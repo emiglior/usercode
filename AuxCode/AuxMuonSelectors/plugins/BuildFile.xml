@@ -6,7 +6,13 @@
 <use   name="DataFormats/EgammaCandidates"/>
 <use   name="DataFormats/VertexReco"/>
 <use   name="DataFormats/MuonReco"/>
+<use   name="DataFormats/TrackReco"/>
+<use   name="DataFormats/TrackingRecHit"/>
 <use   name="DataFormats/Math"/>
+<use   name="Geometry/CommonDetUnit"/>
+<use   name="Geometry/TrackerGeometryBuilder"/>
+<use   name="Geometry/Records"/>
+
 <library   file="*.cc" name="AuxCodeAuxMuonSelectorsPlugins">
   <flags   EDM_PLUGIN="1"/>
 </library>
