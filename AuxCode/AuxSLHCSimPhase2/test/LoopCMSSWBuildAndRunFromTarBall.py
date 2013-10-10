@@ -207,8 +207,8 @@ def main():
     (out,err) = child_edm.communicate()
 
     ### uncomment next to debug the script on 50 events
-    nEvents=100 # this line should be commented for running on the full GEN-SIM sample
-#    nEvents = int((out.split("\n")[1]).split()[3])
+#    nEvents=100 # this line should be commented for running on the full GEN-SIM sample
+    nEvents = int((out.split("\n")[1]).split()[3])
 
     print nEvents, opts.numberofjobs          
                                          
