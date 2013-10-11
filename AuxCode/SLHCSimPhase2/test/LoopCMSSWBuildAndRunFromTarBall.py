@@ -155,7 +155,7 @@ class Job:
         fout.write("ls -lh \n")
         fout.write(" # retrieve the outputs \n")
         fout.write("for RootOutputFile in $(ls *root ); do rfcp  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
-        fout.write("rfcp step_digitodqm_PUandAge.py ${OUT_DIR} \n")
+        fout.write("rfcp step_digitodqmvalidation_PUandAge.py ${OUT_DIR} \n")
         fout.write("# rfcp ${CMSSW_BASE}/src/SLHCUpgradeSimulations/Geometry/data/PhaseI/PixelSkimmedGeometry_phase1.txt ${OUT_DIR} \n")
         fout.write("# rfcp ${CMSSW_BASE}/src/Geometry/TrackerCommonData/data/PhaseI/trackerStructureTopology.xml ${OUT_DIR} \n")
         fout.close()
