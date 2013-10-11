@@ -101,7 +101,7 @@ class Job:
         fout.write("inputgensimfilename="+GENSIM_FILE+" \n")
         
 
-# specific for cmssusy,ba.infn.it
+# specific for cmssusy.ba.infn.it
 # https://www.ba.infn.it/pagine-utenti.html?task=viewpage&user_id=111&pageid=96
         fout.write("if [ \"$PBS_ENVIRONMENT\" == \"PBS_BATCH\" ]; then \n")
         fout.write("echo \"I AM IN BATCH\" \n")
