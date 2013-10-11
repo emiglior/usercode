@@ -10,6 +10,7 @@ from optparse import OptionParser
 ###### method to define global variable instead of export #############
 
 def set_global_var():
+    global USER
     global HOME
     global PBS_DIR
     global LOG_DIR
@@ -18,6 +19,8 @@ def set_global_var():
     global CMSSW_VER
 
     global GENSIM_FILE
+
+    USER = os.environ.get('USER')
     HOME = os.environ.get('HOME')
     PBS_DIR = os.getcwd()+os.path.join("/PBS")
     LOG_DIR = os.getcwd()+os.path.join("/log")
@@ -53,7 +56,7 @@ class Job:
         self.ageing=ageing
         
         self.the_dir=the_dir  # this is the working 
-        self.out_dir=os.path.join("/lustre/cms/store/user/emiglior/SLHCSimPhase2/out","sample_"+sample,"pu_"+pu,"PixelROCRows_" +pixelrocrows+"_PixelROCCols_"+pixelroccols,"BPixThr_"+bpixthr)
+        self.out_dir=os.path.join("/lustre/cms/store/user",USER,"SLHCSimPhase2/out","sample_"+sample,"pu_"+pu,"PixelROCRows_" +pixelrocrows+"_PixelROCCols_"+pixelroccols,"BPixThr_"+bpixthr)
         os.system("mkdir -p "+self.out_dir)
 
         self.job_basename= 'step_digitodqm_' +self.sample+ '_pu' + self.pu + '_age' + self.ageing + '_' + str(self.firstevent)+ "_PixelROCRows" + self.pixelrocrows + "_PixelROCCols" + self.pixelroccols + "_BPixThr" + self.bpixthr
