@@ -71,6 +71,8 @@ if options.PUScenario!="NoPU":
     if "140" in options.PUScenario:        
         process.mix.input.nbPileupEvents.averageNumber = cms.double(140.000000)
         print "PU = 140"
+    elif "10" in options.PUScenario:
+        process.mix.input.nbPileupEvents.averageNumber = cms.double(10.000000)
     elif "25" in options.PUScenario:
         process.mix.input.nbPileupEvents.averageNumber = cms.double(25.000000)
     elif "35" in options.PUScenario:
@@ -242,6 +244,10 @@ from SLHCUpgradeSimulations.Configuration.phase1TkCustoms import customise
 
 #call to customisation function customise imported from SLHCUpgradeSimulations.Configuration.phase1TkCustoms
 process = customise(process)
+
+# for light sequence (keeping only tracker validation sequences)
+from TkOnlyValidationCustoms import customise_tkonly
+process = customise_tkonly(process)
 
 # Uncomment next two lines to change pixel DIGI threshold
 process.mix.digitizers.pixel.ThresholdInElectrons_BPix = cms.double(options.BPixThr)
