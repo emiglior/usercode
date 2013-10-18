@@ -246,7 +246,7 @@ from SLHCUpgradeSimulations.Configuration.phase1TkCustoms import customise
 process = customise(process)
 
 # for light sequence (keeping only tracker validation sequences)
-from TkOnlyValidationCustoms import customise_tkonly
+from AuxCode.SLHCSimPhase2.TkOnlyValidationCustoms import customise_tkonly
 process = customise_tkonly(process)
 
 # Uncomment next two lines to change pixel DIGI threshold

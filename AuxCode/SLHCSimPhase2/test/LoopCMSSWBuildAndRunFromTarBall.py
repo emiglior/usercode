@@ -88,8 +88,8 @@ class Job:
         fout.write("#PBS -N "+self.job_basename+"\n")
         fout.write("#PBS -o "+os.path.join(LOG_dir,self.job_basename)+".out"+"\n")
         fout.write("#PBS -e "+os.path.join(LOG_dir,self.job_basename)+".err"+"\n")
-        fout.write("#PBS -q local \n")
-        fout.write("#PBS -l mem=5gb \n")
+        fout.write("#PBS -q veryshort \n")
+#        fout.write("#PBS -l mem=5gb \n")
         fout.write("### Auto-Generated Script by LoopCMSSWBuildAndRunFromTarBall.py ### \n")
         fout.write("JobName="+self.job_basename+" \n")
         fout.write("outfilename="+self.job_basename+".root"+" \n")
@@ -126,9 +126,7 @@ class Job:
         fout.write("cmssw_ver="+CMSSW_VER+" \n")
         fout.write("scram p CMSSW $cmssw_ver  \n")
         fout.write("# Compile CMSSW on batch node  \n")
-        fout.write("cd $cmssw_ver \n")
-        fout.write("cp -pr "+os.path.join(HOME,"SLHCSimPhase2","${cmssw_ver}","src")+" . \n")
-        fout.write("cd src \n")
+        fout.write("cd ${cmssw_ver}/src \n")
         fout.write("eval `scram r -sh` \n")
 #         fout.write("# this is needed to change the size of the pixels \n")
 #         fout.write("# addpkg CalibTracker/SiPixelESProducers V50-00-02 \n")
@@ -142,18 +140,18 @@ class Job:
 #         fout.write("# trackerStructureTopology_template_L0L1.xml -> L0+L1 BPIX is changed \n")
 #         fout.write("# cp -v /cmshome/traverso/AuxFiles/trackerStructureTopology_template_L0.xml ${BATCH_DIR}/trackerStructureTopology_template.xml \n")
 #         fout.write("#sed -e \"s%PIXELROCROWS%$PixelROCRows%g\" -e \"s%PIXELROCCOLS%$PixelROCCols%g\" ${BATCH_DIR}/trackerStructureTopology_template.xml > Geometry/TrackerCommonData/data/PhaseI/trackerStructureTopology.xml \n")
-        fout.write("# showtags -r \n")
+#        fout.write("# showtags -r \n")
+        fout.write("git clone -b 612_slhc4 git://github.com/emiglior/usercode.git . \n")
         fout.write("scram b -j 8 \n")
+###################################3
         fout.write("# Run CMSSW to complete the recipe for changing the size of the pixels \n")
-        fout.write("#cd SLHCUpgradeSimulations/Geometry/test \n")
+        fout.write("# cd SLHCUpgradeSimulations/Geometry/test \n")
         fout.write("# cmsRun writeFile_phase1_cfg.py \n")
         fout.write("# mv PixelSkimmedGeometry_phase1.txt ${CMSSW_BASE}/src/SLHCUpgradeSimulations/Geometry/data/PhaseI \n")
-        fout.write("#  Run CMSSW for DIGI-to-DQM steps \n")
-        fout.write("cd ${CMSSW_BASE}/test \n")
-        fout.write("cp -v "+os.path.join(HOME,"SLHCSimPhase2","AuxFiles","scripts","step_digitodqmvalidation_PUandAge.py")+" . \n")  
-        fout.write("cp -v "+os.path.join(HOME,"SLHCSimPhase2","AuxFiles","scripts","TkOnlyValidationCustoms.py")+" . \n") 
+        fout.write("# Run CMSSW for DIGI-to-DQM steps \n")
+        fout.write("cd "+os.path.join("AuxCode","SLHCSimPhase2","test")+"\n")  
         fout.write("cmsRun step_digitodqmvalidation_PUandAge.py maxEvents=${maxevents} firstEvent=${firstevent} BPixThr=${bpixthr} InputFileName=${inputgensimfilename} OutFileName=${outfilename} PUScenario=${puscenario} AgeingScenario=${ageing} \n")
-        fout.write("ls -lh \n")
+        fout.write("ls -lh . \n")
         fout.write(" # retrieve the outputs \n")
         fout.write("for RootOutputFile in $(ls *root ); do rfcp  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
         fout.write("rfcp step_digitodqmvalidation_PUandAge.py ${OUT_DIR} \n")
@@ -211,8 +209,8 @@ def main():
     (out,err) = child_edm.communicate()
 
     ### uncomment next to debug the script on 50 events
-#    nEvents=100 # this line should be commented for running on the full GEN-SIM sample
-    nEvents = int((out.split("\n")[1]).split()[3])
+    nEvents=50 # this line should be commented for running on the full GEN-SIM sample
+#    nEvents = int((out.split("\n")[1]).split()[3])
 
     print nEvents, opts.numberofjobs          
                                          
@@ -268,7 +266,7 @@ def main():
     fout.write("cd "+os.path.join(HOME,"SLHCSimPhase2","${cmssw_ver}","src")+"\n")
     fout.write("eval `scram r -sh`\n")
     fout.write("DQMFileList="+DQMFileList[:-1]+" \n")
-    fout.write("cmsDriver.py step4  --geometry Extended2017 --customise SLHCUpgradeSimulations/Configuration/phase1TkCustoms.customise --conditions auto:upgrade2017 --mc  -s HARVESTING:validationHarvesting+dqmHarvesting --filein $DQMFileList --fileout file:step4.root  > step4_FourMuPt1_200_UPG2017+FourMuPt1_200_UPG2017+DIGIUP17+RECOUP17+HARVESTUP17.log \n")
+    fout.write("cmsDriver.py step4  --geometry Extended2017 --customise SLHCUpgradeSimulations/Configuration/phase1TkCustoms.customise,AuxCode/SLHCSimPhase2/TkOnlyValidationCustoms.customise_tkonly --conditions auto:upgrade2017 --mc  -s HARVESTING:validationHarvesting+dqmHarvesting --filein $DQMFileList --fileout file:step4.root  > step4_FourMuPt1_200_UPG2017+FourMuPt1_200_UPG2017+DIGIUP17+RECOUP17+HARVESTUP17.log \n")
     fout.close()
 
 if __name__ == "__main__":        

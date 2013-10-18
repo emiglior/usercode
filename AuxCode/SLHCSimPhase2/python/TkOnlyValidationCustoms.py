@@ -1,5 +1,13 @@
 import FWCore.ParameterSet.Config as cms
+
 def customise_tkonly(process):
+    if hasattr(process,'validation_step'):
+        process=customise_tkonly_validation(process)
+    if hasattr(process,'dqmHarvesting'):
+        process=customise_tkonly_harvesting(process)
+    return process
+        
+def customise_tkonly_validation(process):
     # keeping only tracker validation sequences
     process.validation_step.remove(process.globaldigisanalyze)                               
     process.validation_step.remove(process.ecalSimHitsValidationSequence)                    
@@ -43,48 +51,11 @@ def customise_tkonly(process):
     process.validation_step.remove(process.HLTJetMETValSeq)
     # removing additional track collections from trackValidation input
     process.trackValidator.label = cms.VInputTag(cms.InputTag("generalTracks"))   
-    return(process)
+    return process 
 
 
-
-
-                                      
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                                   
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
-                                  
+def customise_tkonly_harvesting(process):
+# currently is just a skeleton 
+# add below the "remove"'s required 
+#    process.schedule.remove(process.dqmHarvesting)    
+    return process 
