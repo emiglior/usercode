@@ -55,7 +55,17 @@ def customise_tkonly_validation(process):
 
 
 def customise_tkonly_harvesting(process):
-# currently is just a skeleton 
-# add below the "remove"'s required 
-#    process.schedule.remove(process.dqmHarvesting)    
+    # add below the "remove"'s required
+    process.postValidation.remove(process.recoMuonPostProcessors)        
+    process.postValidation.remove(process.MuIsoValPostProcessor)    
+    process.postValidation.remove(process.calotowersPostProcessor)  
+    process.postValidation.remove(process.hcalSimHitsPostProcessor) 
+    process.postValidation.remove(process.hcaldigisPostProcessor)  
+    process.postValidation.remove(process.hcalrechitsPostProcessor) 
+    process.postValidation.remove(process.electronPostValidationSequence)
+    process.postValidation.remove(process.photonPostProcessor)      
+    process.postValidation.remove(process.pfJetClient)              
+    process.postValidation.remove(process.pfMETClient)              
+    process.postValidation.remove(process.rpcRecHitPostValidation_step)
+    process.postValidation.remove(process.runTauEff)                   
     return process 

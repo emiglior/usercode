@@ -249,6 +249,12 @@ process = customise(process)
 from AuxCode.SLHCSimPhase2.TkOnlyValidationCustoms import customise_tkonly
 process = customise_tkonly(process)
 
+# read-in the parametrization of pixel CPE generic from external cff file
+# TODO 1) the choice of the array shotld be steerable from somewhere
+#      2) the next lines could be fed into the process via the customize option of the cmsDriver.py 
+from AuxCode.SLHCSimPhase2.PixelCPE_tables_cff import *
+process.PixelCPEGenericESProducer.PixelCPEList = pixel_CPE_dummy
+
 # Uncomment next two lines to change pixel DIGI threshold
 process.mix.digitizers.pixel.ThresholdInElectrons_BPix = cms.double(options.BPixThr)
 process.mix.digitizers.pixel.ThresholdInElectrons_BPix_L1 = cms.double(options.BPixThr)

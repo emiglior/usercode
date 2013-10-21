@@ -32,6 +32,7 @@ PixelCPEGeneric::PixelCPEGeneric(edm::ParameterSet const & conf,
     LogDebug("PixelCPEGeneric") 
       << " constructing a generic algorithm for ideal pixel detector.\n"
       << " CPEGeneric:: VerboseLevel = " << theVerboseLevel;
+ 
 
   // Externally settable cuts  
   the_eff_charge_cut_lowX = conf.getParameter<double>("eff_charge_cut_lowX");
@@ -54,6 +55,33 @@ PixelCPEGeneric::PixelCPEGeneric(edm::ParameterSet const & conf,
   DoCosmics_                 = conf.getParameter<bool>("DoCosmics");
   LoadTemplatesFromDB_       = conf.getParameter<bool>("LoadTemplatesFromDB");
 
+  // getting Pixel CPE from configuration file
+  // vpsets for PixelCPE error maps	 
+  edm::VParameterSet PixelCPE_pixelsize_selection_;
+  if ( conf.exists("PixelCPEList") ) {
+    PixelCPE_pixelsize_selection_= conf.getParameter<edm::VParameterSet>("PixelCPEList");
+    for(edm::VParameterSet::const_iterator vpset_it = PixelCPE_pixelsize_selection_.begin(); vpset_it != PixelCPE_pixelsize_selection_.end(); vpset_it++){
+      xerr_barrel_l1_ = vpset_it->getUntrackedParameter<std::vector<double> >("xerr_barrel_l1_");
+      xerr_barrel_l1_def_= vpset_it->getUntrackedParameter<double>("xerr_barrel_l1_def_");
+      yerr_barrel_l1_=  vpset_it->getUntrackedParameter<std::vector<double> >("yerr_barrel_l1_");
+      yerr_barrel_l1_def_= vpset_it->getUntrackedParameter<double>("yerr_barrel_l1_def_");
+      xerr_barrel_ln_= vpset_it->getUntrackedParameter<std::vector<double> >("xerr_barrel_ln_");
+      xerr_barrel_ln_def_= vpset_it->getUntrackedParameter<double>("xerr_barrel_ln_def_");
+      yerr_barrel_ln_= vpset_it->getUntrackedParameter<std::vector<double> >("yerr_barrel_ln_");
+      yerr_barrel_ln_def_= vpset_it->getUntrackedParameter<double>("yerr_barrel_ln_def_");
+      xerr_endcap_= vpset_it->getUntrackedParameter<std::vector<double> >("xerr_endcap_");
+      xerr_endcap_def_= vpset_it->getUntrackedParameter<double>("xerr_endcap_def_");
+      yerr_endcap_= vpset_it->getUntrackedParameter<std::vector<double> >("yerr_endcap_");
+      yerr_endcap_def_= vpset_it->getUntrackedParameter<double>("yerr_endcap_def_"); 
+    } // close loop on  vpset_it
+  }
+
+  bool isUpgrade=false;
+  if ( conf.exists("Upgrade") && conf.getParameter<bool>("Upgrade")) {
+    isUpgrade=true;
+  }
+  isUpgrade_=isUpgrade;
+ 
   if ( !UseErrorsFromTemplates_ && ( TruncatePixelCharge_       || 
 				     IrradiationBiasCorrection_ || 
 				     DoCosmics_                 ||
@@ -95,50 +123,10 @@ PixelCPEGeneric::PixelCPEGeneric(edm::ParameterSet const & conf,
   //cout << "(int)LoadTemplatesFromDB_    = " << (int)LoadTemplatesFromDB_       << endl;
   //cout << endl;
 
-  //yes, these should be config parameters!
-  //default case...
-  xerr_barrel_l1_= {0.00115, 0.00120, 0.00088};
-  xerr_barrel_l1_def_=0.01030;
-  yerr_barrel_l1_= {0.00375,0.00230,0.00250,0.00250,0.00230,0.00230,0.00210,0.00210,0.00240};
-  yerr_barrel_l1_def_=0.00210;
-  xerr_barrel_ln_= {0.00115, 0.00120, 0.00088};
-  xerr_barrel_ln_def_=0.01030;
-  yerr_barrel_ln_= {0.00375,0.00230,0.00250,0.00250,0.00230,0.00230,0.00210,0.00210,0.00240};
-  yerr_barrel_ln_def_=0.00210;
-  xerr_endcap_= {0.0020, 0.0020};
-  xerr_endcap_def_=0.0020;
-  yerr_endcap_= {0.00210};
-  yerr_endcap_def_=0.00075;
-
-  bool isUpgrade=false;
-  if ( conf.exists("Upgrade") && conf.getParameter<bool>("Upgrade")) {
-    isUpgrade=true;
-    xerr_barrel_ln_= {0.00114,0.00104,0.00214};
-    xerr_barrel_ln_def_=0.00425;
-    yerr_barrel_ln_= {0.00299,0.00203,0.0023,0.00237,0.00233,0.00243,0.00232,0.00259,0.00176};
-    yerr_barrel_ln_def_=0.00245;
-    xerr_endcap_= {0.00151,0.000813,0.00221};
-    xerr_endcap_def_=0.00218;
-    yerr_endcap_= {0.00261,0.00107,0.00264};
-    yerr_endcap_def_=0.00357;
-    
-    if ( conf.exists("SmallPitch") && conf.getParameter<bool>("SmallPitch")) {
-      xerr_barrel_l1_= {0.00104, 0.000691, 0.00122};
-      xerr_barrel_l1_def_=0.00321;
-      yerr_barrel_l1_= {0.00199,0.00136,0.0015,0.00153,0.00152,0.00171,0.00154,0.00157,0.00154};
-      yerr_barrel_l1_def_=0.00164;
-    }
-    else{
-      xerr_barrel_l1_= {0.00114,0.00104,0.00214};
-      xerr_barrel_l1_def_=0.00425;
-      yerr_barrel_l1_= {0.00299,0.00203,0.0023,0.00237,0.00233,0.00243,0.00232,0.00259,0.00176};
-      yerr_barrel_l1_def_=0.00245;
-    }
-  }
-
-  isUpgrade_=isUpgrade;
-
+ 
+  
 }
+
 
 
 
@@ -763,9 +751,5 @@ PixelCPEGeneric::localError( const SiPixelCluster& cluster,
   return LocalError( xerr_sq, 0, yerr_sq );
 
 }
-
-
-
-
 
 
