@@ -57,18 +57,19 @@ PixelCPEGeneric::PixelCPEGeneric(edm::ParameterSet const & conf,
 
   // getting Pixel CPE from configuration file
   if ( conf.exists("PixelCPEList") ) {
-    xerr_barrel_l1_     = conf.getUntrackedParameter<std::vector<double> >("xerr_barrel_l1_");
-    xerr_barrel_l1_def_ = conf.getUntrackedParameter<double>("xerr_barrel_l1_def_");
-    yerr_barrel_l1_     = conf.getUntrackedParameter<std::vector<double> >("yerr_barrel_l1_");
-    yerr_barrel_l1_def_ = conf.getUntrackedParameter<double>("yerr_barrel_l1_def_");
-    xerr_barrel_ln_     = conf.getUntrackedParameter<std::vector<double> >("xerr_barrel_ln_");
-    xerr_barrel_ln_def_ = conf.getUntrackedParameter<double>("xerr_barrel_ln_def_");
-    yerr_barrel_ln_     = conf.getUntrackedParameter<std::vector<double> >("yerr_barrel_ln_");
-    yerr_barrel_ln_def_ = conf.getUntrackedParameter<double>("yerr_barrel_ln_def_");
-    xerr_endcap_        = conf.getUntrackedParameter<std::vector<double> >("xerr_endcap_");
-    xerr_endcap_def_    = conf.getUntrackedParameter<double>("xerr_endcap_def_");
-    yerr_endcap_        = conf.getUntrackedParameter<std::vector<double> >("yerr_endcap_");
-    yerr_endcap_def_    = conf.getUntrackedParameter<double>("yerr_endcap_def_"); 
+    edm::ParameterSet pset = conf.getParameter<edm::ParameterSet>("PixelCPEList");
+    xerr_barrel_l1_     = pset.getUntrackedParameter<std::vector<double> >("xerr_barrel_l1_");
+    xerr_barrel_l1_def_ = pset.getUntrackedParameter<double>("xerr_barrel_l1_def_");
+    yerr_barrel_l1_     = pset.getUntrackedParameter<std::vector<double> >("yerr_barrel_l1_");
+    yerr_barrel_l1_def_ = pset.getUntrackedParameter<double>("yerr_barrel_l1_def_");
+    xerr_barrel_ln_     = pset.getUntrackedParameter<std::vector<double> >("xerr_barrel_ln_");
+    xerr_barrel_ln_def_ = pset.getUntrackedParameter<double>("xerr_barrel_ln_def_");
+    yerr_barrel_ln_     = pset.getUntrackedParameter<std::vector<double> >("yerr_barrel_ln_");
+    yerr_barrel_ln_def_ = pset.getUntrackedParameter<double>("yerr_barrel_ln_def_");
+    xerr_endcap_        = pset.getUntrackedParameter<std::vector<double> >("xerr_endcap_");
+    xerr_endcap_def_    = pset.getUntrackedParameter<double>("xerr_endcap_def_");
+    yerr_endcap_        = pset.getUntrackedParameter<std::vector<double> >("yerr_endcap_");
+    yerr_endcap_def_    = pset.getUntrackedParameter<double>("yerr_endcap_def_"); 
     // TO DO implement some default
   }
 
