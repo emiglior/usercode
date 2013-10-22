@@ -56,24 +56,20 @@ PixelCPEGeneric::PixelCPEGeneric(edm::ParameterSet const & conf,
   LoadTemplatesFromDB_       = conf.getParameter<bool>("LoadTemplatesFromDB");
 
   // getting Pixel CPE from configuration file
-  // vpsets for PixelCPE error maps	 
-  edm::VParameterSet PixelCPE_pixelsize_selection_;
   if ( conf.exists("PixelCPEList") ) {
-    PixelCPE_pixelsize_selection_= conf.getParameter<edm::VParameterSet>("PixelCPEList");
-    for(edm::VParameterSet::const_iterator vpset_it = PixelCPE_pixelsize_selection_.begin(); vpset_it != PixelCPE_pixelsize_selection_.end(); vpset_it++){
-      xerr_barrel_l1_ = vpset_it->getUntrackedParameter<std::vector<double> >("xerr_barrel_l1_");
-      xerr_barrel_l1_def_= vpset_it->getUntrackedParameter<double>("xerr_barrel_l1_def_");
-      yerr_barrel_l1_=  vpset_it->getUntrackedParameter<std::vector<double> >("yerr_barrel_l1_");
-      yerr_barrel_l1_def_= vpset_it->getUntrackedParameter<double>("yerr_barrel_l1_def_");
-      xerr_barrel_ln_= vpset_it->getUntrackedParameter<std::vector<double> >("xerr_barrel_ln_");
-      xerr_barrel_ln_def_= vpset_it->getUntrackedParameter<double>("xerr_barrel_ln_def_");
-      yerr_barrel_ln_= vpset_it->getUntrackedParameter<std::vector<double> >("yerr_barrel_ln_");
-      yerr_barrel_ln_def_= vpset_it->getUntrackedParameter<double>("yerr_barrel_ln_def_");
-      xerr_endcap_= vpset_it->getUntrackedParameter<std::vector<double> >("xerr_endcap_");
-      xerr_endcap_def_= vpset_it->getUntrackedParameter<double>("xerr_endcap_def_");
-      yerr_endcap_= vpset_it->getUntrackedParameter<std::vector<double> >("yerr_endcap_");
-      yerr_endcap_def_= vpset_it->getUntrackedParameter<double>("yerr_endcap_def_"); 
-    } // close loop on  vpset_it
+    xerr_barrel_l1_     = conf.getUntrackedParameter<std::vector<double> >("xerr_barrel_l1_");
+    xerr_barrel_l1_def_ = conf.getUntrackedParameter<double>("xerr_barrel_l1_def_");
+    yerr_barrel_l1_     = conf.getUntrackedParameter<std::vector<double> >("yerr_barrel_l1_");
+    yerr_barrel_l1_def_ = conf.getUntrackedParameter<double>("yerr_barrel_l1_def_");
+    xerr_barrel_ln_     = conf.getUntrackedParameter<std::vector<double> >("xerr_barrel_ln_");
+    xerr_barrel_ln_def_ = conf.getUntrackedParameter<double>("xerr_barrel_ln_def_");
+    yerr_barrel_ln_     = conf.getUntrackedParameter<std::vector<double> >("yerr_barrel_ln_");
+    yerr_barrel_ln_def_ = conf.getUntrackedParameter<double>("yerr_barrel_ln_def_");
+    xerr_endcap_        = conf.getUntrackedParameter<std::vector<double> >("xerr_endcap_");
+    xerr_endcap_def_    = conf.getUntrackedParameter<double>("xerr_endcap_def_");
+    yerr_endcap_        = conf.getUntrackedParameter<std::vector<double> >("yerr_endcap_");
+    yerr_endcap_def_    = conf.getUntrackedParameter<double>("yerr_endcap_def_"); 
+    // TO DO implement some default
   }
 
   bool isUpgrade=false;
