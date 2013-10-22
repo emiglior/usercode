@@ -141,11 +141,7 @@ class Job:
 #         fout.write("# cp -v /cmshome/traverso/AuxFiles/trackerStructureTopology_template_L0.xml ${BATCH_DIR}/trackerStructureTopology_template.xml \n")
 #         fout.write("#sed -e \"s%PIXELROCROWS%$PixelROCRows%g\" -e \"s%PIXELROCCOLS%$PixelROCCols%g\" ${BATCH_DIR}/trackerStructureTopology_template.xml > Geometry/TrackerCommonData/data/PhaseI/trackerStructureTopology.xml \n")
 #        fout.write("# showtags -r \n")
-        fout.write("export GIT_SSL_NO_VERIFY=true \n")
-        fout.write("git cms-addpkg RecoLocalTracker/SiPixelRecHits \n")
-        fout.write("git fetch https://github.com/emiglior/cmssw 612_slhc4:612_slhc4 \n")
-        fout.write("git checkout 612_slhc4 \n")
-        fout.write("git cms-addpkg AuxCode/SLHCSimPhase2 \n")        
+        fout.write("git clone -b 612_slhc4 git://github.com/emiglior/usercode.git . \n")
         fout.write("scram b -j 8 \n")
 ###################################3
         fout.write("# Run CMSSW to complete the recipe for changing the size of the pixels \n")
