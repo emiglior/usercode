@@ -25,7 +25,7 @@ def set_global_var(sample):
     PBS_DIR = os.getcwd()+os.path.join("/PBS") 
     LOG_DIR = os.getcwd()+os.path.join("/log")
     SCRAM_ARCH = "slc5_amd64_gcc472"
-    CMSSW_VER="CMSSW_6_1_2_SLHC4_patch1"
+    CMSSW_VER="CMSSW_6_1_2_SLHC8_patch3"
     
     if (sample=="TTbar") | (sample=="ttbar") | (sample=="TTBar") :
         GENSIM_FILE = "file:/lustre/cms/store/user/musich/SLHCSimPhase2/Samples/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
@@ -70,14 +70,14 @@ class Job:
         self.cfg_dir=None
         self.outputPSetName=None
 
-        # PBS variables        
+# PBS variables        
         self.output_PBS_name=None
 
 ###############################
     def createThePBSFile(self):
 ###############################
 
-        # directory to store the PBS to be submitted
+# directory to store the PBS to be submitted
         self.pbs_dir = PBS_DIR
         if not os.path.exists(self.pbs_dir):
             os.makedirs(self.pbs_dir)
@@ -149,7 +149,7 @@ class Job:
         # fout.write("# cp -v /cmshome/traverso/AuxFiles/trackerStructureTopology_template_L0.xml ${BATCH_DIR}/trackerStructureTopology_template.xml \n")
         # fout.write("#sed -e \"s%PIXELROCROWS%$PixelROCRows%g\" -e \"s%PIXELROCCOLS%$PixelROCCols%g\" ${BATCH_DIR}/trackerStructureTopology_template.xml > Geometry/TrackerCommonData/data/PhaseI/trackerStructureTopology.xml \n")
         # fout.write("# showtags -r \n")
-        fout.write("git clone -b 612_slhc4 git://github.com/emiglior/usercode.git . \n")
+        fout.write("git clone -b 612_slhc8 git://github.com/emiglior/usercode.git . \n")
         fout.write("scram b -j 8 \n")
         fout.write("# Run CMSSW to complete the recipe for changing the size of the pixels \n")
         fout.write("# cd SLHCUpgradeSimulations/Geometry/test \n")
@@ -189,8 +189,8 @@ def main():
     parser.add_option('-a','--ageing',help='set ageing',dest='ageing',action='store',default='NoAgeing')
     (opts, args) = parser.parse_args()
 
-    # check that chosen pixel size matches what is currently available in the trackerStructureTopology
-    # https://twiki.cern.ch/twiki/bin/view/CMS/ExamplePhaseI#Changing_the_Pixel_Size
+# check that chosen pixel size matches what is currently available in the trackerStructureTopology
+# https://twiki.cern.ch/twiki/bin/view/CMS/ExamplePhaseI#Changing_the_Pixel_Size
     if int(opts.rocrows) % 80:
         print 'illegal value for PixelROCRows' 
     exit
@@ -226,8 +226,8 @@ def main():
     (out,err) = child_edm.communicate()
 
     ### uncomment next to debug the script on 50 events
-    nEvents=50 # this line should be commented for running on the full GEN-SIM sample
-    #  nEvents = int((out.split("\n")[1]).split()[3])
+    # nEvents=50 # this line should be commented for running on the full GEN-SIM sample
+    nEvents = int((out.split("\n")[1]).split()[3])
     
     eventsPerJob = nEvents/int(opts.numberofjobs)
 
@@ -285,7 +285,7 @@ def main():
     #############################################
     
     link_name="sample_"+opts.sample+"_pu"+opts.pu+"_PixelROCRows_"+opts.rocrows+"_PixelROCCols_"+opts.roccols+"_BPixThr_"+opts.bpixthr
-    linkthedir="ln -fs "+out_dir+" "+link_name     
+    linkthedir="ln -fs "+out_dir+" "+os.path.join(LOG_DIR,link_name)     
     os.system(linkthedir)    
 
     print "- Output will be saved in   :",out_dir
