@@ -2,14 +2,14 @@
 # using: 
 # Revision: 1.14 
 # Source: /local/reps/CMSSW/CMSSW/Configuration/Applications/python/ConfigBuilder.py,v 
-# with command line options: step_digitodqm --no_exec -s DIGI,L1,DIGI2RAW,RAW2DIGI,L1Reco,RECO,VALIDATION,DQM --customise SLHCUpgradeSimulations/Configuration/postLS1Customs.customisePostLS1,SLHCUpgradeSimulations/Configuration/phase1TkCustoms.customise,SLHCUpgradeSimulations/Configuration/customise_mixing.customise_NoCrossing --conditions auto:upgrade2017 --datatier GEN-SIM-RECO,DQM -n 100 --geometry Extended2017 --eventcontent FEVTDEBUGHLT,DQM --filein file:/lustre/cms/store/user/traverso/UpgradeSamples/step1_TTtoAnything_1k_evts.root --pileup AVE_140_BX_25ns --pileup_input file:MinBias_TuneZ2star_14TeV_pythia6_cff_py_GEN_SIM.root --fileout file:step_digitodqm.root
+# with command line options: step2 --no_exec -n 10 --conditions auto:upgradePLS3 --eventcontent FEVTDEBUGHLT,DQM -s DIGI,L1,DIGI2RAW,RAW2DIGI,L1TrackTrigger,L1Reco,RECO,VALIDATION,DQM --datatier GEN-SIM-RECO,DQM --customise SLHCUpgradeSimulations/Configuration/postLS1Customs.customisePostLS1,SLHCUpgradeSimulations/Configuration/phase2TkCustomsBE.customise,SLHCUpgradeSimulations/Configuration/phase2TkCustomsBE.l1EventContent --geometry ExtendedPhase2TkBE --magField 38T_PostLS1 --pileup AVE_140_BX_25ns --pileup_input file:MinBias_TuneZ2star_14TeV_pythia6_cff_py_GEN_SIM.root --filein file:step1.root --fileout file:step2.root
 import FWCore.ParameterSet.Config as cms
 import FWCore.ParameterSet.VarParsing as VarParsing
 
 options = VarParsing.VarParsing()
 
 options.register('InputFileName',
-                 "file:/lustre/cms/store/user/traverso/UpgradeSamples/step1_TTtoAnything_1k_evts.root", # default value
+                 "file:/lustre/cms/store/user/musich/SLHCSimPhase2/Samples/612_slhc8/RelVals/TTbar/2E905DB0-012F-E311-830A-0025905964C4.root", # default value
                  VarParsing.VarParsing.multiplicity.singleton, # singleton or list
                  VarParsing.VarParsing.varType.string,         # string, int, or float
                  "name of the input file ")
@@ -63,7 +63,7 @@ process.load('Configuration.EventContent.EventContent_cff')
 if options.PUScenario!="NoPU":
 
     process.load('SimGeneral.MixingModule.mix_E8TeV_AVE_16_BX_25ns_cfi')
-    process.mix.input.fileNames = cms.untracked.vstring(['file:/lustre/cms/store/user/musich/SLHCSimPhase2/Samples/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_15k_evts.root'])
+    process.mix.input.fileNames = cms.untracked.vstring(['file:/lustre/cms/store/user/musich/SLHCSimPhase2/Samples/612_slhc8/RelVals/MinBias/D0C92216-F62E-E311-A76C-0026189437E8.root','file:/lustre/cms/store/user/musich/SLHCSimPhase2/Samples/612_slhc8/RelVals/MinBias/0E964DB3-F62E-E311-AF5D-00259059649C.root'])
     process.mix.bunchspace = cms.int32(25)
     process.mix.minBunch = cms.int32(-12)
     process.mix.maxBunch = cms.int32(3)
@@ -100,12 +100,13 @@ if options.PUScenario!="NoPU":
 else:
     process.load('SimGeneral.MixingModule.mixNoPU_cfi')
 
-process.load('Configuration.Geometry.GeometryExtended2017Reco_cff')
-process.load('Configuration.StandardSequences.MagneticField_38T_cff')
+process.load('Configuration.Geometry.GeometryExtendedPhase2TkBEReco_cff')
+process.load('Configuration.StandardSequences.MagneticField_38T_PostLS1_cff')
 process.load('Configuration.StandardSequences.Digi_cff')
 process.load('Configuration.StandardSequences.SimL1Emulator_cff')
 process.load('Configuration.StandardSequences.DigiToRaw_cff')
 process.load('Configuration.StandardSequences.RawToDigi_cff')
+process.load('Configuration.StandardSequences.L1TrackTrigger_cff')
 process.load('Configuration.StandardSequences.L1Reco_cff')
 process.load('Configuration.StandardSequences.Reconstruction_cff')
 process.load('Configuration.StandardSequences.Validation_cff')
@@ -168,13 +169,14 @@ process.DQMoutput = cms.OutputModule("PoolOutputModule",
 
 # Other statements
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:upgrade2017', '')
+process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:upgradePLS3', '')
 
 # Path and EndPath definitions
 process.digitisation_step = cms.Path(process.pdigi)
 process.L1simulation_step = cms.Path(process.SimL1Emulator)
 process.digi2raw_step = cms.Path(process.DigiToRaw)
 process.raw2digi_step = cms.Path(process.RawToDigi)
+process.L1TrackTrigger_step = cms.Path(process.L1TrackTrigger)
 process.L1Reco_step = cms.Path(process.L1Reco)
 process.reconstruction_step = cms.Path(process.reconstruction)
 process.prevalidation_step = cms.Path(process.prevalidation)
@@ -189,6 +191,7 @@ process.schedule = cms.Schedule(process.digitisation_step,
                                 process.L1simulation_step,
                                 process.digi2raw_step,
                                 process.raw2digi_step,
+                                process.L1TrackTrigger_step,
                                 process.L1Reco_step,
                                 process.reconstruction_step,
                                 process.prevalidation_step,
@@ -198,13 +201,17 @@ process.schedule = cms.Schedule(process.digitisation_step,
                                 process.FEVTDEBUGHLToutput_step,
                                 process.DQMoutput_step)
 
+
 # customisation of the process.
 
-# if options.PUScenario!="NoPU":
-#     # Automatic addition of the customisation function from SLHCUpgradeSimulations.Configuration.customise_mixing
-#     from SLHCUpgradeSimulations.Configuration.customise_mixing import customise_NoCrossing 
-#     #call to customisation function customise_NoCrossing imported from SLHCUpgradeSimulations.Configuration.customise_mixing
-#     ### EM ### process = customise_NoCrossing(process)
+# Automatic addition of the customisation function from SLHCUpgradeSimulations.Configuration.phase2TkCustomsBE
+from SLHCUpgradeSimulations.Configuration.phase2TkCustomsBE import customise,l1EventContent 
+
+#call to customisation function customise imported from SLHCUpgradeSimulations.Configuration.phase2TkCustomsBE
+process = customise(process)
+
+#call to customisation function l1EventContent imported from SLHCUpgradeSimulations.Configuration.phase2TkCustomsBE
+process = l1EventContent(process)
 
 # Automatic addition of the customisation function from SLHCUpgradeSimulations.Configuration.postLS1Customs
 from SLHCUpgradeSimulations.Configuration.postLS1Customs import customisePostLS1 
@@ -238,12 +245,6 @@ if options.AgeingScenario!="NoAgeing":
         process = customise_aging_3000(process)
     else:
         print "Unrecognized Ageing scenario, using default (=NoAgeing)"
-
-# Automatic addition of the customisation function from SLHCUpgradeSimulations.Configuration.phase1TkCustoms
-from SLHCUpgradeSimulations.Configuration.phase1TkCustoms import customise 
-
-#call to customisation function customise imported from SLHCUpgradeSimulations.Configuration.phase1TkCustoms
-process = customise(process)
 
 # for light sequence (keeping only tracker validation sequences)
 from AuxCode.SLHCSimPhase2.TkOnlyValidationCustoms import customise_tkonly

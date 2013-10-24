@@ -28,14 +28,14 @@ def set_global_var(sample):
     CMSSW_VER="CMSSW_6_1_2_SLHC8_patch3"
     
     if (sample=="TTbar") | (sample=="ttbar") | (sample=="TTBar") :
-        GENSIM_FILE = "file:/lustre/cms/store/user/musich/SLHCSimPhase2/Samples/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
+        GENSIM_FILE = "file:/lustre/cms/store/user/musich/SLHCSimPhase2/Samples/612_slhc8/RelVals/TTbar/2E905DB0-012F-E311-830A-0025905964C4.root"
     elif (sample=="MinBias") | (sample=="minbias") :
-        GENSIM_FILE = "file:/lustre/cms/store/user/musich/SLHCSimPhase2/Samples/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_15k_evts.root"
+        GENSIM_FILE = "file:/lustre/cms/store/user/musich/SLHCSimPhase2/Samples/612_slhc8/RelVals/MinBias/D0C92216-F62E-E311-A76C-0026189437E8.root"
     elif (sample=="IsoMuons") | (sample=="muons") | (sample=="Muons") :
         GENSIM_FILE = "file:/lustre/cms/store/user/musich/SLHCSimPhase2/Samples/ParticleGun/step1_FourMuPartGun_100kEvents.root"
     else :
         print "unrecongnize input sample, using default (=TTbar)"
-        GENSIM_FILE = "file:/lustre/cms/store/user/musich/SLHCSimPhase2/Samples/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
+        GENSIM_FILE = "file:/lustre/cms/store/user/musich/SLHCSimPhase2/Samples/612_slhc8/RelVals/TTbar/2E905DB0-012F-E311-830A-0025905964C4.root"
     
 ###########################################################################
 class Job:
@@ -303,7 +303,7 @@ def main():
     fout.write("cd "+os.path.join(HOME,"SLHCSimPhase2","${cmssw_ver}","src")+"\n")
     fout.write("eval `scram r -sh`\n")
     fout.write("DQMFileList="+DQMFileList[:-1]+" \n")
-    fout.write("cmsDriver.py step4  --geometry Extended2017 --customise SLHCUpgradeSimulations/Configuration/phase1TkCustoms.customise,AuxCode/SLHCSimPhase2/TkOnlyValidationCustoms.customise_tkonly --conditions auto:upgrade2017 --mc  -s HARVESTING:validationHarvesting+dqmHarvesting --filein $DQMFileList --fileout file:step4_sample_"+opts.sample+"_pu"+opts.pu+"_PixelRocRows"+ opts.rocrows+"_PixelROCCols_"+opts.roccols+"_BPixThr"+ opts.bpixthr+".root > step4_sample_"+opts.sample+"_pu"+opts.pu+"_PixelRocRows"+ opts.rocrows+"_PixelROCCols_"+opts.roccols+"_BPixThr"+ opts.bpixthr+".log \n")
+    fout.write("cmsDriver.py step4 --geometry ExtendedPhase2TkBE --magField 38T_PostLS1 --customise SLHCUpgradeSimulations/Configuration/postLS1Customs.customisePostLS1,SLHCUpgradeSimulations/Configuration/phase2TkCustomsBE.customise,SLHCUpgradeSimulations/Configuration/phase2TkCustomsBE.l1EventContent,AuxCode/SLHCSimPhase2/TkOnlyValidationCustoms.customise_tkonly --conditions auto:upgradePLS3 --mc -s HARVESTING:validationHarvesting+dqmHarvesting --filein $DQMFileList --fileout file:step4_sample_"+opts.sample+"_pu"+opts.pu+"_PixelRocRows"+ opts.rocrows+"_PixelROCCols_"+opts.roccols+"_BPixThr"+ opts.bpixthr+".root > step4_sample_"+opts.sample+"_pu"+opts.pu+"_PixelRocRows"+ opts.rocrows+"_PixelROCCols_"+opts.roccols+"_BPixThr"+ opts.bpixthr+".log \n")
     fout.write("mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root AuxCode/SLCHSimPhase2/test/step4_sample_"+opts.sample+"_pu"+opts.pu+"_PixelRocRows"+ opts.rocrows+"_PixelROCCols_"+opts.roccols+"_BPixThr"+ opts.bpixthr+".root")
     fout.close()
 
