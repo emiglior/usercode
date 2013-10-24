@@ -304,7 +304,7 @@ def main():
     fout.write("eval `scram r -sh`\n")
     fout.write("DQMFileList="+DQMFileList[:-1]+" \n")
     fout.write("cmsDriver.py step4 --geometry ExtendedPhase2TkBE --magField 38T_PostLS1 --customise SLHCUpgradeSimulations/Configuration/postLS1Customs.customisePostLS1,SLHCUpgradeSimulations/Configuration/phase2TkCustomsBE.customise,SLHCUpgradeSimulations/Configuration/phase2TkCustomsBE.l1EventContent,AuxCode/SLHCSimPhase2/TkOnlyValidationCustoms.customise_tkonly --conditions auto:upgradePLS3 --mc -s HARVESTING:validationHarvesting+dqmHarvesting --filein $DQMFileList --fileout file:step4_sample_"+opts.sample+"_pu"+opts.pu+"_PixelRocRows"+ opts.rocrows+"_PixelROCCols_"+opts.roccols+"_BPixThr"+ opts.bpixthr+".root > step4_sample_"+opts.sample+"_pu"+opts.pu+"_PixelRocRows"+ opts.rocrows+"_PixelROCCols_"+opts.roccols+"_BPixThr"+ opts.bpixthr+".log \n")
-    fout.write("mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root AuxCode/SLCHSimPhase2/test/step4_sample_"+opts.sample+"_pu"+opts.pu+"_PixelRocRows"+ opts.rocrows+"_PixelROCCols_"+opts.roccols+"_BPixThr"+ opts.bpixthr+".root")
+    fout.write("mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root AuxCode/SLHCSimPhase2/test/step4_sample_"+opts.sample+"_pu"+opts.pu+"_PixelRocRows"+ opts.rocrows+"_PixelROCCols_"+opts.roccols+"_BPixThr"+ opts.bpixthr+".root")
     fout.close()
 
 if __name__ == "__main__":        
