@@ -59,6 +59,7 @@ class Job:
         # parameters of the pixel digitizer 
         self.pixelrocrows=pixelrocrows
         self.pixelroccols=pixelroccols
+        
         self.bpixthr=bpixthr
         self.ageing=ageing
         
@@ -107,6 +108,10 @@ class Job:
         fout.write("maxevents="+str(self.maxevents)+" \n")
         fout.write("pixelroccols="+self.pixelroccols+" \n")
         fout.write("pixelrocrows="+self.pixelrocrows+" \n")
+        fout.write("pixelcpe=pixel_CPE_100x150_upgrade \n")
+        fout.write("if [[ \"$pixelrocrows\"==\"160\" && \"$pixelroccols\"==\"104\" ]]; then \n")
+        fout.write("pixelcpe=pixel_CPE_50x75_upgrade \n")
+        fout.write("fi \n")        
         fout.write("puscenario="+self.pu+" \n")
         fout.write("ageing="+self.ageing+" \n")
         fout.write("bpixthr="+self.bpixthr+" \n")
@@ -190,7 +195,7 @@ class Job:
 
         fout.write("# Run CMSSW for DIGI-to-DQM steps \n")
         fout.write("cd "+os.path.join("AuxCode","SLHCSimPhase2","test")+"\n")  
-        fout.write("cmsRun step_digitodqmvalidation_PUandAge.py maxEvents=${maxevents} firstEvent=${firstevent} BPixThr=${bpixthr} InputFileName=${inputgensimfilename} OutFileName=${outfilename} PUScenario=${puscenario} AgeingScenario=${ageing} \n")
+        fout.write("cmsRun step_digitodqmvalidation_PUandAge.py maxEvents=${maxevents} firstEvent=${firstevent} BPixThr=${bpixthr} PixelCPE=${pixelcpe} InputFileName=${inputgensimfilename} OutFileName=${outfilename} PUScenario=${puscenario} AgeingScenario=${ageing} \n")
         fout.write("ls -lh . \n")
         fout.write(" # retrieve the outputs \n")
         fout.write("for RootOutputFile in $(ls *root ); do rfcp  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")

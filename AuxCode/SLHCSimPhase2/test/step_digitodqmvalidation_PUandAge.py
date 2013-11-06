@@ -32,6 +32,12 @@ options.register('BPixThr',
                  VarParsing.VarParsing.varType.int,
                  "BPix Clusterizer Threshold (2000 e- is default)")
 
+options.register('PixelCPE',
+                 "pixel_CPE_100x150_upgrade", # default value
+                 VarParsing.VarParsing.multiplicity.singleton, # singleton or list
+                 VarParsing.VarParsing.varType.string,         # string, int, or float
+                 "Pixel CPE (pixel_CPE_100x150_upgrade is default)")
+
 options.register('OutFileName',
                  "step_digitodqm.root", # default value
                  VarParsing.VarParsing.multiplicity.singleton, # singleton or list
@@ -254,7 +260,7 @@ process = customise_tkonly(process)
 # TODO 1) the choice of the array shotld be steerable from somewhere
 #      2) the next lines could be fed into the process via the customize option of the cmsDriver.py 
 from AuxCode.SLHCSimPhase2.PixelCPE_tables_cff import *
-process.PixelCPEGenericESProducer.PixelCPEList = pixel_CPE_100x150_upgrade 
+process.PixelCPEGenericESProducer.PixelCPEList = options.pixel_CPE
 
 # Uncomment next two lines to change pixel DIGI threshold
 process.mix.digitizers.pixel.ThresholdInElectrons_BPix = cms.double(options.BPixThr)
