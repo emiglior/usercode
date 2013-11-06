@@ -260,6 +260,7 @@ process = customise_tkonly(process)
 # TODO 1) the choice of the array shotld be steerable from somewhere
 #      2) the next lines could be fed into the process via the customize option of the cmsDriver.py 
 
+print options.PixelCPE
 from AuxCode.SLHCSimPhase2.PixelCPE_tables_cff import *
 process.PixelCPEGenericESProducer.PixelCPEList = PixelCPE_table[options.PixelCPE]
 
