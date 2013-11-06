@@ -135,9 +135,10 @@ class Job:
         fout.write("scram p CMSSW $cmssw_ver  \n")
         fout.write("cd ${cmssw_ver}/src \n")
         fout.write("eval `scram r -sh` \n")
-        fout.write("# this is needed to change the size of the pixels \n")
 
-        # implement in the PBS script E.Brownson's recipe for changing the size of the pixels 
+        # implement in the PBS script E.Brownson's recipe for changing the size of the pixels / part #1
+        fout.write("# Eric Brownson's recipe to change the size of the pixels \n")
+        fout.write("### 1: checkout CMSSW patches \n")
         fout.write("if [ \"$PBS_ENVIRONMENT\" == \"PBS_BATCH\" ]; then \n")
         fout.write("cd $HOME \n")
         fout.write("# git config needed to avoid \n")
@@ -156,7 +157,6 @@ class Job:
         fout.write("ls -la $HOME \n")
         fout.write("cd $HOME/${cmssw_ver}/src  \n")
         fout.write("fi \n")
-
         fout.write("git cms-addpkg CalibTracker/SiPixelESProducers \n")
         fout.write("git cms-addpkg CondFormats/SiPixelObjects \n")
         fout.write("git cms-addpkg CondTools/SiPixel \n")
@@ -167,12 +167,8 @@ class Job:
         fout.write("pwd \n")
         fout.write("ls -l . \n")
         fout.write("git pull https://github.com/brownsonian/cmssw SmallPitch_on612 \n")
-        # fout.write("# copy a templated version of trackerStructureTopology.xml and set the pixel size \n")
-        # fout.write("# trackerStructureTopology_template_L0.xml   -> L0    BPIX is changed \n")
-        # fout.write("# trackerStructureTopology_template_L1.xml   -> L1    BPIX is changed \n")
-        # fout.write("# trackerStructureTopology_template_L0L1.xml -> L0+L1 BPIX is changed \n")
-        # fout.write("# cp -v /cmshome/traverso/AuxFiles/trackerStructureTopology_template_L0.xml ${BATCH_DIR}/trackerStructureTopology_template.xml \n")
-        # fout.write("#sed -e \"s%PIXELROCROWS%$PixelROCRows%g\" -e \"s%PIXELROCCOLS%$PixelROCCols%g\" ${BATCH_DIR}/trackerStructureTopology_template.xml > Geometry/TrackerCommonData/data/PhaseI/trackerStructureTopology.xml \n")
+        fout.write("### 1 ended  \n")
+        
         fout.write("git clone -b 612_slhc8 git://github.com/emiglior/usercode.git \n")
         fout.write("mv usercode/AuxCode .\n")
         fout.write("mv usercode/RecoLocalTracker .\n")
@@ -180,10 +176,18 @@ class Job:
         fout.write("git cms-checkdeps -a \n")
         fout.write("# compile \n")
         fout.write("scram b -j 8 \n")
+
+        # implement in the PBS script E.Brownson's recipe for changing the size of the pixels / part #2
+        fout.write("# Eric Brownson's recipe to change the size of the pixels \n")
+        fout.write("### 2: modify the topology \n")
+        fout.write("# trackerStructureTopology_template_L0.xml   -> L0    BPIX is changed \n")
+        fout.write("sed -e \"s%PIXELROCROWS%"+self.pixelrocrows+"%g\" -e \"s%PIXELROCCOLS%"+self.pixelroccols+"%g\" AuxCode/SLHCSimPhase2/test/trackerStructureTopology_template_L0.xml > Geometry/TrackerCommonData/data/PhaseII/BarrelEndcap/trackerStructureTopology.xml \n")
         fout.write("# Run CMSSW to complete the recipe for changing the size of the pixels \n")
-        fout.write("# cd SLHCUpgradeSimulations/Geometry/test \n")
-        fout.write("# cmsRun writeFile_phase1_cfg.py \n")
-        fout.write("# mv PixelSkimmedGeometry_phase1.txt ${CMSSW_BASE}/src/SLHCUpgradeSimulations/Geometry/data/PhaseI \n")
+        fout.write("cmsRun SLHCUpgradeSimulations/Geometry/test/writeFile_phase2BE_cfg.py \n")
+        fout.write("mv PixelSkimmedGeometry_phase2BE.txt ${CMSSW_BASE}/src/SLHCUpgradeSimulations/Geometry/data/PhaseII/BarrelEndcap/PixelSkimmedGeometry.txt \n")        
+        fout.write("### 2 ended  \n")
+
+
         fout.write("# Run CMSSW for DIGI-to-DQM steps \n")
         fout.write("cd "+os.path.join("AuxCode","SLHCSimPhase2","test")+"\n")  
         fout.write("cmsRun step_digitodqmvalidation_PUandAge.py maxEvents=${maxevents} firstEvent=${firstevent} BPixThr=${bpixthr} InputFileName=${inputgensimfilename} OutFileName=${outfilename} PUScenario=${puscenario} AgeingScenario=${ageing} \n")
@@ -255,8 +259,8 @@ def main():
     (out,err) = child_edm.communicate()
 
     ### uncomment next to debug the script on 50 events
-    # nEvents=50 # this line should be commented for running on the full GEN-SIM sample
-    nEvents = int((out.split("\n")[1]).split()[3])
+    nEvents=10 # this line should be commented for running on the full GEN-SIM sample
+    # nEvents = int((out.split("\n")[1]).split()[3])
     
     eventsPerJob = nEvents/int(opts.numberofjobs)
 
