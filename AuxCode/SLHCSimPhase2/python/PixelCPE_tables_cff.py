@@ -67,3 +67,4 @@ pixel_CPE_dummy= cms.PSet(
     yerr_endcap_def_=cms.untracked.double(0.00275)
     )
 
+PixelCPE_table = { 'pixel_CPE_100x150_default' : pixel_CPE_100x150_default, 'pixel_CPE_100x150_upgrade' : pixel_CPE_100x150_upgrade, 'pixel_CPE_75x100_upgrade'   : pixel_CPE_75x100_upgrade , 'pixel_CPE_dummy'   : pixel_CPE_dummy }
