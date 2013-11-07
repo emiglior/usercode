@@ -233,12 +233,13 @@ def main():
 
     ajob=Job(opts.jobname, nEvents, opts.ageing, opts.rocrows, opts.roccols, opts.bpixthr)
     ajob.createThePBSFile()        
+
+    out_dir = ajob.out_dir # save for later usage
+    
     if opts.submit:
         ajob.submit()
         del ajob
             
-    out_dir = ajob.out_dir # save for later usage
-
         
     #############################################
     # link the output folder
