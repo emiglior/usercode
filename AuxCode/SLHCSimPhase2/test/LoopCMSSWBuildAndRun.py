@@ -109,7 +109,8 @@ class Job:
         fout.write("pixelroccols="+self.pixelroccols+" \n")
         fout.write("pixelrocrows="+self.pixelrocrows+" \n")
         fout.write("pixelcpe=pixel_CPE_100x150_upgrade \n")
-        fout.write("if [[ \"$pixelrocrows\"==\"160\" && \"$pixelroccols\"==\"104\" ]]; then \n")
+        fout.write("#CAREFUL!  bash is picky about spaces when comparing strings\n")
+        fout.write("if [[ \"$pixelrocrows\" = 160 && \"$pixelroccols\" = 104 ]]; then \n")
         fout.write("pixelcpe=pixel_CPE_50x75_upgrade \n")
         fout.write("fi \n")        
         fout.write("puscenario="+self.pu+" \n")
@@ -264,7 +265,7 @@ def main():
     (out,err) = child_edm.communicate()
 
     ### uncomment next to debug the script on 50 events
-    nEvents=10 # this line should be commented for running on the full GEN-SIM sample
+    nEvents=250 # this line should be commented for running on the full GEN-SIM sample
     # nEvents = int((out.split("\n")[1]).split()[3])
     
     eventsPerJob = nEvents/int(opts.numberofjobs)

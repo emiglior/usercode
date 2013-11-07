@@ -3,7 +3,31 @@
 # Revision: 1.14 
 # Source: /local/reps/CMSSW/CMSSW/Configuration/Applications/python/ConfigBuilder.py,v 
 # with command line options: Configuration/GenProduction/python/FourteenTeV/TenMuE_0_200_cfi.py --no_exec -n 10 -s GEN,SIM,DIGI,L1,DIGI2RAW,RAW2DIGI,L1TrackTrigger,L1Reco,RECO --conditions auto:upgradePLS3 --eventcontent FEVTDEBUGHLT --beamspot Gauss --geometry ExtendedPhase2TkBE --magField 38T_PostLS1 --relval 10000,100 --datatier GEN-SIM-RECO --customise SLHCUpgradeSimulations/Configuration/postLS1Customs.customisePostLS1,SLHCUpgradeSimulations/Configuration/phase2TkCustomsBE.customise,SLHCUpgradeSimulations/Configuration/phase2TkCustomsBE.l1EventContent --fileout file:TenMuE_0_200_cff_py_GEN_SIM_RECO.root
+
 import FWCore.ParameterSet.Config as cms
+import FWCore.ParameterSet.VarParsing as VarParsing
+
+options = VarParsing.VarParsing()
+
+options.register('maxEvents',
+                 -1,
+                 VarParsing.VarParsing.multiplicity.singleton,
+                 VarParsing.VarParsing.varType.int,
+                 "Number of events to process (-1 for all)")
+
+options.register('BPixThr',
+                 2000,
+                 VarParsing.VarParsing.multiplicity.singleton,
+                 VarParsing.VarParsing.varType.int,
+                 "BPix Clusterizer Threshold (2000 e- is default)")
+
+options.register('AgeingScenario',
+                 "NoAgeing", # default value
+                 VarParsing.VarParsing.multiplicity.singleton, # singleton or list
+                 VarParsing.VarParsing.varType.string,         # string, int, or float
+                 "Ageing scenario (NoAgeing is default)")
+
+options.parseArguments()
 
 process = cms.Process('RECO')
 
@@ -30,16 +54,15 @@ process.load('Configuration.StandardSequences.Reconstruction_cff')
 process.load('Configuration.StandardSequences.EndOfProcess_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
+process.MessageLogger.destinations = ['cout', 'cerr']
+process.MessageLogger.cerr.FwkReport.reportEvery = 50
+
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(50)
+    input = cms.untracked.int32(options.maxEvents)
 )
 
 # Input source
 process.source = cms.Source("EmptySource")
-
-process.options = cms.untracked.PSet(
-
-)
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
@@ -148,6 +171,37 @@ from SLHCUpgradeSimulations.Configuration.postLS1Customs import customisePostLS1
 
 #call to customisation function customisePostLS1 imported from SLHCUpgradeSimulations.Configuration.postLS1Customs
 process = customisePostLS1(process)
+
+if options.AgeingScenario!="NoAgeing":
+    # Automatic addition of the customisation function from SLHCUpgradeSimulations.Configuration.aging
+    from SLHCUpgradeSimulations.Configuration.aging import * 
+
+    #call to customisation function customise_aging_500 imported from SLHCUpgradeSimulations.Configuration.aging
+
+    if options.AgeingScenario=="100":
+        process = customise_aging_100(process)
+    elif options.AgeingScenario=="200":    
+        process = customise_aging_200(process)
+    elif options.AgeingScenario=="300":    
+        process = customise_aging_300(process)
+    elif options.AgeingScenario=="400":    
+        process = customise_aging_400(process)
+    elif options.AgeingScenario=="500":    
+        process = customise_aging_500(process)
+    elif options.AgeingScenario=="600":    
+        process = customise_aging_600(process)
+    elif options.AgeingScenario=="700":    
+        process = customise_aging_700(process)
+    elif options.AgeingScenario=="1000":    
+        process = customise_aging_1000(process)
+    elif options.AgeingScenario=="3000":    
+        process = customise_aging_3000(process)
+    else:
+        print "Unrecognized Ageing scenario, using default (=NoAgeing)"
+
+# Uncomment next two lines to change pixel DIGI threshold
+process.mix.digitizers.pixel.ThresholdInElectrons_BPix = cms.double(options.BPixThr)
+process.mix.digitizers.pixel.ThresholdInElectrons_BPix_L1 = cms.double(options.BPixThr)
 
 # End of customisation functions
 
