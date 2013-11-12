@@ -4,8 +4,24 @@ import datetime,time
 import os,sys
 import string, re
 import subprocess
-# generic  python modules
+import ConfigParser
 from optparse import OptionParser
+
+
+##### method to parse the input file ################################
+
+def ConfigSectionMap(config, section):
+    the_dict = {}
+    options = config.options(section)
+    for option in options:
+        try:
+            the_dict[option] = config.get(section, option)
+            if the_dict[option] == -1:
+                DebugPrint("skip: %s" % option)
+        except:
+            print("exception on %s!" % option)
+            the_dict[option] = None
+    return the_dict
 
 ###### method to define global variable instead of export #############
 
@@ -30,7 +46,7 @@ class Job:
     """Main class to create and submit PBS jobs"""
 ###########################################################################
 
-    def __init__(self, job_id, maxevents, ageing, pixelrocrows, pixelroccols, bpixthr):
+    def __init__(self, job_id, maxevents, ageing, pixelrocrows, pixelroccols, bpixthr, bpixl0thickness):
 ############################################################################################################################
         
         # store the job-ID (since it is created in a for loop)
@@ -44,14 +60,15 @@ class Job:
         # parameters of the pixel digitizer 
         self.pixelrocrows=pixelrocrows
         self.pixelroccols=pixelroccols
+        self.bpixl0thickness=bpixl0thickness
         
         self.bpixthr=bpixthr
         self.ageing=ageing
         
-        self.out_dir=os.path.join("/lustre/cms/store/user",USER,"SLHCSimPhase2/out","PixelROCRows_" +pixelrocrows+"_PixelROCCols_"+pixelroccols,"BPixThr_"+bpixthr)
+        self.out_dir=os.path.join("/lustre/cms/store/user",USER,"SLHCSimPhase2/out","PixelROCRows_" +pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness,"BPixThr_"+bpixthr)
         os.system("mkdir -p "+self.out_dir)
 
-        self.job_basename= 'pixelCPE_age' + self.ageing + '_PixelROCRows' + self.pixelrocrows + "_PixelROCCols" + self.pixelroccols + "_BPixThr" + self.bpixthr
+        self.job_basename= 'pixelCPE_age' + self.ageing + '_PixelROCRows' + self.pixelrocrows + "_PixelROCCols" + self.pixelroccols +"_L0Thick" + self.bpixl0thickness + "_BPixThr" + self.bpixthr
         
         self.cfg_dir=None
         self.outputPSetName=None
@@ -166,6 +183,10 @@ class Job:
         fout.write("cmsRun SLHCUpgradeSimulations/Geometry/test/writeFile_phase2BE_cfg.py \n")
         fout.write("mv PixelSkimmedGeometry_phase2BE.txt ${CMSSW_BASE}/src/SLHCUpgradeSimulations/Geometry/data/PhaseII/BarrelEndcap/PixelSkimmedGeometry.txt \n")        
         fout.write("### 2 ended  \n")
+
+        # implement the recipe for changing the bpix sensor thickness from A. Tricomi
+        fout.write("# A Tricomi's recipe to change the sensors thickness \n")
+        fout.write("sed -e \"s%BPIXLAYER0THICKNESS%"+self.bpixl0thickness+"%g\" AuxCode/SLHCSimPhase2/test/pixbarladderfull0_template.xml > Geometry/TrackerCommonData/data/PhaseI/pixbarladderfull0.xml \n")
         
         fout.write("# Run CMSSW for GEN-NTUPLE steps \n")
         fout.write("cd "+os.path.join("AuxCode","SLHCSimPhase2","test")+"\n")  
@@ -198,17 +219,57 @@ def main():
     parser.add_option('-j','--jobname', help='task name', dest='jobname', action='store', default='myjob')
     parser.add_option('-r','--ROCRows',help='ROC Rows (default 80 -> du=100 um)', dest='rocrows', action='store', default='80')
     parser.add_option('-c','--ROCCols',help='ROC Cols (default 52 -> dv=150 um)', dest='roccols', action='store', default='52')
-    parser.add_option('-t','--BPixThr',help='BPix Threshold', dest='bpixthr', action='store', default='2000')
+    parser.add_option('-t','--Layer0Thick',help='BPix L0 sensor thickness', dest='layer0thick', action='store', default='285')
+    parser.add_option('-T','--BPixThr',help='BPix Threshold', dest='bpixthr', action='store', default='2000')
     parser.add_option('-a','--ageing',help='set ageing',dest='ageing',action='store',default='NoAgeing')
+    parser.add_option('-i','--input',help='set input configuration (overrides default)',dest='inputconfig',action='store',default=None)
     (opts, args) = parser.parse_args()
+
+    # initialize needed input 
+    mRocRows = None
+    mRocCols = None
+    mBPixthr = None
+    mL0Thick = None
+    mAgeing  = None
+
+    ConfigFile = opts.inputconfig
+    
+    if ConfigFile is not None:
+
+        print "********************************************************"
+        print "*         Parsing from input file:", ConfigFile,"    "
+        
+        config = ConfigParser.ConfigParser()
+        config.read(ConfigFile)
+        
+        mRocRows   = ConfigSectionMap(config,"PixelConfiguration")['rocrows']   
+        mRocCols   = ConfigSectionMap(config,"PixelConfiguration")['roccols']   
+        mL0Thick   = ConfigSectionMap(config,"PixelConfiguration")['layer0thickness']
+        mBPixThr   = ConfigSectionMap(config,"PixelConfiguration")['bpixthr']   
+        mAgeing    = ConfigSectionMap(config,"PixelConfiguration")['ageing']    
+        mNOfEvents = ConfigSectionMap(config,"JobConfiguration")['numberofevents']
+
+    else :
+
+        print "********************************************************"
+        print "*             Parsing from command line                *"
+        print "********************************************************"
+        
+        mRocRows   = opts.rocrows
+        mRocCols   = opts.roccols
+        mL0Thick   = opts.layer0thick
+        mBPixThr   = opts.bpixthr
+        mAgeing    = opts.ageing
+        mNOfEvents = opts.numberofevents
+
 
 # check that chosen pixel size matches what is currently available in the trackerStructureTopology
 # https://twiki.cern.ch/twiki/bin/view/CMS/ExamplePhaseI#Changing_the_Pixel_Size
-    if int(opts.rocrows) % 80:
+    if int(mRocRows) % 80:
         print 'illegal value for PixelROCRows' 
     exit
 
-    if int(opts.roccols) % 52:
+    if int(mRocCols) % 52:
         print "illegal value for PixelROCCols"
     exit
 
@@ -221,17 +282,18 @@ def main():
     print "  Launching this script from : ",os.getcwd()
     print "- submitted                  : ",opts.submit
     print "- Jobname                    : ",opts.jobname
-    print "- ROCRows                    : ",opts.rocrows
-    print "- ROCCols                    : ",opts.roccols
-    print "- Clusterizer Threshold      : ",opts.bpixthr
-    print "- Ageing Scenario            : ",opts.ageing
-    print "- Total events to run        : ",opts.numberofevents     
+    print "- ROCRows                    : ",mRocRows
+    print "- ROCCols                    : ",mRocCols
+    print "- L0 Thickness               : ",mL0Thick
+    print "- Clusterizer Threshold      : ",mBPixThr
+    print "- Ageing Scenario            : ",mAgeing
+    print "- Total events to run        : ",mNOfEvents     
 
-    nEvents=int(opts.numberofevents)
+    nEvents=int(mNOfEvents)
     
     jobIndex=0
 
-    ajob=Job(opts.jobname, nEvents, opts.ageing, opts.rocrows, opts.roccols, opts.bpixthr)
+    ajob=Job(opts.jobname, nEvents, mAgeing, mRocRows, mRocCols, mBPixThr, mL0Thick)
     ajob.createThePBSFile()        
 
     out_dir = ajob.out_dir # save for later usage
@@ -245,7 +307,7 @@ def main():
     # link the output folder
     #############################################
     
-    link_name="PixelROCRows_"+opts.rocrows+"_PixelROCCols_"+opts.roccols+"_BPixThr_"+opts.bpixthr
+    link_name="PixelROCRows_"+mRocRows+"_PixelROCCols_"+mRocCols+"_L0Thick"+mL0Thick+"_BPixThr_"+mBPixThr
     linkthedir="ln -fs "+out_dir+" "+os.path.join(LOG_DIR,link_name)     
     os.system(linkthedir)    
 
