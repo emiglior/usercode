@@ -4,8 +4,24 @@ import datetime,time
 import os,sys
 import string, re
 import subprocess
+import ConfigParser
 # generic  python modules
 from optparse import OptionParser
+
+##### method to parse the input file ################################
+
+def ConfigSectionMap(config, section):
+    the_dict = {}
+    options = config.options(section)
+    for option in options:
+        try:
+            the_dict[option] = config.get(section, option)
+            if the_dict[option] == -1:
+                DebugPrint("skip: %s" % option)
+        except:
+            print("exception on %s!" % option)
+            the_dict[option] = None
+    return the_dict
 
 ###### method to define global variable instead of export #############
 
@@ -42,7 +58,7 @@ class Job:
     """Main class to create and submit PBS jobs"""
 ###########################################################################
 
-    def __init__(self, job_id,firstevent,maxevents, sample, pu, ageing, pixelrocrows, pixelroccols, bpixthr):
+    def __init__(self, job_id,firstevent,maxevents, sample, pu, ageing, pixelrocrows, pixelroccols, bpixthr, bpixl0thickness):
 ############################################################################################################################
         
         # store the job-ID (since it is created in a for loop)
@@ -59,14 +75,15 @@ class Job:
         # parameters of the pixel digitizer 
         self.pixelrocrows=pixelrocrows
         self.pixelroccols=pixelroccols
+        self.bpixl0thickness=bpixl0thickness
         
         self.bpixthr=bpixthr
         self.ageing=ageing
         
-        self.out_dir=os.path.join("/lustre/cms/store/user",USER,"SLHCSimPhase2/out","sample_"+sample,"pu_"+pu,"PixelROCRows_" +pixelrocrows+"_PixelROCCols_"+pixelroccols,"BPixThr_"+bpixthr)
+        self.out_dir=os.path.join("/lustre/cms/store/user",USER,"SLHCSimPhase2/out","sample_"+sample,"pu_"+pu,"PixelROCRows_"+pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness, "BPixThr_"+bpixthr)
         os.system("mkdir -p "+self.out_dir)
 
-        self.job_basename= 'step_digitodqm_' +self.sample+ '_pu' + self.pu + '_age' + self.ageing + '_' + str(self.firstevent)+ "_PixelROCRows" + self.pixelrocrows + "_PixelROCCols" + self.pixelroccols + "_BPixThr" + self.bpixthr
+        self.job_basename= "step_digitodqm_" +self.sample+ "_pu" + self.pu + "_age" + self.ageing + "_PixelROCRows" + self.pixelrocrows + "_PixelROCCols" + self.pixelroccols + "_L0Thick" + self.bpixl0thickness + "_BPixThr" + self.bpixthr + "_event" + str(self.firstevent)
         
         self.cfg_dir=None
         self.outputPSetName=None
@@ -127,15 +144,14 @@ class Job:
         fout.write("cd \n")
         fout.write("export PBS_O_WORKDIR=$HOME \n")
         fout.write("fi \n")
+        fout.write("export SCRAM_ARCH=slc5_amd64_gcc472 \n")
         fout.write("# Save current dir on batch machine  \n")
-        fout.write("BATCH_DIR='pwd' \n")
+        fout.write("BATCH_DIR=`pwd` \n")
         fout.write("echo '$HOSTNAME is '$HOSTNAME \n")
         fout.write("echo '$BATCH_DIR is '$BATCH_DIR\n")
-        fout.write("echo '$SCRAM_ARCH is '$SCRAM_ARCH \n")
         fout.write("echo '$PBS_ENVIRONMENT is ' $PBS_ENVIRONMENT \n")
         fout.write("# Setup variables   \n")
         fout.write("source /opt/exp_soft/cms/cmsset_default.sh \n")
-        fout.write("export SCRAM_ARCH=slc5_amd64_gcc472 \n")
         fout.write("cmssw_ver="+CMSSW_VER+" \n")
         fout.write("# Install and Compile CMSSW on batch node  \n")
         fout.write("scram p CMSSW $cmssw_ver  \n")
@@ -193,6 +209,9 @@ class Job:
         fout.write("mv PixelSkimmedGeometry_phase2BE.txt ${CMSSW_BASE}/src/SLHCUpgradeSimulations/Geometry/data/PhaseII/BarrelEndcap/PixelSkimmedGeometry.txt \n")        
         fout.write("### 2 ended  \n")
 
+        # implement the recipe for changing the bpix sensor thickness from A. Tricomi
+        fout.write("# A Tricomi's recipe to change the sensors thickness \n")
+        fout.write("sed -e \"s%BPIXLAYER0THICKNESS%"+self.bpixl0thickness+"%g\" AuxCode/SLHCSimPhase2/test/pixbarladderfull0_template.xml > Geometry/TrackerCommonData/data/PhaseI/pixbarladderfull0.xml \n")
 
         fout.write("# Run CMSSW for DIGI-to-DQM steps \n")
         fout.write("cd "+os.path.join("AuxCode","SLHCSimPhase2","test")+"\n")  
@@ -217,43 +236,88 @@ def main():
 
     desc="""This is a description of %prog."""
     parser = OptionParser(description=desc,version='%prog version 0.1')
-    parser.add_option('-s','--submit',  help='job submitted', dest='submit', action='store_true', default=False)
+    parser.add_option('-s','--submit',          help='job submitted',           dest='submit', action='store_true', default=False)
     parser.add_option('-n','--numberofjobs',    help='number of splitted jobs', dest='numberofjobs', action='store',  default=1)
-    parser.add_option('-j','--jobname', help='task name', dest='jobname', action='store', default='myjob')
-    parser.add_option('-r','--ROCRows',help='ROC Rows (default 80 -> du=100 um)', dest='rocrows', action='store', default='80')
-    parser.add_option('-c','--ROCCols',help='ROC Cols (default 52 -> dv=150 um)', dest='roccols', action='store', default='52')
-    parser.add_option('-t','--BPixThr',help='BPix Threshold', dest='bpixthr', action='store', default='2000')
-    parser.add_option('-p','--pileup',help='set pileup',dest='pu',action='store',default='NoPU')
-    parser.add_option('-S','--sample',help='set sample name',dest='sample',action='store',default='TTbar')
-    parser.add_option('-a','--ageing',help='set ageing',dest='ageing',action='store',default='NoAgeing')
+    parser.add_option('-j','--jobname',         help='task name',               dest='jobname', action='store', default='myjob')
+    parser.add_option('-r','--ROCRows',         help='ROC Rows (default 80 -> du=100 um)', dest='rocrows', action='store', default='80')
+    parser.add_option('-c','--ROCCols',         help='ROC Cols (default 52 -> dv=150 um)', dest='roccols', action='store', default='52')
+    parser.add_option('-t','--Layer0Thick',     help='BPix L0 sensor thickness',dest='layer0thick', action='store', default='285')
+    parser.add_option('-T','--BPixThr',         help='BPix Threshold',          dest='bpixthr', action='store', default='2000')
+    parser.add_option('-p','--pileup',          help='set pileup',              dest='pu',action='store',default='NoPU')
+    parser.add_option('-S','--sample',          help='set sample name',         dest='sample',action='store',default='TTbar')
+    parser.add_option('-a','--ageing',          help='set ageing',              dest='ageing',action='store',default='NoAgeing')
+    parser.add_option('-i','--input',           help='set input configuration (overrides default)',dest='inputconfig',action='store',default=None)
     (opts, args) = parser.parse_args()
+
+    # initialize needed input 
+    mRocRows = None
+    mRocCols = None
+    mBPixThr = None
+    mL0Thick = None
+    mAgeing  = None
+    mSample  = None
+    mPileUp  = None
+
+    ConfigFile = opts.inputconfig
+    
+    if ConfigFile is not None:
+
+        print "********************************************************"
+        print "*         Parsing from input file:", MyConfigFile,"    "
+        
+        config = ConfigParser.ConfigParser()
+        config.read(ConfigFile)
+        
+        mRocRows = ConfigSectionMap(config,"PixelConfiguration")['rocrows']   
+        mRocCols = ConfigSectionMap(config,"PixelConfiguration")['roccols']   
+        mBPixThr = ConfigSectionMap(config,"PixelConfiguration")['bpixthr']   
+        mL0Thick = ConfigSectionMap(config,"PixelConfiguration")['layer0thickness']
+        mAgeing  = ConfigSectionMap(config,"PixelConfiguration")['ageing']    
+        mSample  = ConfigSectionMap(config,"SampleConfiguration")['sample']   
+        mPileUp  = ConfigSectionMap(config,"SampleConfiguration")['pileup']   
+
+    else :
+
+        print "********************************************************"
+        print "*             Parsing from command line                *"
+        print "********************************************************"
+        
+        mRocRows = opts.rocrows
+        mRocCols = opts.roccols
+        mBPixThr = opts.bpixthr
+        mL0Thick = opts.layer0thick
+        mAgeing  = opts.ageing
+        mSample  = opts.sample
+        mPileUp  = opts.pu
+
 
 # check that chosen pixel size matches what is currently available in the trackerStructureTopology
 # https://twiki.cern.ch/twiki/bin/view/CMS/ExamplePhaseI#Changing_the_Pixel_Size
-    if int(opts.rocrows) % 80:
+    if int(mRocRows) % 80:
         print 'illegal value for PixelROCRows' 
     exit
 
-    if int(opts.roccols) % 52:
+    if int(mRocCols) % 52:
         print "illegal value for PixelROCCols"
     exit
 
     # Set global variables
-    set_global_var(opts.sample)
- 
+    set_global_var(mSample)
+    
     print "********************************************************"
     print "*                 Configuration info                   *"
     print "********************************************************"
     print "  Launching this script from : ",os.getcwd()
     print "- submitted                  : ",opts.submit
     print "- Jobname                    : ",opts.jobname
-    print "- Sample                     : ",opts.sample
+    print "- Sample                     : ",mSample
     print "- Input generated sample     : ",GENSIM_FILE
-    print "- PileUp Scenario            : ",opts.pu
-    print "- ROCRows                    : ",opts.rocrows
-    print "- ROCCols                    : ",opts.roccols
-    print "- Clusterizer Threshold      : ",opts.bpixthr
-    print "- Ageing Scenario            : ",opts.ageing
+    print "- PileUp Scenario            : ",mPileUp
+    print "- ROCRows                    : ",mRocRows
+    print "- ROCCols                    : ",mRocCols
+    print "- L0 Thickness               : ",mL0Thick
+    print "- Clusterizer Threshold      : ",mBPixThr
+    print "- Ageing Scenario            : ",mAgeing
     
     # Setup CMSSW variables
     os.system("source /opt/exp_soft/cms/cmsset_default.sh")
@@ -282,14 +346,6 @@ def main():
     
     #prepare the list of the DQM files for the harvesting
     DQMFileList=""
-
-    #############################################
-    # prepare the log folder
-    #############################################
-    #AUX_DIR = os.path.join(HOME,"SLHCSimPhase2","AuxFiles")
-    #if not os.path.exists(AUX_DIR):
-    #    os.makedirs(AUX_DIR)
-    #os.chdir(AUX_DIR)
     
     out_dir = None
 
@@ -301,7 +357,7 @@ def main():
 
         print "- Job n. ",jobIndex," will process events from: ",firstEvent," to ",firstEvent+eventsPerJob-1
         
-        ajob=Job(opts.jobname, firstEvent, eventsPerJob, opts.sample, opts.pu, opts.ageing, opts.rocrows, opts.roccols, opts.bpixthr)
+        ajob=Job(opts.jobname, firstEvent, eventsPerJob, mSample, mPileUp, mAgeing, mRocRows, mRocCols, mBPixThr, mL0Thick)
         ajob.createThePBSFile()
 
         dqmoutput=ajob.job_basename+".root"
@@ -323,7 +379,7 @@ def main():
     # link the output folder
     #############################################
     
-    link_name="sample_"+opts.sample+"_pu"+opts.pu+"_PixelROCRows_"+opts.rocrows+"_PixelROCCols_"+opts.roccols+"_BPixThr_"+opts.bpixthr
+    link_name="sample_"+mSample+"_pu"+mPileUp+"_PixelROCRows_"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr_"+mBPixThr+"_L0Thick"+mL0Thick
     linkthedir="ln -fs "+out_dir+" "+os.path.join(LOG_DIR,link_name)     
     os.system(linkthedir)    
 
@@ -334,7 +390,7 @@ def main():
     # prepare the script for the harvesting step
     #############################################
     
-    harvestingname = PBS_DIR + "/jobs/"+opts.jobname+"_sample_"+opts.sample+"_pu"+opts.pu+"_PixelRocRows"+ opts.rocrows+"_PixelROCCols_"+opts.roccols+"_BPixThr"+ opts.bpixthr+".sh"
+    harvestingname = PBS_DIR + "/jobs/"+opts.jobname+"_sample_"+mSample+"_pu"+mPileUp+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+mBPixThr+"_L0Thick"+mL0Thick+".sh"
     fout=open(harvestingname,"w")
     fout.write("#!/bin/sh \n")
     fout.write("source /opt/exp_soft/cms/cmsset_default.sh \n")
@@ -342,8 +398,8 @@ def main():
     fout.write("cd "+os.path.join(HOME,"SLHCSimPhase2","${cmssw_ver}","src")+"\n")
     fout.write("eval `scram r -sh`\n")
     fout.write("DQMFileList="+DQMFileList[:-1]+" \n")
-    fout.write("cmsDriver.py step4 --geometry ExtendedPhase2TkBE --magField 38T_PostLS1 --customise SLHCUpgradeSimulations/Configuration/postLS1Customs.customisePostLS1,SLHCUpgradeSimulations/Configuration/phase2TkCustomsBE.customise,SLHCUpgradeSimulations/Configuration/phase2TkCustomsBE.l1EventContent,AuxCode/SLHCSimPhase2/TkOnlyValidationCustoms.customise_tkonly --conditions auto:upgradePLS3 --mc -s HARVESTING:validationHarvesting+dqmHarvesting --filein $DQMFileList --fileout file:step4_sample_"+opts.sample+"_pu"+opts.pu+"_PixelRocRows"+ opts.rocrows+"_PixelROCCols_"+opts.roccols+"_BPixThr"+ opts.bpixthr+".root > step4_sample_"+opts.sample+"_pu"+opts.pu+"_PixelRocRows"+ opts.rocrows+"_PixelROCCols_"+opts.roccols+"_BPixThr"+ opts.bpixthr+".log \n")
-    fout.write("mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root AuxCode/SLHCSimPhase2/test/step4_sample_"+opts.sample+"_pu"+opts.pu+"_PixelRocRows"+ opts.rocrows+"_PixelROCCols_"+opts.roccols+"_BPixThr"+ opts.bpixthr+".root")
+    fout.write("cmsDriver.py step4 --geometry ExtendedPhase2TkBE --magField 38T_PostLS1 --customise SLHCUpgradeSimulations/Configuration/postLS1Customs.customisePostLS1,SLHCUpgradeSimulations/Configuration/phase2TkCustomsBE.customise,SLHCUpgradeSimulations/Configuration/phase2TkCustomsBE.l1EventContent,AuxCode/SLHCSimPhase2/TkOnlyValidationCustoms.customise_tkonly --conditions auto:upgradePLS3 --mc -s HARVESTING:validationHarvesting+dqmHarvesting --filein $DQMFileList --fileout file:step4_sample_"+mSample+"_pu"+mPileUp+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+mBPixThr+"_L0Thick"+mL0Thick+".root > step4_sample_"+mSample+"_pu"+mPileUp+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+mBPixThr+"_L0Thick"+mL0Thick+".log \n")
+    fout.write("mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root AuxCode/SLHCSimPhase2/test/step4_sample_"+mSample+"_pu"+mPileUp+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+ mBPixThr+"_L0Thick"+mL0Thick+".root")
     fout.close()
 
 if __name__ == "__main__":        
