@@ -11,7 +11,7 @@
  <Constant name="CFHoles"           value="16"/>
  <Constant name="CFHoleStep"        value="33.00*mm"/>
 -->
- <Constant name="MySensorThick"     value="BPIXLAYER0THICKNESS"/>
+ <Constant name="MySensorThick"     value="BPIXLAYER0THICKNESS*mm"/>
  <Constant name="MountClipThick"    value="0.20*mm"/>
  <Constant name="MountClipLength"   value="[pixbarladder:ModuleDz]/2-[pixbarladder:CapacitorStripDz]/2"/>
  <Constant name="MountClipWidth"    value="[CFStripWidth]"/>
