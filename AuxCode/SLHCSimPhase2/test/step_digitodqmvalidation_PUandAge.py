@@ -262,7 +262,7 @@ process = customise_tkonly(process)
 
 print options.PixelCPE
 from AuxCode.SLHCSimPhase2.PixelCPE_tables_cff import *
-process.PixelCPEGenericESProducer.PixelCPEList = PixelCPE_table[options.PixelCPE]
+process.PixelCPEGenericESProducer.PixelCPEList = PixelCPE_dict[options.PixelCPE]
 
 # Uncomment next two lines to change pixel DIGI threshold
 process.mix.digitizers.pixel.ThresholdInElectrons_BPix = cms.double(options.BPixThr)
