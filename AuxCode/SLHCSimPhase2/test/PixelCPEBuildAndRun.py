@@ -181,6 +181,7 @@ class Job:
 
         fout.write("# compile \n")
         fout.write("scram b -j 8 \n")
+        fout.write("eval `scram r -sh` \n")
 
         # implement in the PBS script E.Brownson's recipe for changing the size of the pixels / part #2
         fout.write("# Eric Brownson's recipe to change the size of the pixels \n")
