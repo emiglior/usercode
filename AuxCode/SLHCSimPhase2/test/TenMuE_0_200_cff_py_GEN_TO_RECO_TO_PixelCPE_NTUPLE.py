@@ -199,9 +199,13 @@ if options.AgeingScenario!="NoAgeing":
     else:
         print "Unrecognized Ageing scenario, using default (=NoAgeing)"
 
+from AuxCode.SLHCSimPhase2.PixelCPE_tables_cff import *
+process.PixelCPEGenericESProducer.PixelCPEList = PixelCPE_dict['pixel_CPE_100x150_upgrade']
+
 # Uncomment next two lines to change pixel DIGI threshold
 process.mix.digitizers.pixel.ThresholdInElectrons_BPix = cms.double(options.BPixThr)
 process.mix.digitizers.pixel.ThresholdInElectrons_BPix_L1 = cms.double(options.BPixThr)
 
+#print process.dumpPython()
 # End of customisation functions
 
