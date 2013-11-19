@@ -1,6 +1,6 @@
-ROOTCFLAGS    = $(shell $(ROOTSYS)/bin/root-config --cflags)
-ROOTLIBS      = $(shell $(ROOTSYS)/bin/root-config --libs)
-ROOTGLIBS     = $(shell $(ROOTSYS)/bin/root-config --glibs)
+ROOTCFLAGS    = $(shell root-config --cflags)
+ROOTLIBS      = $(shell root-config --libs)
+ROOTGLIBS     = $(shell root-config --glibs)
 #######################################
 # -- DEFINE ARCH to something sensible!
 #######################################
