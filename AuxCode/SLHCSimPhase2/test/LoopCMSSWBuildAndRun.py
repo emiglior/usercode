@@ -369,7 +369,7 @@ def main():
 
         print "- Job n. ",jobIndex," will process events from: ",firstEvent," to ",firstEvent+eventsPerJob-1
         
-        ajob=Job(opts.jobname, firstEvent, eventsPerJob, mSample, mPileUp, mAgeing, mRocRows, mRocCols, mBPixThr, mL0Thick)
+        ajob=Job(opts.jobname, firstEvent, eventsPerJob, mSample, mPileUp, mAgeing, mRocRows, mRocCols, mBPixThr, mL0Thick, mPixelCPE)
         ajob.createThePBSFile()
 
         dqmoutput=ajob.job_basename+".root"
