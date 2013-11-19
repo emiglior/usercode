@@ -65,7 +65,7 @@ class Job:
         self.bpixthr=bpixthr
         self.ageing=ageing
         
-        self.out_dir=os.path.join("/lustre/cms/store/user",USER,"SLHCSimPhase2/out","PixelROCRows_" +pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness,"BPixThr_"+bpixthr)
+        self.out_dir=os.path.join("/lustre/cms/store/user",USER,"SLHCSimPhase2/out2","PixelROCRows_" +pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness,"BPixThr_"+bpixthr)
         os.system("mkdir -p "+self.out_dir)
 
         self.job_basename= 'pixelCPE_age' + self.ageing + '_PixelROCRows' + self.pixelrocrows + "_PixelROCCols" + self.pixelroccols +"_L0Thick" + self.bpixl0thickness + "_BPixThr" + self.bpixthr
@@ -100,6 +100,7 @@ class Job:
         fout.write("#PBS -N "+self.job_basename+"\n")
         fout.write("#PBS -j oe \n")
         fout.write("#PBS -o "+os.path.join(LOG_DIR,self.job_basename)+".log"+"\n")
+#        fout.write("#PBS -e "+os.path.join(LOG_DIR,self.job_basename)+".err"+"\n")
         fout.write("#PBS -q local \n")
         fout.write("### Auto-Generated Script by LoopCMSSWBuildAndRunFromTarBall.py ### \n")
         fout.write("JobName="+self.job_basename+" \n")
@@ -209,7 +210,7 @@ class Job:
 #        fout.write("./res \n")        
         fout.write(" # retrieve the outputs \n")
         fout.write("for RootOutputFile in $(ls *root ); do rfcp  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
-        fout.write("for EpsOutputFile in $(ls *eps ); do rfcp  ${EpsOutputFile}  ${OUT_DIR}/${EpsOutputFile} ; done \n")
+#        fout.write("for EpsOutputFile in $(ls *eps ); do rfcp  ${EpsOutputFile}  ${OUT_DIR}/${EpsOutputFile} ; done \n")
         fout.write("rfcp TenMuE_0_200_cff_py_GEN_TO_RECO_TO_PixelCPE_NTUPLE.py ${OUT_DIR} \n")
         fout.close()
 

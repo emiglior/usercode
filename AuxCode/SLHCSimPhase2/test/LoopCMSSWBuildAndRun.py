@@ -58,7 +58,7 @@ class Job:
     """Main class to create and submit PBS jobs"""
 ###########################################################################
 
-    def __init__(self, job_id,firstevent,maxevents, sample, pu, ageing, pixelrocrows, pixelroccols, bpixthr, bpixl0thickness):
+    def __init__(self, job_id,firstevent,maxevents, sample, pu, ageing, pixelrocrows, pixelroccols, bpixthr, bpixl0thickness, pixelcpe):
 ############################################################################################################################
         
         # store the job-ID (since it is created in a for loop)
@@ -79,6 +79,9 @@ class Job:
         
         self.bpixthr=bpixthr
         self.ageing=ageing
+
+        # parameters for RECO
+        self.pixelcpe=pixelcpe
         
         self.out_dir=os.path.join("/lustre/cms/store/user",USER,"SLHCSimPhase2/out","sample_"+sample,"pu_"+pu,"PixelROCRows_"+pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness, "BPixThr_"+bpixthr)
         os.system("mkdir -p "+self.out_dir)
@@ -125,11 +128,7 @@ class Job:
         fout.write("maxevents="+str(self.maxevents)+" \n")
         fout.write("pixelroccols="+self.pixelroccols+" \n")
         fout.write("pixelrocrows="+self.pixelrocrows+" \n")
-        fout.write("pixelcpe=pixel_CPE_100x150_upgrade \n")
-        fout.write("#CAREFUL!  bash is picky about spaces when comparing strings\n")
-        fout.write("if [[ \"$pixelrocrows\" = 160 && \"$pixelroccols\" = 104 ]]; then \n")
-        fout.write("pixelcpe=pixel_CPE_50x75_upgrade \n")
-        fout.write("fi \n")        
+        fout.write("pixelcpe="+self.pixelcpe+" \n")
         fout.write("puscenario="+self.pu+" \n")
         fout.write("ageing="+self.ageing+" \n")
         fout.write("bpixthr="+self.bpixthr+" \n")
@@ -261,13 +260,14 @@ def main():
     (opts, args) = parser.parse_args()
 
     # initialize needed input 
-    mRocRows = None
-    mRocCols = None
-    mBPixThr = None
-    mL0Thick = None
-    mAgeing  = None
-    mSample  = None
-    mPileUp  = None
+    mRocRows  = None
+    mRocCols  = None
+    mBPixThr  = None
+    mL0Thick  = None
+    mAgeing   = None
+    mSample   = None
+    mPileUp   = None
+    mPixelCPE = None
 
     ConfigFile = opts.inputconfig
     
@@ -279,13 +279,14 @@ def main():
         config = ConfigParser.ConfigParser()
         config.read(ConfigFile)
         
-        mRocRows = ConfigSectionMap(config,"PixelConfiguration")['rocrows']   
-        mRocCols = ConfigSectionMap(config,"PixelConfiguration")['roccols']   
-        mBPixThr = ConfigSectionMap(config,"PixelConfiguration")['bpixthr']   
-        mL0Thick = ConfigSectionMap(config,"PixelConfiguration")['layer0thickness']
-        mAgeing  = ConfigSectionMap(config,"PixelConfiguration")['ageing']    
-        mSample  = ConfigSectionMap(config,"SampleConfiguration")['sample']   
-        mPileUp  = ConfigSectionMap(config,"SampleConfiguration")['pileup']   
+        mRocRows  = ConfigSectionMap(config,"PixelConfiguration")['rocrows']   
+        mRocCols  = ConfigSectionMap(config,"PixelConfiguration")['roccols']   
+        mBPixThr  = ConfigSectionMap(config,"PixelConfiguration")['bpixthr']   
+        mL0Thick  = ConfigSectionMap(config,"PixelConfiguration")['layer0thickness']
+        mAgeing   = ConfigSectionMap(config,"PixelConfiguration")['ageing']    
+        mSample   = ConfigSectionMap(config,"SampleConfiguration")['sample']   
+        mPileUp   = ConfigSectionMap(config,"SampleConfiguration")['pileup']
+        mPixelCPE = ConfigSectionMap(config,"SampleConfiguration")['pixelcpe']   
 
     else :
 
@@ -293,14 +294,14 @@ def main():
         print "*             Parsing from command line                *"
         print "********************************************************"
         
-        mRocRows = opts.rocrows
-        mRocCols = opts.roccols
-        mBPixThr = opts.bpixthr
-        mL0Thick = opts.layer0thick
-        mAgeing  = opts.ageing
-        mSample  = opts.sample
-        mPileUp  = opts.pu
-
+        mRocRows  = opts.rocrows
+        mRocCols  = opts.roccols
+        mBPixThr  = opts.bpixthr
+        mL0Thick  = opts.layer0thick
+        mAgeing   = opts.ageing
+        mSample   = opts.sample
+        mPileUp   = opts.pu
+        mPixelCPE = 'pixelCPE_100x150_upgrade'
 
 # check that chosen pixel size matches what is currently available in the trackerStructureTopology
 # https://twiki.cern.ch/twiki/bin/view/CMS/ExamplePhaseI#Changing_the_Pixel_Size
