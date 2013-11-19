@@ -152,7 +152,7 @@ class Job:
         fout.write("echo '$PBS_ENVIRONMENT is ' $PBS_ENVIRONMENT \n")
         fout.write("# Setup variables   \n")
         fout.write("VO_CMS_SW_DIR=/cvmfs/cms.cern.ch \n")
-        fout.write("source $VO_CMS_SW_DIR/cms/cmsset_default.sh \n")
+        fout.write("source $VO_CMS_SW_DIR/cmsset_default.sh \n")
         fout.write("cmssw_ver="+CMSSW_VER+" \n")
         fout.write("# Install and Compile CMSSW on batch node  \n")
         
