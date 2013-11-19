@@ -368,19 +368,29 @@ MyCanvas.Print("FPix_LocalY.eps");
 MyCanvas.Clear();
 // *****************************************************************************
 /*
+    xerr_barrel_l1_= cms.untracked.vdouble(0.00115, 0.00120, 0.00088),
+    xerr_barrel_l1_def_=cms.untracked.double(0.01030),
+    yerr_barrel_l1_= cms.untracked.vdouble(0.00375,0.00230,0.00250,0.00250,0.00230,0.00230,0.00210,0.00210,0.00240),
+    yerr_barrel_l1_def_=cms.untracked.double(0.00210),
+    xerr_barrel_ln_= cms.untracked.vdouble(0.00115, 0.00120, 0.00088),
+    xerr_barrel_ln_def_=cms.untracked.double(0.01030),
+    yerr_barrel_ln_= cms.untracked.vdouble(0.00375,0.00230,0.00250,0.00250,0.00230,0.00230,0.00210,0.00210,0.00240),
+    yerr_barrel_ln_def_=cms.untracked.double(0.00210),
+    xerr_endcap_= cms.untracked.vdouble(0.0020, 0.0020),
+    xerr_endcap_def_=cms.untracked.double(0.0020),
+    yerr_endcap_= cms.untracked.double(0.00210),
+    yerr_endcap_def_=cms.untracked.double(0.00075)
 
-      xerr_barrel_l1_= {0.00114,0.00104,0.00214};
-      xerr_barrel_l1_def_=0.00425;
-      yerr_barrel_l1_= {0.00299,0.00203,0.0023,0.00237,0.00233,0.00243,0.00232,0.00259,0.00176};
-      yerr_barrel_l1_def_=0.00245;
 */
 std::cout 	<< "\n\nOutputing the sigmas from the gaus fits to be inserted into the code."
-		<< "\n    xerr_barrel_ln_= {"	<<BPix_234x_FitSigma[0]/units<<","
+		<< "\n    xerr_barrel_ln_ = cms.untracked.vdouble("	
+                                                <<BPix_234x_FitSigma[0]/units<<","
 						<<BPix_234x_FitSigma[1]/units<<","
                                                 <<BPix_234x_FitSigma[2]/units
-						<<"};"
-		<< "\n    xerr_barrel_ln_def_="<<BPix_234x_FitSigma[3]<<";"
-                << "\n    yerr_barrel_ln_= {"	<<BPix_234y_FitSigma[0]/units<<","
+						<<"),"
+		<< "\n    xerr_barrel_ln_def_ = cms.untracked.double("<<BPix_234x_FitSigma[3]<<"),"
+                << "\n    yerr_barrel_ln_ = cms.untracked.vdouble("	
+                                                <<BPix_234y_FitSigma[0]/units<<","
                                                 <<BPix_234y_FitSigma[1]/units<<","
                                                 <<BPix_234y_FitSigma[2]/units<<","
                                                 <<BPix_234y_FitSigma[3]/units<<","
@@ -389,25 +399,29 @@ std::cout 	<< "\n\nOutputing the sigmas from the gaus fits to be inserted into t
                                                 <<BPix_234y_FitSigma[6]/units<<","
                                                 <<BPix_234y_FitSigma[7]/units<<","
                                                 <<BPix_234y_FitSigma[8]/units
-						<<"};"
-                << "\n    yerr_barrel_ln_def_="<<BPix_234y_FitSigma[9]<<";"
-                << "\n    xerr_endcap_= {"	<<FPix_x_FitSigma[0]/units<<","
+						<<"),"
+                << "\n    yerr_barrel_ln_def_ = cms.untracked.double("<<BPix_234y_FitSigma[9]<<"),"
+                << "\n    xerr_endcap_ = cms.untracked.vdouble("	
+                                                <<FPix_x_FitSigma[0]/units<<","
 						<<FPix_x_FitSigma[1]/units<<","
                                                 <<FPix_x_FitSigma[2]/units
-						<<"};"
-                << "\n    xerr_endcap_def_="<<FPix_x_FitSigma[3]<<";"
-                << "\n    yerr_endcap_= {"	<<FPix_y_FitSigma[0]/units<<","
+						<<"),"
+                << "\n    xerr_endcap_def_ = cms.untracked.double("<<FPix_x_FitSigma[3]<<"),"
+                << "\n    yerr_endcap_ = cms.untracked.vdouble("	
+                                                <<FPix_y_FitSigma[0]/units<<","
                                                 <<FPix_y_FitSigma[1]/units<<","
                                                 <<FPix_y_FitSigma[2]/units
-						<<"};"
-                << "\n    yerr_endcap_def_="<<FPix_y_FitSigma[3]<<";"
+						<<"),"
+                << "\n    yerr_endcap_def_ = cms.untracked.double("<<FPix_y_FitSigma[3]<<"),"
 		<< "\n\n"
-                << "\n    xerr_barrel_l1_= {"   <<BPix_1x_FitSigma[0]/units<<","
+                << "\n    xerr_barrel_l1_ = cms.untracked.vdouble("   
+                                                <<BPix_1x_FitSigma[0]/units<<","
                                                 <<BPix_1x_FitSigma[1]/units<<","
                                                 <<BPix_1x_FitSigma[2]/units
-                                                <<"};"
-                << "\n    xerr_barrel_l1_def_="<<BPix_1x_FitSigma[3]<<";"
-                << "\n    yerr_barrel_l1_= {"   <<BPix_1y_FitSigma[0]/units<<","
+                                                <<"),"
+                << "\n    xerr_barrel_l1_def_ = cms.untracked.double("<<BPix_1x_FitSigma[3]<<"),"
+                << "\n    yerr_barrel_l1_ = cms.untracked.vdouble("   
+      <<BPix_1y_FitSigma[0]/units<<","
                                                 <<BPix_1y_FitSigma[1]/units<<","
                                                 <<BPix_1y_FitSigma[2]/units<<","
                                                 <<BPix_1y_FitSigma[3]/units<<","
@@ -416,8 +430,8 @@ std::cout 	<< "\n\nOutputing the sigmas from the gaus fits to be inserted into t
                                                 <<BPix_1y_FitSigma[6]/units<<","
                                                 <<BPix_1y_FitSigma[7]/units<<","
                                                 <<BPix_1y_FitSigma[8]/units
-                                                <<"};"
-                << "\n    yerr_barrel_l1_def_="<<BPix_1y_FitSigma[9]<<";"
+                                                <<"),"
+                << "\n    yerr_barrel_l1_def_ = cms.untracked.double("<<BPix_1y_FitSigma[9]<<")"
                 << "\n\n";
 
 
