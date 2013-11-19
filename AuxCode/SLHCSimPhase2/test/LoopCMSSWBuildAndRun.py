@@ -274,7 +274,7 @@ def main():
     if ConfigFile is not None:
 
         print "********************************************************"
-        print "*         Parsing from input file:", MyConfigFile,"    "
+        print "*         Parsing from input file:", ConfigFile,"    "
         
         config = ConfigParser.ConfigParser()
         config.read(ConfigFile)
