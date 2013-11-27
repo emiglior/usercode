@@ -5,8 +5,8 @@ import os,sys
 import string, re
 import subprocess
 import ConfigParser
-# generic  python modules
 from optparse import OptionParser
+
 
 ##### method to parse the input file ################################
 
@@ -44,14 +44,14 @@ def set_global_var(sample):
     CMSSW_VER="CMSSW_6_1_2_SLHC8_patch3"
     
     if (sample=="TTbar") | (sample=="ttbar") | (sample=="TTBar") :
-        GENSIM_FILE = "file:/lustre/cms/store/user/musich/SLHCSimPhase2/Samples/612_slhc8/RelVals/TTbar/2E905DB0-012F-E311-830A-0025905964C4.root"
+        GENSIM_FILE = "file:/gr1_data/CMS/SLCHSimPhaseII/612_slhc8/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
     elif (sample=="MinBias") | (sample=="minbias") :
-        GENSIM_FILE = "file:/lustre/cms/store/user/musich/SLHCSimPhase2/Samples/612_slhc8/RelVals/MinBias/D0C92216-F62E-E311-A76C-0026189437E8.root"
+        GENSIM_FILE = "file:/gr1_data/CMS/SLCHSimPhaseII/612_slhc8/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_15k_evts.root"
     elif (sample=="IsoMuons") | (sample=="muons") | (sample=="Muons") :
-        GENSIM_FILE = "file:/lustre/cms/store/user/musich/SLHCSimPhase2/Samples/ParticleGun/step1_FourMuPartGun_100kEvents.root"
+        GENSIM_FILE = "file:/gr1_data/CMS/SLCHSimPhaseII/612_slhc8/ParticleGun/step1_FourMuPartGun_100kEvents.root"
     else :
         print "unrecongnize input sample, using default (=TTbar)"
-        GENSIM_FILE = "file:/lustre/cms/store/user/musich/SLHCSimPhase2/Samples/612_slhc8/RelVals/TTbar/2E905DB0-012F-E311-830A-0025905964C4.root"
+        GENSIM_FILE = "file:gr1_data/CMS/SLCHSimPhaseII/612_slhc8/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
     
 ###########################################################################
 class Job:
@@ -82,8 +82,13 @@ class Job:
 
         # parameters for RECO
         self.pixelcpe=pixelcpe
+
+# >>>>>>>>> BA
+#                self.out_dir=os.path.join("/lustre/cms/store/user",USER,"SLHCSimPhase2/out","sample_"+sample,"pu_"+pu,"PixelROCRows_"+pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness, "BPixThr_"+bpixthr)
+        self.out_dir=os.path.join("/gr1_data/CMS",USER,"SLHCSimPhase2/out","sample_"+sample,"pu_"+pu,"PixelROCRows_"+pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness, "BPixThr_"+bpixthr)
+# <<<<<<<<< CT
         
-        self.out_dir=os.path.join("/lustre/cms/store/user",USER,"SLHCSimPhase2/out","sample_"+sample,"pu_"+pu,"PixelROCRows_"+pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness, "BPixThr_"+bpixthr)
+
         os.system("mkdir -p "+self.out_dir)
 
         self.job_basename= "step_digitodqm_" +self.sample+ "_pu" + self.pu + "_age" + self.ageing + "_PixelROCRows" + self.pixelrocrows + "_PixelROCCols" + self.pixelroccols + "_L0Thick" + self.bpixl0thickness + "_BPixThr" + self.bpixthr + "_event" + str(self.firstevent)
@@ -114,13 +119,21 @@ class Job:
             os.makedirs(LOG_DIR)
 
         fout.write("#!/bin/sh \n") 
-        fout.write("#PBS -S /bin/sh\n")       
-        fout.write("#PBS -N "+self.job_basename+"\n")
-        fout.write("#PBS -j oe \n")
-        fout.write("#PBS -o "+os.path.join(LOG_DIR,self.job_basename)+".log"+"\n")
-        fout.write("#PBS -q local \n")
-        fout.write("#PBS -l mem=5gb \n")
-        fout.write("### Auto-Generated Script by LoopCMSSWBuildAndRunFromTarBall.py ### \n")
+# >>>>>>>>> BA
+#        fout.write("#PBS -S /bin/sh\n")       
+#        fout.write("#PBS -N "+self.job_basename+"\n")
+#        fout.write("#PBS -j oe \n")
+#        fout.write("#PBS -o "+os.path.join(LOG_DIR,self.job_basename)+".log"+"\n")
+#        fout.write("#PBS -q local \n")
+#        fout.write("#PBS -l mem=5gb \n")
+        fout.write("#BSUB -L /bin/sh \n")       
+        fout.write("#BSUB -J "+self.job_basename+"\n")
+        fout.write("#BSUB -e "+os.path.join(LOG_DIR,self.job_basename)+".err \n")
+        fout.write("#BSUB -o "+os.path.join(LOG_DIR,self.job_basename)+".out \n")
+        fout.write("#BSUB -q gr1cmsq \n")
+        fout.write("#BSUB -R \"rusage[mem=5000]\"\n")
+# <<<<<<<<< CT        
+        fout.write("### Auto-Generated Script by LoopCMSSWBuildAndRun.py ### \n")
         fout.write("JobName="+self.job_basename+" \n")
         fout.write("outfilename="+self.job_basename+".root"+" \n")
         fout.write("OUT_DIR="+self.out_dir+" \n")
@@ -133,82 +146,82 @@ class Job:
         fout.write("ageing="+self.ageing+" \n")
         fout.write("bpixthr="+self.bpixthr+" \n")
         fout.write("inputgensimfilename="+GENSIM_FILE+" \n")
-        
-        # specific for cmssusy.ba.infn.it
-        # https://www.ba.infn.it/pagine-utenti.html?task=viewpage&user_id=111&pageid=96
-        fout.write("if [ \"$PBS_ENVIRONMENT\" == \"PBS_BATCH\" ]; then \n")
+
+# >>>>>>>>> BA
+# specific for cmssusy.ba.infn.it https://www.ba.infn.it/pagine-utenti.html?task=viewpage&user_id=111&pageid=96
+#       fout.write("if [ \"$PBS_ENVIRONMENT\" == \"PBS_BATCH\" ]; then \n")
+#       fout.write("echo \"I AM IN BATCH\" \n")
+#       fout.write("mkdir -p /home/tmp/$USER/$PBS_JOBID \n")
+#       fout.write("export HOME=/home/tmp/$USER/$PBS_JOBID \n")
+#       fout.write("cd \n")
+#       fout.write("export PBS_O_WORKDIR=$HOME \n")
+#       fout.write("fi \n")
+#       fout.write("echo '$PBS_ENVIRONMENT is ' $PBS_ENVIRONMENT \n")
+        fout.write("if [ ! \"$LSB_JOBID\" = \"\" ]; then \n")
         fout.write("echo \"I AM IN BATCH\" \n")
-        fout.write("mkdir -p /home/tmp/$USER/$PBS_JOBID \n")
-        fout.write("export HOME=/home/tmp/$USER/$PBS_JOBID \n")
+        fout.write("mkdir -p /tmp/$USER/$LSB_JOBID \n")
+        fout.write("export HOME=/tmp/$USER/$LSB_JOBID \n")
         fout.write("cd \n")
-        fout.write("export PBS_O_WORKDIR=$HOME \n")
         fout.write("fi \n")
+# <<<<<<<<< CT
+        
         fout.write("export SCRAM_ARCH=slc5_amd64_gcc472 \n")
-        fout.write("# Save current dir on batch machine  \n")
-        fout.write("BATCH_DIR=`pwd` \n")
-        fout.write("echo '$HOSTNAME is '$HOSTNAME \n")
-        fout.write("echo '$BATCH_DIR is '$BATCH_DIR\n")
-        fout.write("echo '$PBS_ENVIRONMENT is ' $PBS_ENVIRONMENT \n")
         fout.write("# Setup variables   \n")
-        fout.write("VO_CMS_SW_DIR=/cvmfs/cms.cern.ch \n")
+# >>>>>>>>> BA
+#        fout.write("VO_CMS_SW_DIR=/cvmfs/cms.cern.ch \n")
+        fout.write("VO_CMS_SW_DIR=/swcms_slc5/CMSSW \n")
+# <<<<<<<<< CT
         fout.write("source $VO_CMS_SW_DIR/cmsset_default.sh \n")
+
         fout.write("cmssw_ver="+CMSSW_VER+" \n")
         fout.write("# Install and Compile CMSSW on batch node  \n")
-        
-        # ugly alternative for SLC6
-        fout.write("# start here ugly recipe for SLC6 since git doesn't work after scram \n")
-        fout.write("cp -pr /lustre/cms/store/user/musich/612SLHC8_fromRecipe.tgz . \n")
-        fout.write("tar xf 612SLHC8_fromRecipe.tgz \n")
+        fout.write("scram p CMSSW $cmssw_ver  \n")
         fout.write("cd ${cmssw_ver}/src \n")
-        fout.write("scramv1 b ProjectRename \n")        
+        fout.write("eval `scram r -sh` \n")
 
-#         fout.write("scram p CMSSW $cmssw_ver  \n")
-#         fout.write("cd ${cmssw_ver}/src \n")
-#         fout.write("eval `scram r -sh` \n")
-
-#         # implement in the PBS script E.Brownson's recipe for changing the size of the pixels / part #1
-#         fout.write("# Eric Brownson's recipe to change the size of the pixels \n")
-#         fout.write("### 1: checkout CMSSW patches \n")
-#         fout.write("if [ \"$PBS_ENVIRONMENT\" == \"PBS_BATCH\" ]; then \n")
-#         fout.write("cd $HOME \n")
-#         fout.write("# git config needed to avoid \n")
-#         fout.write("# error: SSL certificate problem: unable to get local issuer certificate while accessing \n")
-#         fout.write("ln -fs "+os.path.join(HOME,".gitconfig")+ " .\n")        
-#         fout.write("# since /cmshome/emiglior is mounted on the batch node \n")
-#         fout.write("eval `ssh-agent -s` \n")
-#         fout.write("ssh-add "+os.path.join(HOME,".ssh","id_rsa")+"\n")
-#         fout.write("# checkpoint: test that ssh connection is ok \n")
-#         fout.write("ssh -T git@github.com \n")
-#         fout.write("git clone https://github.com/fwyzard/cms-git-tools \n")
-#         fout.write("ls -l ${PWD}/cms-git-tools \n")
-#         fout.write("PATH=$PATH:${PWD}/cms-git-tools\n")
-#         fout.write("git cms-init -y --ssh \n")
-#         fout.write("echo \"List the content of HOME\" \n")
-#         fout.write("ls -la $HOME \n")
-#         fout.write("cd $HOME/${cmssw_ver}/src  \n")
-#         fout.write("fi \n")
-#         fout.write("git cms-addpkg CalibTracker/SiPixelESProducers \n")
-#         fout.write("git cms-addpkg CondFormats/SiPixelObjects \n")
-#         fout.write("git cms-addpkg CondTools/SiPixel \n")
-#         fout.write("git cms-addpkg Geometry/TrackerCommonData \n")
-#         fout.write("git cms-addpkg SLHCUpgradeSimulations/Geometry \n")
-#         fout.write("git cms-addpkg SLHCUpgradeSimulations/Configuration \n")
-#         fout.write("echo \"After git cms-addpkg\" \n")
-#         fout.write("pwd \n")
-#         fout.write("ls -l . \n")
-#         fout.write("git pull https://github.com/brownsonian/cmssw SmallPitch_on612 \n")
-#         fout.write("### 1 ended  \n")
+        # implement in the PBS script E.Brownson's recipe for changing the size of the pixels / part #1
+        fout.write("# Eric Brownson's recipe to change the size of the pixels \n")
+        fout.write("### 1: checkout CMSSW patches \n")
+# >>>>>>>>> BA
+#       fout.write("if [ \"$PBS_ENVIRONMENT\" == \"PBS_BATCH\" ]; then \n")
+        fout.write("if [ ! \"$LSB_JOBID\" = \"\" ]; then \n")
+# <<<<<<<<< CT
+        fout.write("cd \n")
+        fout.write("# git config needed to avoid \n")
+        fout.write("# error: SSL certificate problem: unable to get local issuer certificate while accessing \n")
+        fout.write("ln -fs "+os.path.join(HOME,".gitconfig")+ " .\n")        
+        fout.write("# since /cmshome/emiglior is mounted on the batch node \n")
+        fout.write("eval `ssh-agent -s` \n")
+        fout.write("ssh-add "+os.path.join(HOME,".ssh","id_rsa")+"\n")
+        fout.write("# checkpoint: test that ssh connection is ok \n")
+        fout.write("ssh -T git@github.com \n")
+        fout.write("git clone https://github.com/fwyzard/cms-git-tools \n")
+        fout.write("PATH=$PWD/cms-git-tools:$PATH \n")
+        fout.write("git cms-init -y --ssh \n")
+        fout.write("cd $HOME/${cmssw_ver}/src  \n")
+        fout.write("fi \n")
+        fout.write("git cms-addpkg CalibTracker/SiPixelESProducers \n")
+        fout.write("git cms-addpkg CondFormats/SiPixelObjects \n")
+        fout.write("git cms-addpkg CondTools/SiPixel \n")
+        fout.write("git cms-addpkg Geometry/TrackerCommonData \n")
+        fout.write("git cms-addpkg SLHCUpgradeSimulations/Geometry \n")
+        fout.write("git cms-addpkg SLHCUpgradeSimulations/Configuration \n")
+        fout.write("echo \"After git cms-addpkg\" \n")
+        fout.write("pwd \n")
+        fout.write("ls -l . \n")
+        fout.write("git pull https://github.com/brownsonian/cmssw SmallPitch_on612 \n")
+        fout.write("### 1 ended  \n")
         
-#         fout.write("git clone -b 612_slhc8 git://github.com/emiglior/usercode.git \n")
-#         fout.write("mv usercode/AuxCode .\n")
-#         fout.write("mv usercode/RecoLocalTracker .\n")
-#         fout.write("rm -fr usercode \n")
-#         fout.write("git cms-checkdeps -a \n")
+        fout.write("git clone -b 612_slhc8 git://github.com/emiglior/usercode.git \n")
+        fout.write("mv usercode/AuxCode .\n")
+        fout.write("mv usercode/RecoLocalTracker .\n")
+        fout.write("rm -fr usercode \n")
+        fout.write("git cms-checkdeps -a \n")
 
         fout.write("# compile \n")
         fout.write("scram b -j 8 \n")
         fout.write("eval `scram r -sh` \n")
-
+        
         # implement in the PBS script E.Brownson's recipe for changing the size of the pixels / part #2
         fout.write("# Eric Brownson's recipe to change the size of the pixels \n")
         fout.write("### 2: modify the topology \n")
@@ -226,19 +239,22 @@ class Job:
         fout.write("# Run CMSSW for DIGI-to-DQM steps \n")
         fout.write("cd "+os.path.join("AuxCode","SLHCSimPhase2","test")+"\n")  
         fout.write("cmsRun step_digitodqmvalidation_PUandAge.py maxEvents=${maxevents} firstEvent=${firstevent} BPixThr=${bpixthr} PixelCPE=${pixelcpe} InputFileName=${inputgensimfilename} OutFileName=${outfilename} PUScenario=${puscenario} AgeingScenario=${ageing} \n")
+        fout.write("cp step_digitodqmvalidation_PUandAge.py ${OUT_DIR} \n")
         fout.write("ls -lh . \n")
         fout.write(" # retrieve the outputs \n")
-        fout.write("for RootOutputFile in $(ls *root ); do rfcp  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
-        fout.write("rfcp step_digitodqmvalidation_PUandAge.py ${OUT_DIR} \n")
-        fout.write("# rfcp ${CMSSW_BASE}/src/SLHCUpgradeSimulations/Geometry/data/PhaseI/PixelSkimmedGeometry_phase1.txt ${OUT_DIR} \n")
-        fout.write("# rfcp ${CMSSW_BASE}/src/Geometry/TrackerCommonData/data/PhaseI/trackerStructureTopology.xml ${OUT_DIR} \n")
+        fout.write("for RootOutputFile in $(ls *root ); do cp  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
+        fout.write("#cp ${CMSSW_BASE}/src/SLHCUpgradeSimulations/Geometry/data/PhaseI/PixelSkimmedGeometry_phase1.txt ${OUT_DIR} \n")
+        fout.write("#cp ${CMSSW_BASE}/src/Geometry/TrackerCommonData/data/PhaseI/trackerStructureTopology.xml ${OUT_DIR} \n")
         fout.close()
 
 ############################################
     def submit(self):
 ############################################
         os.system("chmod u+x " + os.path.join(self.pbs_dir,'jobs',self.output_PBS_name))
-        os.system("qsub < "+os.path.join(self.pbs_dir,'jobs',self.output_PBS_name))
+# >>>>>>>>> BA
+#        os.system("qsub < "+os.path.join(self.pbs_dir,'jobs',self.output_PBS_name))
+        os.system("/sw/lsf/7.0/linux2.6-glibc2.3-x86_64/bin/bsub < "+os.path.join(self.pbs_dir,'jobs',self.output_PBS_name))
+# <<<<<<<<< CT
 
 #################
 def main():            
@@ -251,7 +267,7 @@ def main():
     parser.add_option('-j','--jobname',         help='task name',               dest='jobname', action='store', default='myjob')
     parser.add_option('-r','--ROCRows',         help='ROC Rows (default 80 -> du=100 um)', dest='rocrows', action='store', default='80')
     parser.add_option('-c','--ROCCols',         help='ROC Cols (default 52 -> dv=150 um)', dest='roccols', action='store', default='52')
-    parser.add_option('-t','--Layer0Thick',     help='BPix L0 sensor thickness',dest='layer0thick', action='store', default='285')
+    parser.add_option('-t','--Layer0Thick',     help='BPix L0 sensor thickness',dest='layer0thick', action='store', default='0.285')
     parser.add_option('-T','--BPixThr',         help='BPix Threshold',          dest='bpixthr', action='store', default='2000')
     parser.add_option('-p','--pileup',          help='set pileup',              dest='pu',action='store',default='NoPU')
     parser.add_option('-S','--sample',          help='set sample name',         dest='sample',action='store',default='TTbar')
@@ -332,7 +348,7 @@ def main():
     print "- Ageing Scenario            : ",mAgeing
     
     # Setup CMSSW variables
-    os.system("source /opt/exp_soft/cms/cmsset_default.sh")
+    os.system("source /swcms_slc5/CMSSW/cmsset_default.sh")
     os.chdir(os.path.join(HOME,"SLHCSimPhase2",CMSSW_VER,"src"))
     os.system("eval `scram r -sh`")
 
@@ -341,8 +357,8 @@ def main():
     (out,err) = child_edm.communicate()
 
     ### uncomment next to debug the script on 50 events
-    nEvents=250 # this line should be commented for running on the full GEN-SIM sample
-    # nEvents = int((out.split("\n")[1]).split()[3])
+    nEvents=100 # this line should be commented for running on the full GEN-SIM sample
+    #nEvents = int((out.split("\n")[1]).split()[3])
     
     eventsPerJob = nEvents/int(opts.numberofjobs)
 
@@ -405,7 +421,7 @@ def main():
     harvestingname = PBS_DIR + "/jobs/"+opts.jobname+"_sample_"+mSample+"_pu"+mPileUp+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+mBPixThr+"_L0Thick"+mL0Thick+".sh"
     fout=open(harvestingname,"w")
     fout.write("#!/bin/sh \n")
-    fout.write("source /opt/exp_soft/cms/cmsset_default.sh \n")
+    fout.write("source /swcms_slc5/CMSSW/cmsset_default.sh \n")
     fout.write("cmssw_ver="+CMSSW_VER+" \n")
     fout.write("cd "+os.path.join(HOME,"SLHCSimPhase2","${cmssw_ver}","src")+"\n")
     fout.write("eval `scram r -sh`\n")

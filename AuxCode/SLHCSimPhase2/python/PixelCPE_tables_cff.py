@@ -14,7 +14,7 @@ pixelCPE_100x150_default = cms.PSet(
     yerr_barrel_ln_def_=cms.untracked.double(0.00210),
     xerr_endcap_= cms.untracked.vdouble(0.0020, 0.0020),
     xerr_endcap_def_=cms.untracked.double(0.0020),
-    yerr_endcap_= cms.untracked.double(0.00210),
+    yerr_endcap_= cms.untracked.vdouble(0.00210),
     yerr_endcap_def_=cms.untracked.double(0.00075)
     )
 

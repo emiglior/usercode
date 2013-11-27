@@ -63,9 +63,11 @@ class Job:
         self.bpixl0thickness=bpixl0thickness
         
         self.bpixthr=bpixthr
-        self.ageing=ageing
-        
-        self.out_dir=os.path.join("/lustre/cms/store/user",USER,"SLHCSimPhase2/out2","PixelROCRows_" +pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness,"BPixThr_"+bpixthr)
+        self.ageing=ageing        
+# >>>>>>>>> BA
+#        self.out_dir=os.path.join("/lustre/cms/store/user",USER,"SLHCSimPhase2/out2","PixelROCRows_" +pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness,"BPixThr_"+bpixthr)
+        self.out_dir=os.path.join("/gr1_data/CMS",USER,"SLHCSimPhase2/out2","PixelROCRows_" +pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness,"BPixThr_"+bpixthr)
+# <<<<<<<<< CT
         os.system("mkdir -p "+self.out_dir)
 
         self.job_basename= 'pixelCPE_age' + self.ageing + '_PixelROCRows' + self.pixelrocrows + "_PixelROCCols" + self.pixelroccols +"_L0Thick" + self.bpixl0thickness + "_BPixThr" + self.bpixthr
@@ -96,12 +98,18 @@ class Job:
             os.makedirs(LOG_DIR)
 
         fout.write("#!/bin/sh \n") 
-        fout.write("#PBS -S /bin/sh\n")       
-        fout.write("#PBS -N "+self.job_basename+"\n")
-        fout.write("#PBS -j oe \n")
-        fout.write("#PBS -o "+os.path.join(LOG_DIR,self.job_basename)+".log"+"\n")
-#        fout.write("#PBS -e "+os.path.join(LOG_DIR,self.job_basename)+".err"+"\n")
-        fout.write("#PBS -q local \n")
+# >>>>>>>>> BA
+#        fout.write("#PBS -S /bin/sh\n")       
+#        fout.write("#PBS -N "+self.job_basename+"\n")
+#        fout.write("#PBS -j oe \n")
+#        fout.write("#PBS -o "+os.path.join(LOG_DIR,self.job_basename)+".log"+"\n")
+#        fout.write("#PBS -q local \n")
+        fout.write("#BSUB -L /bin/sh \n")       
+        fout.write("#BSUB -J "+self.job_basename+"\n")
+        fout.write("#BSUB -e "+os.path.join(LOG_DIR,self.job_basename)+".err \n")
+        fout.write("#BSUB -o "+os.path.join(LOG_DIR,self.job_basename)+".out \n")
+        fout.write("#BSUB -q gr1cmsq \n")
+# <<<<<<<<< CT        
         fout.write("### Auto-Generated Script by LoopCMSSWBuildAndRunFromTarBall.py ### \n")
         fout.write("JobName="+self.job_basename+" \n")
         fout.write("OUT_DIR="+self.out_dir+" \n")
@@ -111,75 +119,75 @@ class Job:
         fout.write("ageing="+self.ageing+" \n")
         fout.write("bpixthr="+self.bpixthr+" \n")
         
-        # specific for cmssusy.ba.infn.it
-        # https://www.ba.infn.it/pagine-utenti.html?task=viewpage&user_id=111&pageid=96
-        fout.write("if [ \"$PBS_ENVIRONMENT\" == \"PBS_BATCH\" ]; then \n")
+# >>>>>>>>> BA
+# specific for cmssusy.ba.infn.it https://www.ba.infn.it/pagine-utenti.html?task=viewpage&user_id=111&pageid=96
+#       fout.write("if [ \"$PBS_ENVIRONMENT\" == \"PBS_BATCH\" ]; then \n")
+#       fout.write("echo \"I AM IN BATCH\" \n")
+#       fout.write("mkdir -p /home/tmp/$USER/$PBS_JOBID \n")
+#       fout.write("export HOME=/home/tmp/$USER/$PBS_JOBID \n")
+#       fout.write("cd \n")
+#       fout.write("export PBS_O_WORKDIR=$HOME \n")
+#       fout.write("fi \n")
+#       fout.write("echo '$PBS_ENVIRONMENT is ' $PBS_ENVIRONMENT \n")
+        fout.write("if [ ! \"$LSB_JOBID\" = \"\" ]; then \n")
         fout.write("echo \"I AM IN BATCH\" \n")
-        fout.write("mkdir -p /home/tmp/$USER/$PBS_JOBID \n")
-        fout.write("export HOME=/home/tmp/$USER/$PBS_JOBID \n")
+        fout.write("mkdir -p /tmp/$USER/$LSB_JOBID \n")
+        fout.write("export HOME=/tmp/$USER/$LSB_JOBID \n")
         fout.write("cd \n")
-        fout.write("export PBS_O_WORKDIR=$HOME \n")
         fout.write("fi \n")
+# <<<<<<<<< CT
+                   
         fout.write("export SCRAM_ARCH=slc5_amd64_gcc472 \n")
-        fout.write("# Save current dir on batch machine  \n")
-        fout.write("BATCH_DIR=`pwd` \n")
-        fout.write("echo '$HOSTNAME is '$HOSTNAME \n")
-        fout.write("echo '$BATCH_DIR is '$BATCH_DIR\n")
-        fout.write("echo '$PBS_ENVIRONMENT is ' $PBS_ENVIRONMENT \n")
         fout.write("# Setup variables   \n")
-        fout.write("VO_CMS_SW_DIR=/cvmfs/cms.cern.ch \n")
+# >>>>>>>>> BA
+#        fout.write("VO_CMS_SW_DIR=/cvmfs/cms.cern.ch \n")
+        fout.write("VO_CMS_SW_DIR=/swcms_slc5/CMSSW \n")
+# <<<<<<<<< CT
         fout.write("source $VO_CMS_SW_DIR/cmsset_default.sh \n")
+                                      
         fout.write("cmssw_ver="+CMSSW_VER+" \n")
         fout.write("# Install and Compile CMSSW on batch node  \n")
-
-        # ugly alternative for SLC6
-        fout.write("# start here ugly recipe for SLC6 since git doesn't work after scram \n")
-        fout.write("cp -pr /lustre/cms/store/user/musich/612SLHC8_fromRecipe.tgz . \n")
-        fout.write("tar xf 612SLHC8_fromRecipe.tgz \n")
+        fout.write("scram p CMSSW $cmssw_ver  \n")
         fout.write("cd ${cmssw_ver}/src \n")
-        fout.write("scramv1 b ProjectRename \n")        
+        fout.write("eval `scram r -sh` \n")
 
-#         fout.write("scram p CMSSW $cmssw_ver  \n")
-#         fout.write("cd ${cmssw_ver}/src \n")
-#         fout.write("eval `scram r -sh` \n")
-
-#         # implement in the PBS script E.Brownson's recipe for changing the size of the pixels / part #1
-#         fout.write("# Eric Brownson's recipe to change the size of the pixels \n")
-#         fout.write("### 1: checkout CMSSW patches \n")
-#         fout.write("if [ \"$PBS_ENVIRONMENT\" == \"PBS_BATCH\" ]; then \n")
-#         fout.write("cd $HOME \n")
-#         fout.write("# git config needed to avoid \n")
-#         fout.write("# error: SSL certificate problem: unable to get local issuer certificate while accessing \n")
-#         fout.write("ln -fs "+os.path.join(HOME,".gitconfig")+ " .\n")        
-#         fout.write("# since /cmshome/emiglior is mounted on the batch node \n")
-#         fout.write("eval `ssh-agent -s` \n")
-#         fout.write("ssh-add "+os.path.join(HOME,".ssh","id_rsa")+"\n")
-#         fout.write("# checkpoint: test that ssh connection is ok \n")
-#         fout.write("ssh -T git@github.com \n")
-#         fout.write("git clone https://github.com/fwyzard/cms-git-tools \n")
-#         fout.write("ls -l ${PWD}/cms-git-tools \n")
-#         fout.write("PATH=$PATH:${PWD}/cms-git-tools\n")
-#         fout.write("git cms-init -y --ssh \n")
-#         fout.write("echo \"List the content of HOME\" \n")
-#         fout.write("ls -la $HOME \n")
-#         fout.write("cd $HOME/${cmssw_ver}/src  \n")
-#         fout.write("fi \n")
-#         fout.write("git cms-addpkg CalibTracker/SiPixelESProducers \n")
-#         fout.write("git cms-addpkg CondFormats/SiPixelObjects \n")
-#         fout.write("git cms-addpkg CondTools/SiPixel \n")
-#         fout.write("git cms-addpkg Geometry/TrackerCommonData \n")
-#         fout.write("git cms-addpkg SLHCUpgradeSimulations/Geometry \n")
-#         fout.write("git cms-addpkg SLHCUpgradeSimulations/Configuration \n")
-#         fout.write("echo \"After git cms-addpkg\" \n")
-#         fout.write("pwd \n")
-#         fout.write("ls -l . \n")
-#         fout.write("git pull https://github.com/brownsonian/cmssw SmallPitch_on612 \n")
-#         fout.write("### 1 ended  \n")
+         # implement in the PBS script E.Brownson's recipe for changing the size of the pixels / part #1
+        fout.write("# Eric Brownson's recipe to change the size of the pixels \n")
+        fout.write("### 1: checkout CMSSW patches \n")
+# >>>>>>>>> BA
+#       fout.write("if [ \"$PBS_ENVIRONMENT\" == \"PBS_BATCH\" ]; then \n")
+        fout.write("if [ ! \"$LSB_JOBID\" = \"\" ]; then \n")
+# <<<<<<<<< CT
+        fout.write("cd \n")
+        fout.write("# git config needed to avoid \n")
+        fout.write("# error: SSL certificate problem: unable to get local issuer certificate while accessing \n")
+        fout.write("ln -fs "+os.path.join(HOME,".gitconfig")+ " .\n")        
+        fout.write("# since /cmshome/emiglior is mounted on the batch node \n")
+        fout.write("eval `ssh-agent -s` \n")
+        fout.write("ssh-add "+os.path.join(HOME,".ssh","id_rsa")+"\n")
+        fout.write("# checkpoint: test that ssh connection is ok \n")
+        fout.write("ssh -T git@github.com \n")
+        fout.write("git clone https://github.com/fwyzard/cms-git-tools \n")
+        fout.write("PATH=$PWD/cms-git-tools:$PATH \n")
+        fout.write("git cms-init -y --ssh \n")
+        fout.write("cd $HOME/${cmssw_ver}/src  \n")
+        fout.write("fi \n")
+        fout.write("git cms-addpkg CalibTracker/SiPixelESProducers \n")
+        fout.write("git cms-addpkg CondFormats/SiPixelObjects \n")
+        fout.write("git cms-addpkg CondTools/SiPixel \n")
+        fout.write("git cms-addpkg Geometry/TrackerCommonData \n")
+        fout.write("git cms-addpkg SLHCUpgradeSimulations/Geometry \n")
+        fout.write("git cms-addpkg SLHCUpgradeSimulations/Configuration \n")
+        fout.write("echo \"After git cms-addpkg\" \n")
+        fout.write("pwd \n")
+        fout.write("ls -l . \n")
+        fout.write("git pull https://github.com/brownsonian/cmssw SmallPitch_on612 \n")
+        fout.write("### 1 ended  \n")
         
-#         fout.write("git clone -b 612_slhc8 git://github.com/emiglior/usercode.git \n")
-#         fout.write("mv usercode/AuxCode .\n")
-#         fout.write("rm -fr usercode \n")
-#         fout.write("git cms-checkdeps -a \n")
+        fout.write("git clone -b 612_slhc8 git://github.com/emiglior/usercode.git \n")
+        fout.write("mv usercode/AuxCode .\n")
+        fout.write("rm -fr usercode \n")
+        fout.write("git cms-checkdeps -a \n")
 
         fout.write("# compile \n")
         fout.write("scram b -j 8 \n")
@@ -203,22 +211,24 @@ class Job:
         fout.write("cd "+os.path.join("AuxCode","SLHCSimPhase2","test")+"\n")  
         fout.write("cmsRun TenMuE_0_200_cff_py_GEN_TO_RECO_TO_PixelCPE_NTUPLE.py maxEvents=${maxevents} BPixThr=${bpixthr} AgeingScenario=${ageing} \n")
         fout.write("ls -lh . \n")
-        fout.write("mv stdgrechitfullph1g_ntuple.root "+self.job_basename+".root \n")
-#        fout.write("cd Brownson \n")
-#        fout.write("make \n")
-#        fout.write("ln -fs ../stdgrechitfullph1g_ntuple.root . \n")
-#        fout.write("./res \n")        
+        fout.write("cp TenMuE_0_200_cff_py_GEN_TO_RECO_TO_PixelCPE_NTUPLE.py ${OUT_DIR} \n")
+        fout.write("cd Brownson \n")
+        fout.write("make \n")
+        fout.write("ln -fs ../stdgrechitfullph1g_ntuple.root . \n")
+        fout.write("./res \n")        
         fout.write(" # retrieve the outputs \n")
-        fout.write("for RootOutputFile in $(ls *root ); do rfcp  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
-#        fout.write("for EpsOutputFile in $(ls *eps ); do rfcp  ${EpsOutputFile}  ${OUT_DIR}/${EpsOutputFile} ; done \n")
-        fout.write("rfcp TenMuE_0_200_cff_py_GEN_TO_RECO_TO_PixelCPE_NTUPLE.py ${OUT_DIR} \n")
+        fout.write("for RootOutputFile in $(ls *root ); do cp  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
+        fout.write("for EpsOutputFile in $(ls *eps ); do cp  ${EpsOutputFile}  ${OUT_DIR}/${EpsOutputFile} ; done \n")
         fout.close()
 
 ############################################
     def submit(self):
 ############################################
         os.system("chmod u+x " + os.path.join(self.pbs_dir,'jobs',self.output_PBS_name))
-        os.system("qsub < "+os.path.join(self.pbs_dir,'jobs',self.output_PBS_name))
+# >>>>>>>>> BA
+#        os.system("qsub < "+os.path.join(self.pbs_dir,'jobs',self.output_PBS_name))
+        os.system("/sw/lsf/7.0/linux2.6-glibc2.3-x86_64/bin/bsub < "+os.path.join(self.pbs_dir,'jobs',self.output_PBS_name))
+# <<<<<<<<< CT
 
 #################
 def main():            
@@ -231,7 +241,7 @@ def main():
     parser.add_option('-j','--jobname', help='task name', dest='jobname', action='store', default='myjob')
     parser.add_option('-r','--ROCRows',help='ROC Rows (default 80 -> du=100 um)', dest='rocrows', action='store', default='80')
     parser.add_option('-c','--ROCCols',help='ROC Cols (default 52 -> dv=150 um)', dest='roccols', action='store', default='52')
-    parser.add_option('-t','--Layer0Thick',help='BPix L0 sensor thickness', dest='layer0thick', action='store', default='285')
+    parser.add_option('-t','--Layer0Thick',help='BPix L0 sensor thickness', dest='layer0thick', action='store', default='0.285')
     parser.add_option('-T','--BPixThr',help='BPix Threshold', dest='bpixthr', action='store', default='2000')
     parser.add_option('-a','--ageing',help='set ageing',dest='ageing',action='store',default='NoAgeing')
     parser.add_option('-i','--input',help='set input configuration (overrides default)',dest='inputconfig',action='store',default=None)
