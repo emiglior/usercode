@@ -69,7 +69,7 @@ process.load('Configuration.EventContent.EventContent_cff')
 if options.PUScenario!="NoPU":
 
     process.load('SimGeneral.MixingModule.mix_E8TeV_AVE_16_BX_25ns_cfi')
-    process.mix.input.fileNames = cms.untracked.vstring(['file:/lustre/cms/store/user/musich/SLHCSimPhase2/Samples/612_slhc8/RelVals/MinBias/D0C92216-F62E-E311-A76C-0026189437E8.root','file:/lustre/cms/store/user/musich/SLHCSimPhase2/Samples/612_slhc8/RelVals/MinBias/0E964DB3-F62E-E311-AF5D-00259059649C.root'])
+    process.mix.input.fileNames = cms.untracked.vstring(['file:/gr1_data/CMS/SLCHSimPhaseII/612_slhc8/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_15k_evts.root'])
     process.mix.bunchspace = cms.int32(25)
     process.mix.minBunch = cms.int32(-12)
     process.mix.maxBunch = cms.int32(3)
