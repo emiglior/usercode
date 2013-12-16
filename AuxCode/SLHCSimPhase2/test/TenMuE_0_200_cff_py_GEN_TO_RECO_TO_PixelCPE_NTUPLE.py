@@ -128,7 +128,7 @@ process.FEVTDEBUGHLToutput_step = cms.EndPath(process.FEVTDEBUGHLToutput)
 ######################################################################################
 ### This fragment is meant to produce ntuples for the calibration of the pixel CPE ###
 # http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/UserCode/Brownson/SLHCUpgradeSimulations/test/resolutionPlotter/
-process.ReadLocalMeasurement = cms.EDAnalyzer("StdHitNtuplizer",
+process.ReadLocalMeasurement = cms.EDAnalyzer("NewStdHitNtuplizer",
    src = cms.InputTag("siPixelRecHits"),
    stereoRecHits = cms.InputTag("siStripMatchedRecHits","stereoRecHit"),
    rphiRecHits = cms.InputTag("siStripMatchedRecHits","rphiRecHit"),
