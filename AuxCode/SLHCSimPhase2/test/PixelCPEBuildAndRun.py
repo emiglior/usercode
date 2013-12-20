@@ -36,11 +36,30 @@ def set_global_var():
 
     USER = os.environ.get('USER')
     HOME = os.environ.get('HOME')
-    PBS_DIR = os.getcwd()+os.path.join("/PBS") 
-    LOG_DIR = os.getcwd()+os.path.join("/log")
+    PBS_DIR = os.path.join(os.getcwd(),"PBS")
+    LOG_DIR = os.path.join(os.getcwd(),"log")
     SCRAM_ARCH = "slc5_amd64_gcc472"
     CMSSW_VER="CMSSW_6_1_2_SLHC8_patch3"
-        
+
+###### method to create recursively directories on EOS  #############
+    
+def mkdir_eos(out_path):
+    newpath='/'
+    for dir in out_path.split('/'):
+        newpath=os.path.join(newpath,dir)
+        # do not issue mkdir from very top of the tree
+        if newpath.find('SLHCSimPhase2') > 0:
+            p = subprocess.Popen(["cmsMkdir",newpath], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            (out, err) = p.communicate()
+            p.wait()
+
+# now check that the directory exists
+    p = subprocess.Popen(["cmsLs",out_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    (out, err) = p.communicate()
+    p.wait()
+    if p.returncode !=0:
+        print out
+
 ###########################################################################
 class Job:
     """Main class to create and submit PBS jobs"""
@@ -61,14 +80,15 @@ class Job:
         self.pixelrocrows=pixelrocrows
         self.pixelroccols=pixelroccols
         self.bpixl0thickness=bpixl0thickness
-        
+
         self.bpixthr=bpixthr
         self.ageing=ageing        
 # >>>>>>>>> BA
 #        self.out_dir=os.path.join("/lustre/cms/store/user",USER,"SLHCSimPhase2/out2","PixelROCRows_" +pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness,"BPixThr_"+bpixthr)
-        self.out_dir=os.path.join("/gr1_data/CMS",USER,"SLHCSimPhase2/out2","PixelROCRows_" +pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness,"BPixThr_"+bpixthr)
-# <<<<<<<<< CT
-        os.system("mkdir -p "+self.out_dir)
+        self.out_dir=os.path.join("/store/caf/user/emiglior","SLHCSimPhase2/out","PixelROCRows_" +pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness,"BPixThr_"+bpixthr)
+# <<<<<<<<< LXBATCH
+#        os.system("mkdir -p "+self.out_dir)
+        mkdir_eos(self.out_dir)
 
         self.job_basename= 'pixelCPE_age' + self.ageing + '_PixelROCRows' + self.pixelrocrows + "_PixelROCCols" + self.pixelroccols +"_L0Thick" + self.bpixl0thickness + "_BPixThr" + self.bpixthr
         
@@ -106,11 +126,13 @@ class Job:
 #        fout.write("#PBS -q local \n")
         fout.write("#BSUB -L /bin/sh \n")       
         fout.write("#BSUB -J "+self.job_basename+"\n")
-        fout.write("#BSUB -e "+os.path.join(LOG_DIR,self.job_basename)+".err \n")
-        fout.write("#BSUB -o "+os.path.join(LOG_DIR,self.job_basename)+".out \n")
-        fout.write("#BSUB -q gr1cmsq \n")
+# CT        fout.write("#BSUB -e "+os.path.join(LOG_DIR,self.job_basename)+".err \n")
+# CT       fout.write("#BSUB -o "+os.path.join(LOG_DIR,self.job_basename)+".out \n")
+# CT       fout.write("#BSUB -q gr1cmsq \n")
+        fout.write("#BSUB -oo "+os.path.join(LOG_DIR,self.job_basename)+".log \n") # LXBATCH
+        fout.write("#BSUB -q cmscaf1nd \n")                                        # LXBATCH
 # <<<<<<<<< CT        
-        fout.write("### Auto-Generated Script by LoopCMSSWBuildAndRunFromTarBall.py ### \n")
+        fout.write("### Auto-Generated Script by LoopCMSSWBuildAndRun.py ### \n")
         fout.write("JobName="+self.job_basename+" \n")
         fout.write("OUT_DIR="+self.out_dir+" \n")
         fout.write("maxevents="+str(self.maxevents)+" \n")
@@ -131,8 +153,9 @@ class Job:
 #       fout.write("echo '$PBS_ENVIRONMENT is ' $PBS_ENVIRONMENT \n")
         fout.write("if [ ! \"$LSB_JOBID\" = \"\" ]; then \n")
         fout.write("echo \"I AM IN BATCH\" \n")
-        fout.write("mkdir -p /tmp/$USER/$LSB_JOBID \n")
-        fout.write("export HOME=/tmp/$USER/$LSB_JOBID \n")
+# CT       fout.write("mkdir -p /tmp/$USER/$LSB_JOBID \n")
+# CT       fout.write("export HOME=/tmp/$USER/$LSB_JOBID \n")
+        fout.write("export HOME=$WORKDIR \n") # LXBATCH
         fout.write("cd \n")
         fout.write("fi \n")
 # <<<<<<<<< CT
@@ -141,9 +164,10 @@ class Job:
         fout.write("# Setup variables   \n")
 # >>>>>>>>> BA
 #        fout.write("VO_CMS_SW_DIR=/cvmfs/cms.cern.ch \n")
-        fout.write("VO_CMS_SW_DIR=/swcms_slc5/CMSSW \n")
+#        fout.write("VO_CMS_SW_DIR=/swcms_slc5/CMSSW \n")
 # <<<<<<<<< CT
-        fout.write("source $VO_CMS_SW_DIR/cmsset_default.sh \n")
+#        fout.write("source $VO_CMS_SW_DIR/cmsset_default.sh \n")  # LXBATCH
+
                                       
         fout.write("cmssw_ver="+CMSSW_VER+" \n")
         fout.write("# Install and Compile CMSSW on batch node  \n")
@@ -217,8 +241,10 @@ class Job:
         fout.write("ln -fs ../stdgrechitfullph1g_ntuple.root . \n")
         fout.write("./res \n")        
         fout.write(" # retrieve the outputs \n")
-        fout.write("for RootOutputFile in $(ls *root ); do cp  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
-        fout.write("for EpsOutputFile in $(ls *eps ); do cp  ${EpsOutputFile}  ${OUT_DIR}/${EpsOutputFile} ; done \n")
+#        fout.write("for RootOutputFile in $(ls *root ); do cp  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
+#        fout.write("for EpsOutputFile in $(ls *eps ); do cp  ${EpsOutputFile}  ${OUT_DIR}/${EpsOutputFile} ; done \n")
+        fout.write("for RootOutputFile in $(ls *root ); do cmsStage  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
+        fout.write("for EpsOutputFile in $(ls *eps ); do cmsStage  ${EpsOutputFile}  ${OUT_DIR}/${EpsOutputFile} ; done \n")
         fout.close()
 
 ############################################
@@ -227,7 +253,8 @@ class Job:
         os.system("chmod u+x " + os.path.join(self.pbs_dir,'jobs',self.output_PBS_name))
 # >>>>>>>>> BA
 #        os.system("qsub < "+os.path.join(self.pbs_dir,'jobs',self.output_PBS_name))
-        os.system("/sw/lsf/7.0/linux2.6-glibc2.3-x86_64/bin/bsub < "+os.path.join(self.pbs_dir,'jobs',self.output_PBS_name))
+# CT        os.system("/sw/lsf/7.0/linux2.6-glibc2.3-x86_64/bin/bsub < "+os.path.join(self.pbs_dir,'jobs',self.output_PBS_name))
+        os.system("bsub < "+os.path.join(self.pbs_dir,'jobs',self.output_PBS_name)) #LXBATCH
 # <<<<<<<<< CT
 
 #################

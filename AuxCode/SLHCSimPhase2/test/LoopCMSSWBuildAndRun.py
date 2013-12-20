@@ -38,21 +38,44 @@ def set_global_var(sample):
 
     USER = os.environ.get('USER')
     HOME = os.environ.get('HOME')
-    PBS_DIR = os.getcwd()+os.path.join("/PBS") 
-    LOG_DIR = os.getcwd()+os.path.join("/log")
+    PBS_DIR = os.path.join(os.getcwd(),"PBS") 
+    LOG_DIR = os.path.join(os.getcwd(),"log")
     SCRAM_ARCH = "slc5_amd64_gcc472"
     CMSSW_VER="CMSSW_6_1_2_SLHC8_patch3"
     
     if (sample=="TTbar") | (sample=="ttbar") | (sample=="TTBar") :
-        GENSIM_FILE = "file:/gr1_data/CMS/SLCHSimPhaseII/612_slhc8/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
+# CT     GENSIM_FILE = "file:/gr1_data/CMS/SLCHSimPhaseII/612_slhc8/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
+        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
     elif (sample=="MinBias") | (sample=="minbias") :
-        GENSIM_FILE = "file:/gr1_data/CMS/SLCHSimPhaseII/612_slhc8/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_15k_evts.root"
+# CT     GENSIM_FILE = "file:/gr1_data/CMS/SLCHSimPhaseII/612_slhc8/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_15k_evts.root"
+        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_15k_evts.root"
     elif (sample=="IsoMuons") | (sample=="muons") | (sample=="Muons") :
-        GENSIM_FILE = "file:/gr1_data/CMS/SLCHSimPhaseII/612_slhc8/ParticleGun/step1_FourMuPartGun_100kEvents.root"
+# CT     GENSIM_FILE = "file:/gr1_data/CMS/SLCHSimPhaseII/612_slhc8/ParticleGun/step1_FourMuPartGun_100kEvents.root"
+        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/ParticleGun/step1_FourMuPartGun_100kEvents.root"
     else :
         print "unrecongnize input sample, using default (=TTbar)"
-        GENSIM_FILE = "file:gr1_data/CMS/SLCHSimPhaseII/612_slhc8/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
+# CT     GENSIM_FILE = "file:gr1_data/CMS/SLCHSimPhaseII/612_slhc8/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
+        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
+
+###### method to create recursively directories on EOS  #############
     
+def mkdir_eos(out_path):
+    newpath='/'
+    for dir in out_path.split('/'):
+        newpath=os.path.join(newpath,dir)
+        # do not issue mkdir from very top of the tree
+        if newpath.find('SLHCSimPhase2') > 0:
+            p = subprocess.Popen(["cmsMkdir",newpath], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            (out, err) = p.communicate()
+            p.wait()
+
+# now check that the directory exists
+    p = subprocess.Popen(["cmsLs",out_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    (out, err) = p.communicate()
+    p.wait()
+    if p.returncode !=0:
+        print out
+
 ###########################################################################
 class Job:
     """Main class to create and submit PBS jobs"""
@@ -85,11 +108,10 @@ class Job:
 
 # >>>>>>>>> BA
 #                self.out_dir=os.path.join("/lustre/cms/store/user",USER,"SLHCSimPhase2/out","sample_"+sample,"pu_"+pu,"PixelROCRows_"+pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness, "BPixThr_"+bpixthr)
-        self.out_dir=os.path.join("/gr1_data/CMS",USER,"SLHCSimPhase2/out","sample_"+sample,"pu_"+pu,"PixelROCRows_"+pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness, "BPixThr_"+bpixthr)
-# <<<<<<<<< CT
-        
-
-        os.system("mkdir -p "+self.out_dir)
+        self.out_dir=os.path.join("/store/caf/user/emiglior","SLHCSimPhase2/out","sample_"+sample,"pu_"+pu,"PixelROCRows_"+pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness, "BPixThr_"+bpixthr)
+# <<<<<<<<< LXBATCH
+#        os.system("mkdir -p "+self.out_dir)
+        mkdir_eos(self.out_dir)        
 
         self.job_basename= "step_digitodqm_" +self.sample+ "_pu" + self.pu + "_age" + self.ageing + "_PixelROCRows" + self.pixelrocrows + "_PixelROCCols" + self.pixelroccols + "_L0Thick" + self.bpixl0thickness + "_BPixThr" + self.bpixthr + "_event" + str(self.firstevent)
         
@@ -128,9 +150,11 @@ class Job:
 #        fout.write("#PBS -l mem=5gb \n")
         fout.write("#BSUB -L /bin/sh \n")       
         fout.write("#BSUB -J "+self.job_basename+"\n")
-        fout.write("#BSUB -e "+os.path.join(LOG_DIR,self.job_basename)+".err \n")
-        fout.write("#BSUB -o "+os.path.join(LOG_DIR,self.job_basename)+".out \n")
-        fout.write("#BSUB -q gr1cmsq \n")
+# CT        fout.write("#BSUB -e "+os.path.join(LOG_DIR,self.job_basename)+".err \n")
+# CT       fout.write("#BSUB -o "+os.path.join(LOG_DIR,self.job_basename)+".out \n")
+# CT       fout.write("#BSUB -q gr1cmsq \n")
+        fout.write("#BSUB -oo "+os.path.join(LOG_DIR,self.job_basename)+".log \n") # LXBATCH
+        fout.write("#BSUB -q cmscaf1nd \n")                                        # LXBATCH
         fout.write("#BSUB -R \"rusage[mem=5000]\"\n")
 # <<<<<<<<< CT        
         fout.write("### Auto-Generated Script by LoopCMSSWBuildAndRun.py ### \n")
@@ -159,8 +183,9 @@ class Job:
 #       fout.write("echo '$PBS_ENVIRONMENT is ' $PBS_ENVIRONMENT \n")
         fout.write("if [ ! \"$LSB_JOBID\" = \"\" ]; then \n")
         fout.write("echo \"I AM IN BATCH\" \n")
-        fout.write("mkdir -p /tmp/$USER/$LSB_JOBID \n")
-        fout.write("export HOME=/tmp/$USER/$LSB_JOBID \n")
+# CT       fout.write("mkdir -p /tmp/$USER/$LSB_JOBID \n")
+# CT       fout.write("export HOME=/tmp/$USER/$LSB_JOBID \n")
+        fout.write("export HOME=$WORKDIR \n") # LXBATCH
         fout.write("cd \n")
         fout.write("fi \n")
 # <<<<<<<<< CT
@@ -169,9 +194,9 @@ class Job:
         fout.write("# Setup variables   \n")
 # >>>>>>>>> BA
 #        fout.write("VO_CMS_SW_DIR=/cvmfs/cms.cern.ch \n")
-        fout.write("VO_CMS_SW_DIR=/swcms_slc5/CMSSW \n")
+#        fout.write("VO_CMS_SW_DIR=/swcms_slc5/CMSSW \n")
 # <<<<<<<<< CT
-        fout.write("source $VO_CMS_SW_DIR/cmsset_default.sh \n")
+#        fout.write("source $VO_CMS_SW_DIR/cmsset_default.sh \n")  # LXBATCH
 
         fout.write("cmssw_ver="+CMSSW_VER+" \n")
         fout.write("# Install and Compile CMSSW on batch node  \n")
@@ -242,7 +267,8 @@ class Job:
         fout.write("cp step_digitodqmvalidation_PUandAge.py ${OUT_DIR} \n")
         fout.write("ls -lh . \n")
         fout.write(" # retrieve the outputs \n")
-        fout.write("for RootOutputFile in $(ls *root ); do cp  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
+#        fout.write("for RootOutputFile in $(ls *root ); do cp  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
+        fout.write("for RootOutputFile in $(ls *root ); do cmsStage  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
         fout.write("#cp ${CMSSW_BASE}/src/SLHCUpgradeSimulations/Geometry/data/PhaseI/PixelSkimmedGeometry_phase1.txt ${OUT_DIR} \n")
         fout.write("#cp ${CMSSW_BASE}/src/Geometry/TrackerCommonData/data/PhaseI/trackerStructureTopology.xml ${OUT_DIR} \n")
         fout.close()
@@ -253,7 +279,8 @@ class Job:
         os.system("chmod u+x " + os.path.join(self.pbs_dir,'jobs',self.output_PBS_name))
 # >>>>>>>>> BA
 #        os.system("qsub < "+os.path.join(self.pbs_dir,'jobs',self.output_PBS_name))
-        os.system("/sw/lsf/7.0/linux2.6-glibc2.3-x86_64/bin/bsub < "+os.path.join(self.pbs_dir,'jobs',self.output_PBS_name))
+# CT        os.system("/sw/lsf/7.0/linux2.6-glibc2.3-x86_64/bin/bsub < "+os.path.join(self.pbs_dir,'jobs',self.output_PBS_name))
+        os.system("bsub < "+os.path.join(self.pbs_dir,'jobs',self.output_PBS_name)) #LXBATCH
 # <<<<<<<<< CT
 
 #################
@@ -348,8 +375,9 @@ def main():
     print "- Ageing Scenario            : ",mAgeing
     
     # Setup CMSSW variables
-    os.system("source /swcms_slc5/CMSSW/cmsset_default.sh")
-    os.chdir(os.path.join(HOME,"SLHCSimPhase2",CMSSW_VER,"src"))
+#     os.system("source /swcms_slc5/CMSSW/cmsset_default.sh") # LXBATCH
+#     os.chdir(os.path.join(HOME,"SLHCSimPhase2",CMSSW_VER,"src"))
+    os.chdir(os.path.join(HOME,"MyWorkSpace/public","SLHCSimPhase2",CMSSW_VER,"src"))
     os.system("eval `scram r -sh`")
 
     # Split and submit
@@ -421,9 +449,10 @@ def main():
     harvestingname = PBS_DIR + "/jobs/"+opts.jobname+"_sample_"+mSample+"_pu"+mPileUp+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+mBPixThr+"_L0Thick"+mL0Thick+".sh"
     fout=open(harvestingname,"w")
     fout.write("#!/bin/sh \n")
-    fout.write("source /swcms_slc5/CMSSW/cmsset_default.sh \n")
+#     fout.write("source /swcms_slc5/CMSSW/cmsset_default.sh \n") # LXBATCH
     fout.write("cmssw_ver="+CMSSW_VER+" \n")
-    fout.write("cd "+os.path.join(HOME,"SLHCSimPhase2","${cmssw_ver}","src")+"\n")
+#    fout.write("cd "+os.path.join(HOME,"SLHCSimPhase2","${cmssw_ver}","src")+"\n") # LXBTACH
+    fout.write("cd "+os.path.join(HOME,"MyWorkSpace/public","SLHCSimPhase2","${cmssw_ver}","src")+"\n")
     fout.write("eval `scram r -sh`\n")
     fout.write("DQMFileList="+DQMFileList[:-1]+" \n")
     fout.write("cmsDriver.py step4 --geometry ExtendedPhase2TkBE --magField 38T_PostLS1 --customise SLHCUpgradeSimulations/Configuration/postLS1Customs.customisePostLS1,SLHCUpgradeSimulations/Configuration/phase2TkCustomsBE.customise,SLHCUpgradeSimulations/Configuration/phase2TkCustomsBE.l1EventContent,AuxCode/SLHCSimPhase2/TkOnlyValidationCustoms.customise_tkonly --conditions auto:upgradePLS3 --mc -s HARVESTING:validationHarvesting+dqmHarvesting --filein $DQMFileList --fileout file:step4_sample_"+mSample+"_pu"+mPileUp+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+mBPixThr+"_L0Thick"+mL0Thick+".root > step4_sample_"+mSample+"_pu"+mPileUp+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+mBPixThr+"_L0Thick"+mL0Thick+".log \n")
