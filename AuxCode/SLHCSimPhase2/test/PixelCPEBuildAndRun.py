@@ -85,7 +85,7 @@ class Job:
         self.ageing=ageing        
 # >>>>>>>>> BA
 #        self.out_dir=os.path.join("/lustre/cms/store/user",USER,"SLHCSimPhase2/out2","PixelROCRows_" +pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness,"BPixThr_"+bpixthr)
-        self.out_dir=os.path.join("/store/caf/user/emiglior","SLHCSimPhase2/out","PixelROCRows_" +pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness,"BPixThr_"+bpixthr)
+        self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/out","PixelROCRows_" +pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness,"BPixThr_"+bpixthr)
 # <<<<<<<<< LXBATCH
 #        os.system("mkdir -p "+self.out_dir)
         mkdir_eos(self.out_dir)
