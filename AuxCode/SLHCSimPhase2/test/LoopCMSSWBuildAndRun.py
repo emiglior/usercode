@@ -45,17 +45,17 @@ def set_global_var(sample):
     
     if (sample=="TTbar") | (sample=="ttbar") | (sample=="TTBar") :
 # CT     GENSIM_FILE = "file:/gr1_data/CMS/SLCHSimPhaseII/612_slhc8/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
-        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
+        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/Extended2017/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
     elif (sample=="MinBias") | (sample=="minbias") :
 # CT     GENSIM_FILE = "file:/gr1_data/CMS/SLCHSimPhaseII/612_slhc8/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_15k_evts.root"
-        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_15k_evts.root"
+        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/Extended2017/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_15k_evts.root"
     elif (sample=="IsoMuons") | (sample=="muons") | (sample=="Muons") :
 # CT     GENSIM_FILE = "file:/gr1_data/CMS/SLCHSimPhaseII/612_slhc8/ParticleGun/step1_FourMuPartGun_100kEvents.root"
-        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/ParticleGun/step1_FourMuPartGun_100kEvents.root"
+        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/Extended2017/ParticleGun/step1_FourMuPartGun_100kEvents.root"
     else :
         print "unrecongnize input sample, using default (=TTbar)"
 # CT     GENSIM_FILE = "file:gr1_data/CMS/SLCHSimPhaseII/612_slhc8/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
-        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
+        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/Extended2017/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
 
 ###### method to create recursively directories on EOS  #############
     
@@ -108,7 +108,7 @@ class Job:
 
 # >>>>>>>>> BA
 #                self.out_dir=os.path.join("/lustre/cms/store/user",USER,"SLHCSimPhase2/out","sample_"+sample,"pu_"+pu,"PixelROCRows_"+pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness, "BPixThr_"+bpixthr)
-        self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/out","sample_"+sample,"pu_"+pu,"PixelROCRows_"+pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness, "BPixThr_"+bpixthr)
+        self.out_dir=os.path.join("/store/caf/user",USER,"TMP","SLHCSimPhase2/out","sample_"+sample,"pu_"+pu,"PixelROCRows_"+pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness, "BPixThr_"+bpixthr)
 # <<<<<<<<< LXBATCH
 #        os.system("mkdir -p "+self.out_dir)
         mkdir_eos(self.out_dir)        
@@ -251,10 +251,17 @@ class Job:
         fout.write("# Eric Brownson's recipe to change the size of the pixels \n")
         fout.write("### 2: modify the topology \n")
         fout.write("# trackerStructureTopology_template_L0.xml   -> L0    BPIX is changed \n")
-        fout.write("sed -e \"s%PIXELROCROWS%"+self.pixelrocrows+"%g\" -e \"s%PIXELROCCOLS%"+self.pixelroccols+"%g\" AuxCode/SLHCSimPhase2/test/trackerStructureTopology_template_L0.xml > Geometry/TrackerCommonData/data/PhaseII/BarrelEndcap/trackerStructureTopology.xml \n")
+        fout.write("sed -e \"s%PIXELROCROWS%"+self.pixelrocrows+"%g\" -e \"s%PIXELROCCOLS%"+self.pixelroccols+"%g\" AuxCode/SLHCSimPhase2/test/trackerStructureTopology_template_L0.xml > Geometry/TrackerCommonData/data/PhaseI/trackerStructureTopology.xml \n")
         fout.write("# Run CMSSW to complete the recipe for changing the size of the pixels \n")
-        fout.write("cmsRun SLHCUpgradeSimulations/Geometry/test/writeFile_phase2BE_cfg.py \n")
-        fout.write("mv PixelSkimmedGeometry_phase2BE.txt ${CMSSW_BASE}/src/SLHCUpgradeSimulations/Geometry/data/PhaseII/BarrelEndcap/PixelSkimmedGeometry.txt \n")        
+
+        # recipe for phase I tracking  
+        fout.write("cmsRun SLHCUpgradeSimulations/Geometry/test/writeFile_phase1_cfg.py \n")
+        fout.write("mv PixelSkimmedGeometry_phase1.txt ${CMSSW_BASE}/src/SLHCUpgradeSimulations/Geometry/data/PhaseI \n")
+        
+        # recipe for phase II tracking
+        # fout.write("cmsRun SLHCUpgradeSimulations/Geometry/test/writeFile_phase2BE_cfg.py \n")
+        # fout.write("mv PixelSkimmedGeometry_phase2BE.txt ${CMSSW_BASE}/src/SLHCUpgradeSimulations/Geometry/data/PhaseII/BarrelEndcap/PixelSkimmedGeometry.txt \n")
+        
         fout.write("### 2 ended  \n")
 
         # implement the recipe for changing the bpix sensor thickness from A. Tricomi
@@ -264,7 +271,7 @@ class Job:
         fout.write("# Run CMSSW for DIGI-to-DQM steps \n")
         fout.write("cd "+os.path.join("AuxCode","SLHCSimPhase2","test")+"\n")  
         fout.write("cmsRun step_digitodqmvalidation_PUandAge.py maxEvents=${maxevents} firstEvent=${firstevent} BPixThr=${bpixthr} PixelCPE=${pixelcpe} InputFileName=${inputgensimfilename} OutFileName=${outfilename} PUScenario=${puscenario} AgeingScenario=${ageing} \n")
-        fout.write("cp step_digitodqmvalidation_PUandAge.py ${OUT_DIR} \n")
+        fout.write("cmsStage step_digitodqmvalidation_PUandAge.py ${OUT_DIR}/step_digitodqmvalidation_PUandAge.py \n")
         fout.write("ls -lh . \n")
         fout.write(" # retrieve the outputs \n")
 #        fout.write("for RootOutputFile in $(ls *root ); do cp  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
@@ -377,7 +384,7 @@ def main():
     # Setup CMSSW variables
 #     os.system("source /swcms_slc5/CMSSW/cmsset_default.sh") # LXBATCH
 #     os.chdir(os.path.join(HOME,"SLHCSimPhase2",CMSSW_VER,"src"))
-    os.chdir(os.path.join(HOME,"MyWorkSpace/public","SLHCSimPhase2",CMSSW_VER,"src"))
+    os.chdir(os.path.join(HOME,"MyWorkSpace/public","TMP","SLHCSimPhase2",CMSSW_VER,"src"))
     os.system("eval `scram r -sh`")
 
     # Split and submit
@@ -385,7 +392,7 @@ def main():
     (out,err) = child_edm.communicate()
 
     ### uncomment next to debug the script on 50 events
-    nEvents=100 # this line should be commented for running on the full GEN-SIM sample
+    nEvents=10 # this line should be commented for running on the full GEN-SIM sample
     #nEvents = int((out.split("\n")[1]).split()[3])
     
     eventsPerJob = nEvents/int(opts.numberofjobs)
@@ -452,11 +459,13 @@ def main():
 #     fout.write("source /swcms_slc5/CMSSW/cmsset_default.sh \n") # LXBATCH
     fout.write("cmssw_ver="+CMSSW_VER+" \n")
 #    fout.write("cd "+os.path.join(HOME,"SLHCSimPhase2","${cmssw_ver}","src")+"\n") # LXBTACH
-    fout.write("cd "+os.path.join(HOME,"MyWorkSpace/public","SLHCSimPhase2","${cmssw_ver}","src")+"\n")
+    fout.write("cd "+os.path.join(HOME,"MyWorkSpace/public","TMP","SLHCSimPhase2","${cmssw_ver}","src")+"\n")
     fout.write("eval `scram r -sh`\n")
     fout.write("DQMFileList="+DQMFileList[:-1]+" \n")
-    fout.write("cmsDriver.py step4 --geometry ExtendedPhase2TkBE --magField 38T_PostLS1 --customise SLHCUpgradeSimulations/Configuration/postLS1Customs.customisePostLS1,SLHCUpgradeSimulations/Configuration/phase2TkCustomsBE.customise,SLHCUpgradeSimulations/Configuration/phase2TkCustomsBE.l1EventContent,AuxCode/SLHCSimPhase2/TkOnlyValidationCustoms.customise_tkonly --conditions auto:upgradePLS3 --mc -s HARVESTING:validationHarvesting+dqmHarvesting --filein $DQMFileList --fileout file:step4_sample_"+mSample+"_pu"+mPileUp+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+mBPixThr+"_L0Thick"+mL0Thick+".root > step4_sample_"+mSample+"_pu"+mPileUp+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+mBPixThr+"_L0Thick"+mL0Thick+".log \n")
+    fout.write("cmsDriver.py step4 --geometry Extended2017 --customise SLHCUpgradeSimulations/Configuration/phase1TkCustoms.customise,AuxCode/SLHCSimPhase2/TkOnlyValidationCustoms.customise_tkonly --conditions auto:upgrade2017 --mc -s HARVESTING:validationHarvesting+dqmHarvesting --filein $DQMFileList --fileout file:step4_sample_"+mSample+"_pu"+mPileUp+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+mBPixThr+"_L0Thick"+mL0Thick+".root > step4_sample_"+mSample+"_pu"+mPileUp+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+mBPixThr+"_L0Thick"+mL0Thick+".log \n")
     fout.write("mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root AuxCode/SLHCSimPhase2/test/step4_sample_"+mSample+"_pu"+mPileUp+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+ mBPixThr+"_L0Thick"+mL0Thick+".root")
+
+ 
     fout.close()
 
 if __name__ == "__main__":        
