@@ -2,7 +2,7 @@
 # using: 
 # Revision: 1.14 
 # Source: /local/reps/CMSSW/CMSSW/Configuration/Applications/python/ConfigBuilder.py,v 
-# with command line options: Configuration/GenProduction/python/FourteenTeV/TenMuE_0_200_cfi.py --no_exec -n 10 -s GEN,SIM,DIGI,L1,DIGI2RAW,RAW2DIGI,L1TrackTrigger,L1Reco,RECO --conditions auto:upgradePLS3 --eventcontent FEVTDEBUGHLT --beamspot Gauss --geometry ExtendedPhase2TkBE --magField 38T_PostLS1 --relval 10000,100 --datatier GEN-SIM-RECO --customise SLHCUpgradeSimulations/Configuration/postLS1Customs.customisePostLS1,SLHCUpgradeSimulations/Configuration/phase2TkCustomsBE.customise,SLHCUpgradeSimulations/Configuration/phase2TkCustomsBE.l1EventContent --fileout file:TenMuE_0_200_cff_py_GEN_SIM_RECO.root
+# with command line options: Configuration/GenProduction/python/FourteenTeV/TenMuE_0_200_cfi.py --no_exec -s GEN,SIM,DIGI,L1,DIGI2RAW,RAW2DIGI,L1Reco,RECO --conditions auto:upgrade2017 --eventcontent FEVTDEBUG --beamspot Gauss --geometry Extended2017 --relval 10000,100 --datatier GEN-SIM-RECO -n 500 --customise SLHCUpgradeSimulations/Configuration/postLS1Customs.customisePostLS1,SLHCUpgradeSimulations/Configuration/phase1TkCustoms.customise --fileout file:TenMuE_0_200_cff_py_GEN_SIM_RECO.root
 
 import FWCore.ParameterSet.Config as cms
 import FWCore.ParameterSet.VarParsing as VarParsing
@@ -37,9 +37,9 @@ process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
 process.load('FWCore.MessageService.MessageLogger_cfi')
 process.load('Configuration.EventContent.EventContent_cff')
 process.load('SimGeneral.MixingModule.mixNoPU_cfi')
-process.load('Configuration.Geometry.GeometryExtendedPhase2TkBEReco_cff')
-process.load('Configuration.Geometry.GeometryExtendedPhase2TkBE_cff')
-process.load('Configuration.StandardSequences.MagneticField_38T_PostLS1_cff')
+process.load('Configuration.Geometry.GeometryExtended2017Reco_cff')
+process.load('Configuration.Geometry.GeometryExtended2017_cff')
+process.load('Configuration.StandardSequences.MagneticField_38T_cff')
 process.load('Configuration.StandardSequences.Generator_cff')
 process.load('IOMC.EventVertexGenerators.VtxSmearedGauss_cfi')
 process.load('GeneratorInterface.Core.genFilterSummary_cff')
@@ -48,7 +48,6 @@ process.load('Configuration.StandardSequences.Digi_cff')
 process.load('Configuration.StandardSequences.SimL1Emulator_cff')
 process.load('Configuration.StandardSequences.DigiToRaw_cff')
 process.load('Configuration.StandardSequences.RawToDigi_cff')
-process.load('Configuration.StandardSequences.L1TrackTrigger_cff')
 process.load('Configuration.StandardSequences.L1Reco_cff')
 process.load('Configuration.StandardSequences.Reconstruction_cff')
 process.load('Configuration.StandardSequences.EndOfProcess_cff')
@@ -64,6 +63,8 @@ process.maxEvents = cms.untracked.PSet(
 # Input source
 process.source = cms.Source("EmptySource")
 
+process.options = cms.untracked.PSet()
+
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
     version = cms.untracked.string('$Revision: 1.14 $'),
@@ -73,10 +74,10 @@ process.configurationMetadata = cms.untracked.PSet(
 
 # Output definition
 
-process.FEVTDEBUGHLToutput = cms.OutputModule("PoolOutputModule",
+process.FEVTDEBUGoutput = cms.OutputModule("PoolOutputModule",
     splitLevel = cms.untracked.int32(0),
     eventAutoFlushCompressedSize = cms.untracked.int32(5242880),
-    outputCommands = process.FEVTDEBUGHLTEventContent.outputCommands,
+    outputCommands = process.FEVTDEBUGEventContent.outputCommands,
     fileName = cms.untracked.string('file:TenMuE_0_200_cff_py_GEN_SIM_RECO.root'),
     dataset = cms.untracked.PSet(
         filterName = cms.untracked.string(''),
@@ -92,7 +93,7 @@ process.FEVTDEBUGHLToutput = cms.OutputModule("PoolOutputModule",
 # Other statements
 process.genstepfilter.triggerConditions=cms.vstring("generation_step")
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:upgradePLS3', '')
+process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:upgrade2017', '')
 
 process.generator = cms.EDProducer("FlatRandomEGunProducer",
     PGunParameters = cms.PSet(
@@ -118,12 +119,11 @@ process.digitisation_step = cms.Path(process.pdigi)
 process.L1simulation_step = cms.Path(process.SimL1Emulator)
 process.digi2raw_step = cms.Path(process.DigiToRaw)
 process.raw2digi_step = cms.Path(process.RawToDigi)
-process.L1TrackTrigger_step = cms.Path(process.L1TrackTrigger)
 process.L1Reco_step = cms.Path(process.L1Reco)
 process.reconstruction_step = cms.Path(process.reconstruction)
 process.genfiltersummary_step = cms.EndPath(process.genFilterSummary)
 process.endjob_step = cms.EndPath(process.endOfProcess)
-process.FEVTDEBUGHLToutput_step = cms.EndPath(process.FEVTDEBUGHLToutput)
+process.FEVTDEBUGoutput_step = cms.EndPath(process.FEVTDEBUGoutput)
 
 ######################################################################################
 ### This fragment is meant to produce ntuples for the calibration of the pixel CPE ###
@@ -150,24 +150,25 @@ process.make_ntuple = cms.Path(process.ReadLocalMeasurement)
 ######################################################################################
 
 # Schedule definition
-process.schedule = cms.Schedule(process.generation_step,process.genfiltersummary_step,process.simulation_step,process.digitisation_step,process.L1simulation_step,process.digi2raw_step,process.raw2digi_step,process.L1TrackTrigger_step,process.L1Reco_step,process.reconstruction_step,process.make_ntuple,process.endjob_step,process.FEVTDEBUGHLToutput_step)
+# Schedule definition
+process.schedule = cms.Schedule(process.generation_step,process.genfiltersummary_step,process.simulation_step,process.digitisation_step,process.L1simulation_step,process.digi2raw_step,process.raw2digi_step,process.L1Reco_step,process.reconstruction_step,process.make_ntuple,process.endjob_step,process.FEVTDEBUGoutput_step)
 # filter all path with the production filter sequence
 for path in process.paths:
 	getattr(process,path)._seq = process.generator * getattr(process,path)._seq 
 
 # customisation of the process.
 
-# Automatic addition of the customisation function from SLHCUpgradeSimulations.Configuration.phase2TkCustomsBE
-from SLHCUpgradeSimulations.Configuration.phase2TkCustomsBE import customise,l1EventContent 
-
-#call to customisation function customise imported from SLHCUpgradeSimulations.Configuration.phase2TkCustomsBE
-process = customise(process)
-
-#call to customisation function l1EventContent imported from SLHCUpgradeSimulations.Configuration.phase2TkCustomsBE
-process = l1EventContent(process)
-
 # Automatic addition of the customisation function from SLHCUpgradeSimulations.Configuration.postLS1Customs
 from SLHCUpgradeSimulations.Configuration.postLS1Customs import customisePostLS1 
+
+#call to customisation function customisePostLS1 imported from SLHCUpgradeSimulations.Configuration.postLS1Customs
+process = customisePostLS1(process)
+
+# Automatic addition of the customisation function from SLHCUpgradeSimulations.Configuration.phase1TkCustoms
+from SLHCUpgradeSimulations.Configuration.phase1TkCustoms import customise 
+
+#call to customisation function customise imported from SLHCUpgradeSimulations.Configuration.phase1TkCustoms
+process = customise(process)
 
 #call to customisation function customisePostLS1 imported from SLHCUpgradeSimulations.Configuration.postLS1Customs
 process = customisePostLS1(process)
