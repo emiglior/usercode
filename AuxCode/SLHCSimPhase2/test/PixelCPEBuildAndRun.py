@@ -208,7 +208,7 @@ class Job:
         fout.write("git pull https://github.com/brownsonian/cmssw SmallPitch_on612 \n")
         fout.write("### 1 ended  \n")
         
-        fout.write("git clone -b 612_slhc8 git://github.com/emiglior/usercode.git \n")
+        fout.write("git clone -b 612_slhc8_TrackingPhase1 git://github.com/emiglior/usercode.git \n")
         fout.write("mv usercode/AuxCode .\n")
         fout.write("rm -fr usercode \n")
         fout.write("git cms-checkdeps -a \n")
