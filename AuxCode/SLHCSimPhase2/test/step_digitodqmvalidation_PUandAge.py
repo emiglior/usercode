@@ -9,7 +9,7 @@ import FWCore.ParameterSet.VarParsing as VarParsing
 options = VarParsing.VarParsing()
 
 options.register('InputFileName',
-                 "file:/lustre/cms/store/user/musich/SLHCSimPhase2/Samples/612_slhc8/RelVals/TTbar/2E905DB0-012F-E311-830A-0025905964C4.root", # default value
+                 "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/ExtendedPhase2TkBE/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root", # default value
                  VarParsing.VarParsing.multiplicity.singleton, # singleton or list
                  VarParsing.VarParsing.varType.string,         # string, int, or float
                  "name of the input file ")
@@ -69,7 +69,7 @@ process.load('Configuration.EventContent.EventContent_cff')
 if options.PUScenario!="NoPU":
 
     process.load('SimGeneral.MixingModule.mix_E8TeV_AVE_16_BX_25ns_cfi')
-    process.mix.input.fileNames = cms.untracked.vstring(['root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_15k_evts.root'])
+    process.mix.input.fileNames = cms.untracked.vstring(['root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/ExtendedPhase2TkBE/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_15k_evts.root'])
     process.mix.bunchspace = cms.int32(25)
     process.mix.minBunch = cms.int32(-12)
     process.mix.maxBunch = cms.int32(3)

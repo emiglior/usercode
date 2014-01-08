@@ -45,17 +45,17 @@ def set_global_var(sample):
     
     if (sample=="TTbar") | (sample=="ttbar") | (sample=="TTBar") :
 # CT     GENSIM_FILE = "file:/gr1_data/CMS/SLCHSimPhaseII/612_slhc8/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
-        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
+        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/ExtendedPhase2TkBE/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
     elif (sample=="MinBias") | (sample=="minbias") :
 # CT     GENSIM_FILE = "file:/gr1_data/CMS/SLCHSimPhaseII/612_slhc8/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_15k_evts.root"
-        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_15k_evts.root"
+        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/ExtendedPhase2TkBE/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_15k_evts.root"
     elif (sample=="IsoMuons") | (sample=="muons") | (sample=="Muons") :
 # CT     GENSIM_FILE = "file:/gr1_data/CMS/SLCHSimPhaseII/612_slhc8/ParticleGun/step1_FourMuPartGun_100kEvents.root"
-        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/ParticleGun/step1_FourMuPartGun_100kEvents.root"
+        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/ExtendedPhase2TkBE/ParticleGun/step1_FourMuPartGun_100kEvents.root"
     else :
         print "unrecongnize input sample, using default (=TTbar)"
 # CT     GENSIM_FILE = "file:gr1_data/CMS/SLCHSimPhaseII/612_slhc8/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
-        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
+        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/ExtendedPhase2TkBE/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
 
 ###### method to create recursively directories on EOS  #############
     
@@ -264,7 +264,7 @@ class Job:
         fout.write("# Run CMSSW for DIGI-to-DQM steps \n")
         fout.write("cd "+os.path.join("AuxCode","SLHCSimPhase2","test")+"\n")  
         fout.write("cmsRun step_digitodqmvalidation_PUandAge.py maxEvents=${maxevents} firstEvent=${firstevent} BPixThr=${bpixthr} PixelCPE=${pixelcpe} InputFileName=${inputgensimfilename} OutFileName=${outfilename} PUScenario=${puscenario} AgeingScenario=${ageing} \n")
-        fout.write("cp step_digitodqmvalidation_PUandAge.py ${OUT_DIR} \n")
+        fout.write("cmsStage step_digitodqmvalidation_PUandAge.py ${OUT_DIR}/step_digitodqmvalidation_PUandAge.py  \n")
         fout.write("ls -lh . \n")
         fout.write(" # retrieve the outputs \n")
 #        fout.write("for RootOutputFile in $(ls *root ); do cp  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
