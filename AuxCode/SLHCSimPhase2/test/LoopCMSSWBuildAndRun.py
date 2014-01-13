@@ -44,17 +44,13 @@ def set_global_var(sample):
     CMSSW_VER="CMSSW_6_1_2_SLHC8_patch3"
     
     if (sample=="TTbar") | (sample=="ttbar") | (sample=="TTBar") :
-# CT     GENSIM_FILE = "file:/gr1_data/CMS/SLCHSimPhaseII/612_slhc8/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
         GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/ExtendedPhase2TkBE/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
     elif (sample=="MinBias") | (sample=="minbias") :
-# CT     GENSIM_FILE = "file:/gr1_data/CMS/SLCHSimPhaseII/612_slhc8/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_15k_evts.root"
         GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/ExtendedPhase2TkBE/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_15k_evts.root"
     elif (sample=="IsoMuons") | (sample=="muons") | (sample=="Muons") :
-# CT     GENSIM_FILE = "file:/gr1_data/CMS/SLCHSimPhaseII/612_slhc8/ParticleGun/step1_FourMuPartGun_100kEvents.root"
         GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/ExtendedPhase2TkBE/ParticleGun/step1_FourMuPartGun_100kEvents.root"
     else :
         print "unrecongnize input sample, using default (=TTbar)"
-# CT     GENSIM_FILE = "file:gr1_data/CMS/SLCHSimPhaseII/612_slhc8/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
         GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/ExtendedPhase2TkBE/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
 
 ###### method to create recursively directories on EOS  #############
@@ -150,13 +146,10 @@ class Job:
 #        fout.write("#PBS -l mem=5gb \n")
         fout.write("#BSUB -L /bin/sh \n")       
         fout.write("#BSUB -J "+self.job_basename+"\n")
-# CT        fout.write("#BSUB -e "+os.path.join(LOG_DIR,self.job_basename)+".err \n")
-# CT       fout.write("#BSUB -o "+os.path.join(LOG_DIR,self.job_basename)+".out \n")
-# CT       fout.write("#BSUB -q gr1cmsq \n")
         fout.write("#BSUB -oo "+os.path.join(LOG_DIR,self.job_basename)+".log \n") # LXBATCH
         fout.write("#BSUB -q cmscaf1nd \n")                                        # LXBATCH
         fout.write("#BSUB -R \"rusage[mem=5000]\"\n")
-# <<<<<<<<< CT        
+# <<<<<<<<< LXBATCH        
         fout.write("### Auto-Generated Script by LoopCMSSWBuildAndRun.py ### \n")
         fout.write("JobName="+self.job_basename+" \n")
         fout.write("outfilename="+self.job_basename+".root"+" \n")
@@ -183,19 +176,17 @@ class Job:
 #       fout.write("echo '$PBS_ENVIRONMENT is ' $PBS_ENVIRONMENT \n")
         fout.write("if [ ! \"$LSB_JOBID\" = \"\" ]; then \n")
         fout.write("echo \"I AM IN BATCH\" \n")
-# CT       fout.write("mkdir -p /tmp/$USER/$LSB_JOBID \n")
-# CT       fout.write("export HOME=/tmp/$USER/$LSB_JOBID \n")
         fout.write("export HOME=$WORKDIR \n") # LXBATCH
         fout.write("cd \n")
         fout.write("fi \n")
-# <<<<<<<<< CT
+# <<<<<<<<< LXBATCH
         
         fout.write("export SCRAM_ARCH=slc5_amd64_gcc472 \n")
         fout.write("# Setup variables   \n")
 # >>>>>>>>> BA
 #        fout.write("VO_CMS_SW_DIR=/cvmfs/cms.cern.ch \n")
 #        fout.write("VO_CMS_SW_DIR=/swcms_slc5/CMSSW \n")
-# <<<<<<<<< CT
+# <<<<<<<<< LXBATCH
 #        fout.write("source $VO_CMS_SW_DIR/cmsset_default.sh \n")  # LXBATCH
 
         fout.write("cmssw_ver="+CMSSW_VER+" \n")
@@ -210,7 +201,7 @@ class Job:
 # >>>>>>>>> BA
 #       fout.write("if [ \"$PBS_ENVIRONMENT\" == \"PBS_BATCH\" ]; then \n")
         fout.write("if [ ! \"$LSB_JOBID\" = \"\" ]; then \n")
-# <<<<<<<<< CT
+# <<<<<<<<< LXBATCH
         fout.write("cd \n")
         fout.write("# git config needed to avoid \n")
         fout.write("# error: SSL certificate problem: unable to get local issuer certificate while accessing \n")
@@ -237,7 +228,7 @@ class Job:
         fout.write("git pull https://github.com/brownsonian/cmssw SmallPitch_on612 \n")
         fout.write("### 1 ended  \n")
         
-        fout.write("git clone -b 612_slhc8 git://github.com/emiglior/usercode.git \n")
+        fout.write("git clone -b 612_slhc8_phase2 git://github.com/emiglior/usercode.git \n")
         fout.write("mv usercode/AuxCode .\n")
         fout.write("mv usercode/RecoLocalTracker .\n")
         fout.write("rm -fr usercode \n")
@@ -279,9 +270,8 @@ class Job:
         os.system("chmod u+x " + os.path.join(self.pbs_dir,'jobs',self.output_PBS_name))
 # >>>>>>>>> BA
 #        os.system("qsub < "+os.path.join(self.pbs_dir,'jobs',self.output_PBS_name))
-# CT        os.system("/sw/lsf/7.0/linux2.6-glibc2.3-x86_64/bin/bsub < "+os.path.join(self.pbs_dir,'jobs',self.output_PBS_name))
         os.system("bsub < "+os.path.join(self.pbs_dir,'jobs',self.output_PBS_name)) #LXBATCH
-# <<<<<<<<< CT
+# <<<<<<<<< LXBATCH
 
 #################
 def main():            
