@@ -1,5 +1,85 @@
 #!/usr/bin/python
 import ROOT
+import math
+
+###############
+def setStyle():
+###############
+    ROOT.gStyle.SetTitleX(0.55)
+    ROOT.gStyle.SetTitleAlign(23)
+    #  TH1::StatOverflows(kTRUE)
+    ROOT.gStyle.SetOptTitle(1)
+    ROOT.gStyle.SetOptStat("e")
+    ROOT.gStyle.SetPadTopMargin(0.08)
+    ROOT.gStyle.SetPadBottomMargin(0.10)
+    ROOT.gStyle.SetPadLeftMargin(0.18)
+    ROOT.gStyle.SetPadRightMargin(0.05)
+    ROOT.gStyle.SetPadBorderMode(0)
+    ROOT.gStyle.SetTitleFillColor(10)
+    ROOT.gStyle.SetTitleFont(42)
+    ROOT.gStyle.SetTitleTextColor(ROOT.kBlue)
+    ROOT.gStyle.SetTitleFontSize(0.06)
+    ROOT.gStyle.SetTitleBorderSize(0)
+    ROOT.gStyle.SetStatColor(ROOT.kWhite)
+    ROOT.gStyle.SetStatFont(42)
+    ROOT.gStyle.SetStatFontSize(0.05)
+    ROOT.gStyle.SetStatTextColor(1)
+    ROOT.gStyle.SetStatFormat("6.4g")
+    ROOT.gStyle.SetStatBorderSize(1)
+    ROOT.gStyle.SetPadTickX(1)  #To get tick marks on the opposite side of the frame
+    ROOT.gStyle.SetPadTickY(1)
+    ROOT.gStyle.SetPadBorderMode(0)
+    ROOT.gStyle.SetOptFit(1)
+    ROOT.gStyle.SetNdivisions(510)
+
+
+############################
+def getExtrema(h1array):
+############################
+    the_max = 0.
+    the_min =999.
+
+    for h1 in h1array:
+        this_max = h1.GetMaximum()
+        this_min = h1.GetMinimum();
+        if this_max>the_max:
+            the_max = this_max
+        if this_min<the_min:
+            the_min = this_min
+        
+# print "Minimum: ", the_min ", Maximum: ", the_max
+    return the_min, the_max
+
+
+######################################################
+def MakeNiceTrendPlotStyle( hist, color, the_extrema):
+######################################################
+    colors = [4,2,2,6]
+    markers = [20,24,24,25]
+    styles = [1,2,1,9]
+    hist.SetStats(ROOT.kFALSE)  
+    hist.GetXaxis().CenterTitle(ROOT.kTRUE)
+    hist.GetYaxis().CenterTitle(ROOT.kTRUE)
+    hist.GetXaxis().SetTitleFont(42) 
+    hist.GetYaxis().SetTitleFont(42)  
+    hist.GetXaxis().SetTitleSize(0.065)
+    hist.GetYaxis().SetTitleSize(0.065)
+    hist.GetXaxis().SetTitleOffset(0.75)
+    hist.GetYaxis().SetTitleOffset(1.3)
+    hist.GetXaxis().SetLabelFont(42)
+    hist.GetYaxis().SetLabelFont(42)
+    hist.GetYaxis().SetLabelSize(.06)
+    hist.GetXaxis().SetLabelSize(.05)
+    hist.SetMarkerSize(1.5)
+    if color == 0:
+        hist.SetMarkerStyle(markers[color])
+    hist.SetLineColor(colors[color])
+    hist.SetLineStyle(styles[color])
+    hist.SetLineWidth(3)
+    hist.SetMarkerColor(colors[color])
+    hist.GetYaxis().SetRangeUser(the_extrema[0]*0.9,the_extrema[1]*1.1)
+
+##
 
 #####################
 def getTH1cdf(h1_in):
@@ -21,8 +101,11 @@ def getTH1cdf(h1_in):
     return cdf
 
 #########################
-def getTH1GausFit(h1_in):
+def getTH1GausFit(h1_in, pad):
 #######################
+    pad.cd()
+    pad.SetLogy()
+
 # fit with gaussian (two-steps) and return mu and sigma
     xmin = h1_in.GetXaxis().GetXmin()
     xmax = h1_in.GetXaxis().GetXmax()
@@ -283,41 +366,129 @@ def main():
                     resY_qall_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hy-pixel_recHit.y))
 
     ### fill the final histograms
+    # ceil(x): the smallest integer value greater than or equal to x (NB return a float)
+    w = math.ceil(math.sqrt(h1_eta.GetNbinsX()))
+    h = math.ceil(n_eta_bins/w)
+    #    print int(w), int(h)
+
+    c1_rPhi_qall = ROOT.TCanvas("c1_rPhi_qall","c1_rPhi_qall",900,900)
+    c1_rPhi_qall.SetFillColor(ROOT.kWhite)
+    c1_rPhi_qall.Divide(int(w),int(h))
+    c1_rPhi_qlow = ROOT.TCanvas("c1_rPhi_qlow","c1_rPhi_qlow",900,900)
+    c1_rPhi_qlow.SetFillColor(ROOT.kWhite)
+    c1_rPhi_qlow.Divide(int(w),int(h))
+    c1_rPhi_qhigh = ROOT.TCanvas("c1_rPhi_qhigh","c1_rPhi_qhigh",900,900)
+    c1_rPhi_qhigh.SetFillColor(ROOT.kWhite)
+    c1_rPhi_qhigh.Divide(int(w),int(h))
+
+    c1_z_qall = ROOT.TCanvas("c1_z_qall","c1_z_qall",900,900)
+    c1_z_qall.SetFillColor(ROOT.kWhite)
+    c1_z_qall.Divide(int(w),int(h))
+    c1_z_qlow = ROOT.TCanvas("c1_z_qlow","c1_z_qlow",900,900)
+    c1_z_qlow.SetFillColor(ROOT.kWhite)
+    c1_z_qlow.Divide(int(w),int(h))
+    c1_z_qhigh = ROOT.TCanvas("c1_z_qhigh","c1_z_qhigh",900,900)
+    c1_z_qhigh.SetFillColor(ROOT.kWhite)
+    c1_z_qhigh.Divide(int(w),int(h))
 
     # initialize the counter (there is only one instance of the function getTH1GausFit)
     getTH1GausFit.icnt = 0 
     for i in xrange(h1_eta.GetNbinsX()):
-
-        sigma = getTH1GausFit(resX_qall_inEtaBinTH1[i])[1]
+        c1_rPhi_qall.cd(i+1)
+        mu, sigma = getTH1GausFit(resX_qall_inEtaBinTH1[i], c1_rPhi_qall.GetPad(i+1))
         h_resRPhivseta_qall.SetBinContent(i+1,sigma)
-        mu = getTH1GausFit(resX_qall_inEtaBinTH1[i])[0]
         h_biasRPhivseta_qall.SetBinContent(i+1,mu)
-        
-        sigma = getTH1GausFit(resX_qlow_inEtaBinTH1[i])[1]
+
+        c1_rPhi_qlow.cd(i+1)        
+        mu, sigma = getTH1GausFit(resX_qlow_inEtaBinTH1[i], c1_rPhi_qlow.GetPad(i+1))
         h_resRPhivseta_qlow.SetBinContent(i+1,sigma)
-        mu = getTH1GausFit(resX_qlow_inEtaBinTH1[i])[0]
         h_biasRPhivseta_qlow.SetBinContent(i+1,mu)
 
-        sigma = getTH1GausFit(resX_qhigh_inEtaBinTH1[i])[1]
+        c1_rPhi_qhigh.cd(i+1)        
+        mu, sigma = getTH1GausFit(resX_qhigh_inEtaBinTH1[i], c1_rPhi_qhigh.GetPad(i+1))
         h_resRPhivseta_qhigh.SetBinContent(i+1,sigma)
-        mu = getTH1GausFit(resX_qhigh_inEtaBinTH1[i])[0]
         h_biasRPhivseta_qhigh.SetBinContent(i+1,mu)
 
-        sigma = getTH1GausFit(resY_qall_inEtaBinTH1[i])[1]
+        c1_z_qall.cd(i+1)
+        mu, sigma = getTH1GausFit(resY_qall_inEtaBinTH1[i], c1_z_qall.GetPad(i+1))
         h_resZvseta_qall.SetBinContent(i+1,sigma)
-        mu = getTH1GausFit(resY_qall_inEtaBinTH1[i])[0]
         h_biasZvseta_qall.SetBinContent(i+1,mu)
 
-        sigma = getTH1GausFit(resY_qlow_inEtaBinTH1[i])[1]
+        c1_z_qlow.cd(i+1)        
+        mu, sigma = getTH1GausFit(resY_qlow_inEtaBinTH1[i], c1_z_qlow.GetPad(i+1))
         h_resZvseta_qlow.SetBinContent(i+1,sigma)
-        mu = getTH1GausFit(resY_qlow_inEtaBinTH1[i])[0]
         h_biasZvseta_qlow.SetBinContent(i+1,mu)
 
-        sigma = getTH1GausFit(resY_qhigh_inEtaBinTH1[i])[1]
+        c1_z_qhigh.cd(i+1)        
+        mu, sigma = getTH1GausFit(resY_qhigh_inEtaBinTH1[i], c1_z_qhigh.GetPad(i+1))
         h_resZvseta_qhigh.SetBinContent(i+1,sigma)
-        mu = getTH1GausFit(resY_qhigh_inEtaBinTH1[i])[0]
         h_biasZvseta_qhigh.SetBinContent(i+1,mu)
+
+
+    c1_rPhi_qall.SaveAs ("c1_rPhi_qall.pdf")
+    c1_rPhi_qlow.SaveAs ("c1_rPhi_qlow.pdf")
+    c1_rPhi_qhigh.SaveAs("c1_rPhi_qhigh.pdf")
+
+    c1_z_qall.SaveAs("c1_z_qall.pdf")
+    c1_z_qlow.SaveAs("c1_z_qlow.pdf")
+    c1_z_qhigh.SaveAs("c1_z_qhigh.pdf")
+
+# draw nice trend plots
+    setStyle()
+    cResVsEta = ROOT.TCanvas("cResVsEta","cResVsEta",1000,700)
+    cResVsEta.Divide(2,1)
+
+    lego = ROOT.TLegend(0.35,0.75,0.75,0.88)
+    lego.SetFillColor(10)
+    lego.SetTextSize(0.05)
+    lego.SetTextFont(42)
+    lego.SetFillColor(10)
+    lego.SetLineColor(10)
+    lego.SetShadowColor(10)
     
+    cResVsEta.cd(1)
+    rphi_arr = []
+    rphi_arr.append(h_resRPhivseta_qall)
+    rphi_arr.append(h_resRPhivseta_qlow)
+    rphi_arr.append(h_resRPhivseta_qhigh)
+  
+    the_extrema = getExtrema(rphi_arr)
+
+    MakeNiceTrendPlotStyle(h_resRPhivseta_qall,0,the_extrema)
+    h_resRPhivseta_qall.Draw("C")
+    h_resRPhivseta_qall.Draw("Psame")
+    MakeNiceTrendPlotStyle(h_resRPhivseta_qhigh,1,the_extrema)
+    h_resRPhivseta_qlow.Draw("Csame")
+    MakeNiceTrendPlotStyle(h_resRPhivseta_qlow,2,the_extrema)
+    h_resRPhivseta_qhigh.Draw("Csame")
+
+    lego.AddEntry(h_resRPhivseta_qall,"Q/#LTQ#GT<1.5") 
+    lego.AddEntry(h_resRPhivseta_qlow,"Q/#LTQ#GT<1.") 
+    lego.AddEntry(h_resRPhivseta_qhigh,"1.<Q/#LTQ#GT<1.5")
+    lego.Draw("same")
+    
+    cResVsEta.cd(2)
+    z_arr = []
+    z_arr.append(h_resZvseta_qall)
+    z_arr.append(h_resZvseta_qlow)
+    z_arr.append(h_resZvseta_qhigh)
+    
+    the_extrema = getExtrema(z_arr)
+  
+    MakeNiceTrendPlotStyle(h_resZvseta_qall,0,the_extrema)
+    h_resZvseta_qall.Draw("C")
+    h_resZvseta_qall.Draw("Psame")
+    MakeNiceTrendPlotStyle(h_resZvseta_qhigh,1,the_extrema)
+    h_resZvseta_qlow.Draw("Csame")
+    MakeNiceTrendPlotStyle(h_resZvseta_qlow,2,the_extrema)
+    h_resZvseta_qhigh.Draw("Csame")
+
+    
+    lego.Draw("same")
+    cResVsEta.SaveAs("rmsVsEta.png")
+    cResVsEta.SaveAs("rmsVsEta.pdf")
+    
+    #    
     output_root_file.Write()
     output_root_file.Close()
 
