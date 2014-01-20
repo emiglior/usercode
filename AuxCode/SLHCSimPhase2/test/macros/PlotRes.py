@@ -485,7 +485,7 @@ def main():
 
     
     lego.Draw("same")
-    cResVsEta.SaveAs("rmsVsEta.png")
+    cResVsEta.SaveAs("rmsVsEta.root")
     cResVsEta.SaveAs("rmsVsEta.pdf")
     
     #    
