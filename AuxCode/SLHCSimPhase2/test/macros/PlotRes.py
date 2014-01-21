@@ -435,8 +435,6 @@ def main():
 
 # draw nice trend plots
     setStyle()
-    cResVsEta = ROOT.TCanvas("cResVsEta","cResVsEta",1000,700)
-    cResVsEta.Divide(2,1)
 
     lego = ROOT.TLegend(0.35,0.75,0.75,0.88)
     lego.SetFillColor(10)
@@ -446,47 +444,50 @@ def main():
     lego.SetLineColor(10)
     lego.SetShadowColor(10)
     
-    cResVsEta.cd(1)
+    cResVsEta_1 = ROOT.TCanvas("cResVsEta_1","cResVsEta_1",500,700)
     rphi_arr = []
-    rphi_arr.append(h_resRPhivseta_qall)
+#    rphi_arr.append(h_resRPhivseta_qall)
     rphi_arr.append(h_resRPhivseta_qlow)
     rphi_arr.append(h_resRPhivseta_qhigh)
   
     the_extrema = getExtrema(rphi_arr)
 
-    MakeNiceTrendPlotStyle(h_resRPhivseta_qall,0,the_extrema)
-    h_resRPhivseta_qall.Draw("C")
-    h_resRPhivseta_qall.Draw("Psame")
+#    MakeNiceTrendPlotStyle(h_resRPhivseta_qall,0,the_extrema)
+#    h_resRPhivseta_qall.Draw("C")
+#    h_resRPhivseta_qall.Draw("Psame")
     MakeNiceTrendPlotStyle(h_resRPhivseta_qhigh,1,the_extrema)
-    h_resRPhivseta_qlow.Draw("Csame")
+    h_resRPhivseta_qlow.Draw("C")
     MakeNiceTrendPlotStyle(h_resRPhivseta_qlow,2,the_extrema)
     h_resRPhivseta_qhigh.Draw("Csame")
 
-    lego.AddEntry(h_resRPhivseta_qall,"Q/#LTQ#GT<1.5") 
+#    lego.AddEntry(h_resRPhivseta_qall,"Q/#LTQ#GT<1.5") 
     lego.AddEntry(h_resRPhivseta_qlow,"Q/#LTQ#GT<1.") 
     lego.AddEntry(h_resRPhivseta_qhigh,"1.<Q/#LTQ#GT<1.5")
+
     lego.Draw("same")
+    cResVsEta_1.SaveAs("rmsVsEta_rphi.root")
     
-    cResVsEta.cd(2)
+    cResVsEta_2 = ROOT.TCanvas("cResVsEta_2","cResVsEta_2",500,700)
     z_arr = []
-    z_arr.append(h_resZvseta_qall)
+#    z_arr.append(h_resZvseta_qall)
     z_arr.append(h_resZvseta_qlow)
     z_arr.append(h_resZvseta_qhigh)
     
     the_extrema = getExtrema(z_arr)
   
-    MakeNiceTrendPlotStyle(h_resZvseta_qall,0,the_extrema)
-    h_resZvseta_qall.Draw("C")
-    h_resZvseta_qall.Draw("Psame")
+ #   MakeNiceTrendPlotStyle(h_resZvseta_qall,0,the_extrema)
+ #   h_resZvseta_qall.Draw("C")
+ #   h_resZvseta_qall.Draw("Psame")
     MakeNiceTrendPlotStyle(h_resZvseta_qhigh,1,the_extrema)
-    h_resZvseta_qlow.Draw("Csame")
+    h_resZvseta_qlow.Draw("C")
     MakeNiceTrendPlotStyle(h_resZvseta_qlow,2,the_extrema)
     h_resZvseta_qhigh.Draw("Csame")
 
-    
     lego.Draw("same")
-    cResVsEta.SaveAs("rmsVsEta.png")
-    cResVsEta.SaveAs("rmsVsEta.pdf")
+    cResVsEta_2.SaveAs("rmsVsEta_rz.root")
+
+#    cResVsEta.SaveAs("rmsVsEta.png")
+#    cResVsEta.SaveAs("rmsVsEta.pdf")
     
     #    
     output_root_file.Write()
