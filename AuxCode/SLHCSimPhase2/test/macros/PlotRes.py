@@ -309,24 +309,24 @@ def main():
         # NB sin(theta) = tv3.Perp()/tv3.Mag()
         tv3 = ROOT.TVector3(pixel_recHit.gx, pixel_recHit.gy, pixel_recHit.gz)
     
-        # hitmap dor sanity check (phase1 subid=1/2 -> BPIX/FPIX, phase2 subdi=1/2 barrel/endcap)
+        # hitmap for sanity check (phase1 subid=1/2 -> BPIX/FPIX, phase2 subid=1/2 barrel/endcap)
         if (pixel_recHit.subid==1):
             h2_rzhitmapSubId1.Fill(tv3.z(),tv3.Perp())
         elif (pixel_recHit.subid==2): 
             h2_rzhitmapSubId2.Fill(tv3.z(),tv3.Perp())
 
         # BPIX only (layer 1)
-        if  (pixel_recHit.subid==1 and pixel_recHit.layer==1 ):
-            h1_eta.Fill(abs(tv3.Eta()))
+        if  (pixel_recHit.subid==1 and pixel_recHit.layer==1):
+            h1_eta.Fill(math.fabs(tv3.Eta()))
             h2_rzhitmap.Fill(tv3.z(),tv3.Perp())
-            hp_qvseta.Fill(abs(tv3.Eta()),pixel_recHit.q*0.001)
+            hp_qvseta.Fill(math.fabs(tv3.Eta()),pixel_recHit.q*0.001)
 
             # ionization corrected for incident angle (only central) 
-            if(abs(tv3.Eta())<0.25):
+            if(math.fabs(tv3.Eta())<0.25):
                 h1_qcorr.Fill(pixel_recHit.q*0.001*tv3.Perp()/tv3.Mag())
 
-            if(abs(tv3.Eta())<eta_max):
-                index = hp_qvseta_xAxis.FindBin(abs(tv3.Eta()))
+            if(math.fabs(tv3.Eta())<eta_max):
+                index = hp_qvseta_xAxis.FindBin(math.fabs(tv3.Eta()))
                 q_inEtaBinTH1[index-1].Fill(pixel_recHit.q*0.001)
                 nyVSq_inEtaBinTH2[index-1].Fill(pixel_recHit.q*0.001, min(pixel_recHit.spready,10.))
 
@@ -346,20 +346,20 @@ def main():
 
             # NB: at given eta   Qave -> Qave(eta=0)/sin(theta)
             if  pixel_recHit.q*0.001 < Qave*tv3.Mag()/tv3.Perp():
-                hp_resRPhivseta_qlow.Fill(abs(tv3.Eta()),pixel_recHit.hx-pixel_recHit.x)
-                hp_resZvseta_qlow.Fill(abs(tv3.Eta()),pixel_recHit.hy-pixel_recHit.y)
-                if(abs(tv3.Eta())<eta_max):
-                    index = hp_qvseta_xAxis.FindBin(abs(tv3.Eta()))
+                hp_resRPhivseta_qlow.Fill(math.fabs(tv3.Eta()),pixel_recHit.hx-pixel_recHit.x)
+                hp_resZvseta_qlow.Fill(math.fabs(tv3.Eta()),pixel_recHit.hy-pixel_recHit.y)
+                if(math.fabs(tv3.Eta())<eta_max):
+                    index = hp_qvseta_xAxis.FindBin(math.fabs(tv3.Eta()))
                     resX_qlow_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hx-pixel_recHit.x))
                     resY_qlow_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hy-pixel_recHit.y))
                     resX_qall_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hx-pixel_recHit.x))
                     resY_qall_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hy-pixel_recHit.y))
 
             elif  pixel_recHit.q*0.001 < 1.5*Qave*tv3.Mag()/tv3.Perp():
-                hp_resRPhivseta_qhigh.Fill(abs(tv3.Eta()),pixel_recHit.hx-pixel_recHit.x)
-                hp_resZvseta_qhigh.Fill(abs(tv3.Eta()),pixel_recHit.hy-pixel_recHit.y)
-                if(abs(tv3.Eta())<eta_max):
-                    index = hp_qvseta_xAxis.FindBin(abs(tv3.Eta()))
+                hp_resRPhivseta_qhigh.Fill(math.fabs(tv3.Eta()),pixel_recHit.hx-pixel_recHit.x)
+                hp_resZvseta_qhigh.Fill(math.fabs(tv3.Eta()),pixel_recHit.hy-pixel_recHit.y)
+                if(math.fabs(tv3.Eta())<eta_max):
+                    index = hp_qvseta_xAxis.FindBin(math.fabs(tv3.Eta()))
                     resX_qhigh_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hx-pixel_recHit.x))
                     resY_qhigh_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hy-pixel_recHit.y))
                     resX_qall_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hx-pixel_recHit.x))
@@ -370,6 +370,10 @@ def main():
     w = math.ceil(math.sqrt(h1_eta.GetNbinsX()))
     h = math.ceil(n_eta_bins/w)
     #    print int(w), int(h)
+
+    c1_qclus = ROOT.TCanvas("c1_qclus","c1_qclus",900,900)
+    c1_qclus.SetFillColor(ROOT.kWhite)
+    c1_qclus.Divide(int(w),int(h))
 
     c1_rPhi_qall = ROOT.TCanvas("c1_rPhi_qall","c1_rPhi_qall",900,900)
     c1_rPhi_qall.SetFillColor(ROOT.kWhite)
@@ -391,9 +395,31 @@ def main():
     c1_z_qhigh.SetFillColor(ROOT.kWhite)
     c1_z_qhigh.Divide(int(w),int(h))
 
+    # need to store TLines in a list otherwise only the lines for the last pad are kept on the canvas
+    line1 = []
+    line2 = []
     # initialize the counter (there is only one instance of the function getTH1GausFit)
     getTH1GausFit.icnt = 0 
     for i in xrange(h1_eta.GetNbinsX()):
+
+        # charge ditribution (not normalized)
+        # vertical lines are Qave/sin(theta) for the low/up edge of the bin (NB: Qave is normalized)
+        c1_qclus.cd(i+1)
+        q_inEtaBinTH1[i].Draw()
+        ymax = q_inEtaBinTH1[i].GetMaximum()
+        xlow = h1_eta.GetXaxis().GetBinLowEdge(i+1)
+        tmp1 = math.exp(-xlow)               # t=tg(theta/2) = exp(-eta)  
+        tmp2 = (1.0+tmp1*tmp1)/(2.0*tmp1)    # 1/sin(theta)=(1+t^2)/(2*t)
+        line1.append(ROOT.TLine(Qave*tmp2,0,Qave*tmp2,0.5*ymax))
+        line1[i].SetLineColor(ROOT.kRed)
+        line1[i].Draw('same')
+        xup = h1_eta.GetXaxis().GetBinUpEdge(i+1)
+        tmp1 = math.exp(-xup)               # t=tg(theta/2) = exp(-eta)  
+        tmp2 = (1.0+tmp1*tmp1)/(2.0*tmp1)   # 1/sin(theta)=(1+t^2)/(2*t)
+        line2.append(ROOT.TLine(Qave*tmp2,0,Qave*tmp2,0.5*ymax))
+        line2[i].SetLineColor(ROOT.kRed)
+        line2[i].Draw('same')
+
         c1_rPhi_qall.cd(i+1)
         mu, sigma = getTH1GausFit(resX_qall_inEtaBinTH1[i], c1_rPhi_qall.GetPad(i+1))
         h_resRPhivseta_qall.SetBinContent(i+1,sigma)
@@ -424,6 +450,7 @@ def main():
         h_resZvseta_qhigh.SetBinContent(i+1,sigma)
         h_biasZvseta_qhigh.SetBinContent(i+1,mu)
 
+    c1_qclus.SaveAs("c1_qclus.pdf")
 
     c1_rPhi_qall.SaveAs ("c1_rPhi_qall.pdf")
     c1_rPhi_qlow.SaveAs ("c1_rPhi_qlow.pdf")
