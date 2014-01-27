@@ -33,14 +33,16 @@ def set_global_var():
     
     global SCRAM_ARCH
     global CMSSW_VER
+    global LAUNCH_BASE
 
     USER = os.environ.get('USER')
     HOME = os.environ.get('HOME')
+    LAUNCH_BASE = os.environ.get('CMSSW_BASE')
     PBS_DIR = os.path.join(os.getcwd(),"PBS")
     LOG_DIR = os.path.join(os.getcwd(),"log")
     SCRAM_ARCH = "slc5_amd64_gcc472"
     CMSSW_VER="CMSSW_6_1_2_SLHC8_patch3"
-
+    
 ###### method to create recursively directories on EOS  #############
     
 def mkdir_eos(out_path):
@@ -65,7 +67,7 @@ class Job:
     """Main class to create and submit PBS jobs"""
 ###########################################################################
 
-    def __init__(self, job_id, maxevents, ageing, pixelrocrows, pixelroccols, bpixthr, bpixl0thickness):
+    def __init__(self, job_id, maxevents, ageing, pixelrocrows, pixelroccols, bpixthr, bpixl0thickness, myseed, islocal):
 ############################################################################################################################
         
         # store the job-ID (since it is created in a for loop)
@@ -82,15 +84,20 @@ class Job:
         self.bpixl0thickness=bpixl0thickness
 
         self.bpixthr=bpixthr
-        self.ageing=ageing        
+        self.ageing=ageing
+        self.myseed=myseed
+        self.islocal=islocal
+        self.launch_dir=LAUNCH_BASE
+
 # >>>>>>>>> BA
 #        self.out_dir=os.path.join("/lustre/cms/store/user",USER,"SLHCSimPhase2/out2","PixelROCRows_" +pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness,"BPixThr_"+bpixthr)
         self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/out","PixelROCRows_" +pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness,"BPixThr_"+bpixthr)
 # <<<<<<<<< LXBATCH
 #        os.system("mkdir -p "+self.out_dir)
-        mkdir_eos(self.out_dir)
+        if(self.job_id==1):
+            mkdir_eos(self.out_dir)
 
-        self.job_basename= 'pixelCPE_age' + self.ageing + '_PixelROCRows' + self.pixelrocrows + "_PixelROCCols" + self.pixelroccols +"_L0Thick" + self.bpixl0thickness + "_BPixThr" + self.bpixthr
+        self.job_basename= 'pixelCPE_age' + self.ageing + '_PixelROCRows' + self.pixelrocrows + "_PixelROCCols" + self.pixelroccols +"_L0Thick" + self.bpixl0thickness + "_BPixThr" + self.bpixthr +"_seed" +str(self.myseed)
         
         self.cfg_dir=None
         self.outputPSetName=None
@@ -126,17 +133,30 @@ class Job:
 #        fout.write("#PBS -q local \n")
         fout.write("#BSUB -L /bin/sh \n")       
         fout.write("#BSUB -J "+self.job_basename+"\n")
+# CT        fout.write("#BSUB -e "+os.path.join(LOG_DIR,self.job_basename)+".err \n")
+# CT       fout.write("#BSUB -o "+os.path.join(LOG_DIR,self.job_basename)+".out \n")
+# CT       fout.write("#BSUB -q gr1cmsq \n")
         fout.write("#BSUB -oo "+os.path.join(LOG_DIR,self.job_basename)+".log \n") # LXBATCH
         fout.write("#BSUB -q cmscaf1nd \n")                                        # LXBATCH
-# <<<<<<<<< LXBATCH        
+# <<<<<<<<< CT        
         fout.write("### Auto-Generated Script by LoopCMSSWBuildAndRun.py ### \n")
         fout.write("JobName="+self.job_basename+" \n")
         fout.write("OUT_DIR="+self.out_dir+" \n")
+        fout.write("islocal="+str(self.islocal)+" \n")
+
+        if(self.islocal):
+            fout.write("echo \"I AM IN LOCAL MODE\" \n")
+            fout.write("export PKG_DIR="+self.launch_dir+"/src/AuxCode/SLHCSimPhase2/test \n")
+        else:
+            fout.write("echo \"I AM NOT IN LOCAL MODE\" \n")
+            fout.write("export PKG_DIR=AuxCode/SLHCSimPhase2/test \n")
+
         fout.write("maxevents="+str(self.maxevents)+" \n")
         fout.write("pixelroccols="+self.pixelroccols+" \n")
         fout.write("pixelrocrows="+self.pixelrocrows+" \n")
         fout.write("ageing="+self.ageing+" \n")
         fout.write("bpixthr="+self.bpixthr+" \n")
+        fout.write("myseed="+str(self.myseed)+" \n")
         
 # >>>>>>>>> BA
 # specific for cmssusy.ba.infn.it https://www.ba.infn.it/pagine-utenti.html?task=viewpage&user_id=111&pageid=96
@@ -150,17 +170,19 @@ class Job:
 #       fout.write("echo '$PBS_ENVIRONMENT is ' $PBS_ENVIRONMENT \n")
         fout.write("if [ ! \"$LSB_JOBID\" = \"\" ]; then \n")
         fout.write("echo \"I AM IN BATCH\" \n")
+# CT       fout.write("mkdir -p /tmp/$USER/$LSB_JOBID \n")
+# CT       fout.write("export HOME=/tmp/$USER/$LSB_JOBID \n")
         fout.write("export HOME=$WORKDIR \n") # LXBATCH
         fout.write("cd \n")
         fout.write("fi \n")
-# <<<<<<<<< LXBATCH
+# <<<<<<<<< CT
                    
         fout.write("export SCRAM_ARCH=slc5_amd64_gcc472 \n")
         fout.write("# Setup variables   \n")
 # >>>>>>>>> BA
 #        fout.write("VO_CMS_SW_DIR=/cvmfs/cms.cern.ch \n")
 #        fout.write("VO_CMS_SW_DIR=/swcms_slc5/CMSSW \n")
-# <<<<<<<<< LXBATCH
+# <<<<<<<<< CT
 #        fout.write("source $VO_CMS_SW_DIR/cmsset_default.sh \n")  # LXBATCH
 
                                       
@@ -176,7 +198,7 @@ class Job:
 # >>>>>>>>> BA
 #       fout.write("if [ \"$PBS_ENVIRONMENT\" == \"PBS_BATCH\" ]; then \n")
         fout.write("if [ ! \"$LSB_JOBID\" = \"\" ]; then \n")
-# <<<<<<<<< LXBATCH
+# <<<<<<<<< CT
         fout.write("cd \n")
         fout.write("# git config needed to avoid \n")
         fout.write("# error: SSL certificate problem: unable to get local issuer certificate while accessing \n")
@@ -216,7 +238,7 @@ class Job:
         fout.write("# Eric Brownson's recipe to change the size of the pixels \n")
         fout.write("### 2: modify the topology \n")
         fout.write("# trackerStructureTopology_template_L0.xml   -> L0    BPIX is changed \n")
-        fout.write("sed -e \"s%PIXELROCROWS%"+self.pixelrocrows+"%g\" -e \"s%PIXELROCCOLS%"+self.pixelroccols+"%g\" AuxCode/SLHCSimPhase2/test/trackerStructureTopology_template_L0.xml > Geometry/TrackerCommonData/data/PhaseI/trackerStructureTopology.xml \n")
+        fout.write("sed -e \"s%PIXELROCROWS%"+self.pixelrocrows+"%g\" -e \"s%PIXELROCCOLS%"+self.pixelroccols+"%g\" ${PKG_DIR}/trackerStructureTopology_template_L0.xml > Geometry/TrackerCommonData/data/PhaseI/trackerStructureTopology.xml \n")
         fout.write("# Run CMSSW to complete the recipe for changing the size of the pixels \n")
 
         # recipe for phase I tracking  
@@ -231,22 +253,20 @@ class Job:
 
         # implement the recipe for changing the bpix sensor thickness from A. Tricomi
         fout.write("# A Tricomi's recipe to change the sensors thickness \n")
-        fout.write("sed -e \"s%BPIXLAYER0THICKNESS%"+self.bpixl0thickness+"%g\" AuxCode/SLHCSimPhase2/test/pixbarladderfull0_template.xml > Geometry/TrackerCommonData/data/PhaseI/pixbarladderfull0.xml \n")
+        fout.write("sed -e \"s%BPIXLAYER0THICKNESS%"+self.bpixl0thickness+"%g\" ${PKG_DIR}/pixbarladderfull0_template.xml > Geometry/TrackerCommonData/data/PhaseI/pixbarladderfull0.xml \n")
         
         fout.write("# Run CMSSW for GEN-NTUPLE steps \n")
         fout.write("cd "+os.path.join("AuxCode","SLHCSimPhase2","test")+"\n")  
-        fout.write("cmsRun TenMuE_0_200_cff_py_GEN_TO_RECO_TO_PixelCPE_NTUPLE.py maxEvents=${maxevents} BPixThr=${bpixthr} AgeingScenario=${ageing} \n")
+        fout.write("cmsRun ${PKG_DIR}/TenMuE_0_200_cff_py_GEN_TO_RECO_TO_PixelCPE_NTUPLE.py maxEvents=${maxevents} BPixThr=${bpixthr} AgeingScenario=${ageing} MySeed=${myseed} \n")
         fout.write("ls -lh . \n")
-        fout.write("cmsStage TenMuE_0_200_cff_py_GEN_TO_RECO_TO_PixelCPE_NTUPLE.py ${OUT_DIR}/TenMuE_0_200_cff_py_GEN_TO_RECO_TO_PixelCPE_NTUPLE.py \n")
-        fout.write("cd Brownson \n")
-        fout.write("make \n")
-        fout.write("ln -fs ../stdgrechitfullph1g_ntuple.root . \n")
-        fout.write("./res \n")        
+        fout.write("cmsStage -f ${PKG_DIR}/TenMuE_0_200_cff_py_GEN_TO_RECO_TO_PixelCPE_NTUPLE.py ${OUT_DIR}/TenMuE_0_200_cff_py_GEN_TO_RECO_TO_PixelCPE_NTUPLE.py \n")
+        #fout.write("cd Brownson \n")
+        #fout.write("make \n")
+        #fout.write("ln -fs ../stdgrechitfullph1g_ntuple.root . \n")
+        #fout.write("./res \n")        
         fout.write(" # retrieve the outputs \n")
-#        fout.write("for RootOutputFile in $(ls *root ); do cp  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
-#        fout.write("for EpsOutputFile in $(ls *eps ); do cp  ${EpsOutputFile}  ${OUT_DIR}/${EpsOutputFile} ; done \n")
-        fout.write("for RootOutputFile in $(ls *root ); do cmsStage  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
-        fout.write("for EpsOutputFile in $(ls *eps ); do cmsStage  ${EpsOutputFile}  ${OUT_DIR}/${EpsOutputFile} ; done \n")
+        fout.write("for RootOutputFile in $(ls *root ); do cmsStage -f  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
+        #fout.write("for EpsOutputFile in $(ls *eps ); do cmsStage -f ${EpsOutputFile}  ${OUT_DIR}/${EpsOutputFile} ; done \n")
         fout.close()
 
 ############################################
@@ -255,8 +275,9 @@ class Job:
         os.system("chmod u+x " + os.path.join(self.pbs_dir,'jobs',self.output_PBS_name))
 # >>>>>>>>> BA
 #        os.system("qsub < "+os.path.join(self.pbs_dir,'jobs',self.output_PBS_name))
+# CT        os.system("/sw/lsf/7.0/linux2.6-glibc2.3-x86_64/bin/bsub < "+os.path.join(self.pbs_dir,'jobs',self.output_PBS_name))
         os.system("bsub < "+os.path.join(self.pbs_dir,'jobs',self.output_PBS_name)) #LXBATCH
-# <<<<<<<<< LXBATCH
+# <<<<<<<<< CT
 
 #################
 def main():            
@@ -265,7 +286,9 @@ def main():
     desc="""This is a description of %prog."""
     parser = OptionParser(description=desc,version='%prog version 0.1')
     parser.add_option('-s','--submit',  help='job submitted', dest='submit', action='store_true', default=False)
-    parser.add_option('-n','--numberofevents',    help='number of events', dest='numberofevents', action='store',  default=1)
+    parser.add_option('-l','--local', help='reads local branch',dest='localmode',action='store_true', default=False)
+    parser.add_option('-n','--numberofevents', help='number of events', dest='numberofevents', action='store', default='1')
+    parser.add_option('-N','--jobsInTask', help='number of jobs in this task', dest='jobsInTask', action='store',default='500')  
     parser.add_option('-j','--jobname', help='task name', dest='jobname', action='store', default='myjob')
     parser.add_option('-r','--ROCRows',help='ROC Rows (default 80 -> du=100 um)', dest='rocrows', action='store', default='80')
     parser.add_option('-c','--ROCCols',help='ROC Cols (default 52 -> dv=150 um)', dest='roccols', action='store', default='52')
@@ -281,7 +304,8 @@ def main():
     mBPixthr = None
     mL0Thick = None
     mAgeing  = None
-
+    mJobsInTask=None
+ 
     ConfigFile = opts.inputconfig
     
     if ConfigFile is not None:
@@ -298,6 +322,7 @@ def main():
         mBPixThr   = ConfigSectionMap(config,"PixelConfiguration")['bpixthr']   
         mAgeing    = ConfigSectionMap(config,"PixelConfiguration")['ageing']    
         mNOfEvents = ConfigSectionMap(config,"JobConfiguration")['numberofevents']
+        mJobsInTask= opts.jobsInTask
 
     else :
 
@@ -311,8 +336,8 @@ def main():
         mBPixThr   = opts.bpixthr
         mAgeing    = opts.ageing
         mNOfEvents = opts.numberofevents
-
-
+        mJobsInTask= opts.jobsInTask
+     
 # check that chosen pixel size matches what is currently available in the trackerStructureTopology
 # https://twiki.cern.ch/twiki/bin/view/CMS/ExamplePhaseI#Changing_the_Pixel_Size
     if int(mRocRows) % 80:
@@ -331,6 +356,8 @@ def main():
     print "********************************************************"
     print "  Launching this script from : ",os.getcwd()
     print "- submitted                  : ",opts.submit
+    print "- isLocal version            : ",opts.localmode
+    print "- Jobs in Task               : ",mJobsInTask
     print "- Jobname                    : ",opts.jobname
     print "- ROCRows                    : ",mRocRows
     print "- ROCCols                    : ",mRocCols
@@ -343,14 +370,20 @@ def main():
     
     jobIndex=0
 
-    ajob=Job(opts.jobname, nEvents, mAgeing, mRocRows, mRocCols, mBPixThr, mL0Thick)
-    ajob.createThePBSFile()        
+    for theseed in range(1,int(mJobsInTask)+1):
 
-    out_dir = ajob.out_dir # save for later usage
+        #ajob=Job(opts.jobname, nEvents, mAgeing, mRocRows, mRocCols, mBPixThr, mL0Thick,theseed)
+        #ajob=Job(theseed, nEvents, mAgeing, mRocRows, mRocCols, mBPixThr, mL0Thick,theseed)
+        ajob=Job(theseed, nEvents, mAgeing, mRocRows, mRocCols, mBPixThr, mL0Thick, theseed, opts.localmode)
+        ajob.createThePBSFile()        
+
+        out_dir = ajob.out_dir # save for later usage
     
-    if opts.submit:
-        ajob.submit()
-        del ajob
+        if opts.submit:
+            ajob.submit()
+            del ajob
+
+        jobIndex+=1       
             
         
     #############################################
@@ -364,6 +397,38 @@ def main():
     print "- Output will be saved in   :",out_dir
     print "********************************************************"
 
+    #############################################
+    # prepare the script for the harvesting step
+    #############################################
+
+    harvestingname = PBS_DIR + "/jobs/PixelCPENtuple_"+opts.jobname+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+mBPixThr+"_L0Thick"+mL0Thick+".csh"
+    fout=open(harvestingname,"w")
+
+    fout.write("#!/bin/tcsh \n")
+    fout.write("OUT_DIR="+out_dir+" \n")
+    fout.write("mkdir /tmp/$USER/"+link_name+" \n")
+    fout.write("foreach inputfile (`cmsLs "+out_dir+"`) \n")
+    fout.write("set namebase=`echo $inputfile |awk '{split($0,b,\"/\"); print b[11]}'` \n")
+    fout.write("if (\"$namebase\" =~ *\"stdgrechitfullph1g\"*) then \n")
+    fout.write("echo \"copying: $COUNT $myDir/$namebase\" \n") 
+    fout.write("cmsStage $myDir/$namebase /tmp/$USER/"+link_name+" \n")
+    fout.write("@ COUNT+=1 \n")
+    fout.write("if ($COUNT == "+mJobsInTask+") then \n")
+    fout.write("break \n")
+    fout.write("endif \n")
+    fout.write("endif \n") 
+    fout.write("end \n")
+    fout.write("echo \"copied $COUNT files\" \n")
+    fout.write("cd /tmp/$USER/"+link_name+" \n")
+    fout.write("hadd stdgrechitfullph1g_ntuple_"+link_name+"*.root \n")
+    fout.write("cmsStage stdgrechitfullph1g_ntuple_"+link_name+"*.root /store/caf/user/$USER/SLHCSimPhase2/PixelNtuples \n")
+    fout.write("cd "+os.path.join("${CMSSW_BASE}","src","AuxCode","SLHCSimPhase2","test","Brownson")+"\n") 
+    fout.write("make \n")
+    fout.write("ln -fs /tmp/$USER/"+link_name+"/stdgrechitfullph1g_ntuple_"+link_name+"*.root ./stdgrechitfullph1g_ntuple.root \n")
+    fout.write("./res \n")
+    #fout.write("for RootOutputFile in $(ls *pdf ); do cp  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
+    fout.write("for EpsOutputFile in $(ls *eps ); do cp  ${EpsOutputFile}    ${OUT_DIR}/${EpsOutputFile} ; done \n")
+      
 if __name__ == "__main__":        
     main()
 
