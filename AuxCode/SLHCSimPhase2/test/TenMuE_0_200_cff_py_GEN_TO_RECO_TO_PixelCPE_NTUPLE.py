@@ -27,7 +27,15 @@ options.register('AgeingScenario',
                  VarParsing.VarParsing.varType.string,         # string, int, or float
                  "Ageing scenario (NoAgeing is default)")
 
+options.register('MySeed',
+                 1,
+                 VarParsing.VarParsing.multiplicity.singleton,
+                 VarParsing.VarParsing.varType.int,
+                 "my seed for the job (1 is default)")
+
 options.parseArguments()
+
+print "my seed is: ", options.MySeed
 
 process = cms.Process('RECO')
 
@@ -56,14 +64,29 @@ process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 process.MessageLogger.destinations = ['cout', 'cerr']
 process.MessageLogger.cerr.FwkReport.reportEvery = 50
 
+# configure seed
+process.RandomNumberGeneratorService.generator.initialSeed = cms.untracked.uint32(options.MySeed)
+process.RandomNumberGeneratorService.generator.engineName = cms.untracked.string('TRandom3')
+
+process.RandomNumberGeneratorService.VtxSmeared.initialSeed = cms.untracked.uint32(options.MySeed)
+process.RandomNumberGeneratorService.VtxSmeared.engineName = cms.untracked.string('TRandom3') 
+
+# set maximum events
 process.maxEvents = cms.untracked.PSet(
     input = cms.untracked.int32(options.maxEvents)
 )
 
-# Input source
-process.source = cms.Source("EmptySource")
+myFirstEvent = (options.maxEvents * options.MySeed)+1
+print "firs Event:",myFirstEvent
 
-process.options = cms.untracked.PSet()
+# Input source
+process.source = cms.Source("EmptySource",
+                            firstEvent = cms.untracked.uint32(myFirstEvent),
+                            firstLuminosityBlock = cms.untracked.uint32(options.MySeed+1)
+                            )
+
+process.options = cms.untracked.PSet(
+)
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
@@ -74,11 +97,15 @@ process.configurationMetadata = cms.untracked.PSet(
 
 # Output definition
 
+outrootfile='file:TenMuE_0_200_cff_py_GEN_SIM_RECO_age_'+str(options.AgeingScenario)+'_BPixThr_'+str(options.BPixThr)+'_evts_'+str(options.maxEvents)+'_evts_seed_'+str(options.MySeed)+'.root'
+outntuplefile='stdgrechitfullph1g_ntuple_age_'+str(options.AgeingScenario)+'_BPixThr_'+str(options.BPixThr)+'_evts_'+str(options.maxEvents)+'_evts_seed_'+str(options.MySeed)+'.root'
+print 'output file name:', outrootfile, outntuplefile
+
 process.FEVTDEBUGoutput = cms.OutputModule("PoolOutputModule",
     splitLevel = cms.untracked.int32(0),
     eventAutoFlushCompressedSize = cms.untracked.int32(5242880),
     outputCommands = process.FEVTDEBUGEventContent.outputCommands,
-    fileName = cms.untracked.string('file:TenMuE_0_200_cff_py_GEN_SIM_RECO.root'),
+    fileName = cms.untracked.string(outrootfile),
     dataset = cms.untracked.PSet(
         filterName = cms.untracked.string(''),
         dataTier = cms.untracked.string('GEN-SIM-RECO')
@@ -103,7 +130,8 @@ process.generator = cms.EDProducer("FlatRandomEGunProducer",
         MinEta = cms.double(-2.5),
         MinE = cms.double(0.0),
         MinPhi = cms.double(-3.14159265359),
-        MaxE = cms.double(200.0)
+        MaxE = cms.double(200.0),
+	MinPt = cms.double(0.9)
     ),
     Verbosity = cms.untracked.int32(0),
     psethack = cms.string('Ten mu e 0 to 200'),
@@ -135,7 +163,7 @@ process.ReadLocalMeasurement = cms.EDAnalyzer("NewStdHitNtuplizer",
    matchedRecHits = cms.InputTag("siStripMatchedRecHits","matchedRecHit"),
    ### if using simple (non-iterative) or old (as in 1_8_4) tracking
    trackProducer = cms.InputTag("generalTracks"),
-   OutputFile = cms.string("stdgrechitfullph1g_ntuple.root"),
+   OutputFile = cms.string(outntuplefile),
    ### for using track hit association
    associatePixel = cms.bool(True),
    associateStrip = cms.bool(False),
