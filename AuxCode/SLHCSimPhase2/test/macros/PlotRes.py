@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+import sys
 import ROOT
 import math
 
@@ -101,39 +102,49 @@ def getTH1cdf(h1_in):
     return cdf
 
 #########################
-def getTH1GausFit(h1_in, pad):
+def getTH1GausFit(h1_in, pad, chopt):
 #######################
     pad.cd()
     pad.SetLogy()
 
-# fit with gaussian (two-steps) and return mu and sigma
-    xmin = h1_in.GetXaxis().GetXmin()
-    xmax = h1_in.GetXaxis().GetXmax()
+    if chopt == "G":
+        # fit with gaussian (two-steps) and return mu and sigma
+        xmin = h1_in.GetXaxis().GetXmin()
+        xmax = h1_in.GetXaxis().GetXmax()
 
-    # Start with a fit on +-1 RMS
-    minfit = max(h1_in.GetMean() - h1_in.GetRMS(),xmin)
-    maxfit = min(h1_in.GetMean() + h1_in.GetRMS(),xmax)
+        # Start with a fit on +-1 RMS
+        minfit = max(h1_in.GetMean() - h1_in.GetRMS(),xmin)
+        maxfit = min(h1_in.GetMean() + h1_in.GetRMS(),xmax)
 
-# icnt is used to have a unique name for the TF1 
-    getTH1GausFit.icnt += 1
+        # icnt is used to have a unique name for the TF1 
+        getTH1GausFit.icnt += 1
 
-    nameF1 = "g"+str(getTH1GausFit.icnt)
-    g1 = ROOT.TF1(nameF1,"gaus",minfit,maxfit)
-    g1.SetLineColor(ROOT.kRed)
-    g1.SetLineWidth(2)
-    h1_in.Fit(g1,"RQ")
+        nameF1 = "g"+str(getTH1GausFit.icnt)
+        g1 = ROOT.TF1(nameF1,"gaus",minfit,maxfit)
+        g1.SetLineColor(ROOT.kRed)
+        g1.SetLineWidth(2)
+        h1_in.Fit(g1,"RQ")
   
-    g1.SetRange(minfit,maxfit)
-    h1_in.Fit(g1,"RQ")
+        g1.SetRange(minfit,maxfit)
+        h1_in.Fit(g1,"RQ")
 
-    # One more iteration
-    minfit = max(g1.GetParameter("Mean") - 2*g1.GetParameter("Sigma"),xmin)
-    maxfit = min(g1.GetParameter("Mean") + 2*g1.GetParameter("Sigma"),xmax)
-    g1.SetRange(minfit,maxfit)
-    h1_in.Fit(g1,"RQ")
+        # One more iteration
+        minfit = max(g1.GetParameter("Mean") - 2*g1.GetParameter("Sigma"),xmin)
+        maxfit = min(g1.GetParameter("Mean") + 2*g1.GetParameter("Sigma"),xmax)
+        g1.SetRange(minfit,maxfit)
+        h1_in.Fit(g1,"RQ")
 
-    mu = g1.GetParameter("Mean") 
-    sigma = g1.GetParameter("Sigma")
+        mu = g1.GetParameter("Mean") 
+        sigma = g1.GetParameter("Sigma")
+    elif chopt == "R":
+        h1_in.Draw() 
+        mu = h1_in.GetMean() 
+        sigma = h1_in.GetRMS()
+    else:
+        print "Unknown chopt in getTH1GausFit", chopt
+        mu = 0
+        sigma = 0
+
     return mu, sigma
 
 #####################
@@ -178,12 +189,36 @@ def declare_struct():
     };" )
 
 
-############
-def main():
-############
+###############
+def main(argv):
+###############
+    # toggle investigation of cluster breakage
+    # WARNING: VERY TIME CONSUMING!
+    investigate_cluster_breakage = True
+
     # input root file
-    input_root_file = ROOT.TFile('./stdgrechitfullph1g_ntuple_20kEvents.root')
-    input_tree = input_root_file.Get('PixelNtuple')    
+    try:
+        input_root_file = ROOT.TFile.Open(argv[0])
+    except:
+        print "No input file specified"
+        sys.exit()
+        
+    # option for the fit of the residuals
+    if len(argv)>1:
+        chopt = argv[1]
+    else:
+        chopt = "R"
+
+    input_tree = input_root_file.Get("PixelNtuple")
+    input_tree.Print()
+
+    if investigate_cluster_breakage:
+        # Create a new file + a clone of old tree in new file
+        skim_file = ROOT.TFile("tmp.root","RECREATE");
+        skim_input_tree = ROOT.TTree()
+        skim_input_tree = input_tree.CopyTree("pixel_recHit.subid==1 && pixel_recHit.layer==1")
+        skim_input_tree.Print()
+        skim_input_tree.AutoSave()
         
     # import the ROOT defined struct(s) in pyROOT
     declare_struct()
@@ -191,54 +226,76 @@ def main():
 
     # define the pyROOT classes and assign the address
     evt = evt_t()
-    input_tree.SetBranchAddress("evt",ROOT.AddressOf(evt,'run'))
     pixel_recHit = pixel_recHit_t()
-    input_tree.SetBranchAddress("pixel_recHit",ROOT.AddressOf(pixel_recHit,'q'))
+    if investigate_cluster_breakage:
+        skim_input_tree.SetBranchAddress("evt",ROOT.AddressOf(evt,"run"))        
+        skim_input_tree.SetBranchAddress("pixel_recHit",ROOT.AddressOf(pixel_recHit,"q"))
+    else:
+        input_tree.SetBranchAddress("evt",ROOT.AddressOf(evt,"run"))        
+        input_tree.SetBranchAddress("pixel_recHit",ROOT.AddressOf(pixel_recHit,"q"))
+
     
     # TH1
     n_eta_bins = 25
     eta_min = 0.
     eta_max = 2.5
     eta_span = (eta_max-eta_min)/n_eta_bins
-    output_root_file = ROOT.TFile('h1_out.root','RECREATE')
+    output_root_file = ROOT.TFile("PlotResHistos.root","RECREATE")
 
     ### hit maps
-    output_root_file.mkdir('hitmaps') 
-    output_root_file.cd('hitmaps') 
-    h1_eta = ROOT.TH1F('h1_eta','h1eta_rechit',n_eta_bins,eta_min,eta_max)
-    h2_rzhitmapSubId1 = ROOT.TH2F('h2_rzhitmapSubId1','rzhitmap_subid1; recHit z [cm]; recHit r [cm]',200,-300.,300.,150,0.,150.)
-    h2_rzhitmapSubId2 = ROOT.TH2F('h2_rzhitmapSubId2','rzhitmap_subid2; recHit z [cm]; recHit r [cm]',200,-300.,300.,150,0.,150.)    
-    h2_rzhitmap = ROOT.TH2F('h2_rzhitmap','rzhitmap; recHit z [cm]; recHit r [cm]',100,-50.,50.,100,2.5,5.)
+    output_root_file.mkdir("hitmaps") 
+    output_root_file.cd("hitmaps") 
+    h1_eta = ROOT.TH1F("h1_eta","h1eta_rechit",n_eta_bins,eta_min,eta_max)
+    h2_rzhitmapSubId1 = ROOT.TH2F("h2_rzhitmapSubId1","rzhitmap_subid1; recHit z [cm]; recHit r [cm]",200,-300.,300.,150,0.,150.)
+    h2_rzhitmapSubId2 = ROOT.TH2F("h2_rzhitmapSubId2","rzhitmap_subid2; recHit z [cm]; recHit r [cm]",200,-300.,300.,150,0.,150.)    
+    h2_rzhitmap = ROOT.TH2F("h2_rzhitmap","rzhitmap; recHit z [cm]; recHit r [cm]",100,-50.,50.,100,2.5,5.)
     
     ### ionization
     output_root_file.cd() 
-    output_root_file.mkdir('dEdx') 
-    output_root_file.cd('dEdx') 
-    hp_qvseta = ROOT.TProfile('hp_qvseta','hp_qvseta;#eta;Q [ke]',n_eta_bins,eta_min,eta_max)
+    output_root_file.mkdir("dEdx") 
+    output_root_file.cd("dEdx") 
+    hp_qvseta = ROOT.TProfile("hp_qvseta","hp_qvseta;#eta;Q [ke]",n_eta_bins,eta_min,eta_max)
     hp_qvseta_xAxis = hp_qvseta.GetXaxis() 
     
-    h1_qcorr  = ROOT.TH1F('h1_qcorr','h1_qcorr;Q_{corr} [ke];recHits',80,0.,400.)
+    h1_qcorr  = ROOT.TH1F("h1_qcorr","h1_qcorr;Q_{corr} [ke];recHits",80,0.,400.)
 
     q_inEtaBinTH1 = []
     nyVSq_inEtaBinTH2 = []
+    dz_closesthit_inEtaBinTH1 = []
+    spreadX_inEtaBinTH1 = []
+    spreadY_inEtaBinTH1 = []
     for i in range(n_eta_bins):
         eta_low = 0.+i*eta_span
         eta_high = eta_low+eta_span
         
-        hname = 'h1_q_EtaBin%d' % i
-        htitle = 'h1_q_Eta bin %d (%.2f < #eta < %.2f);Q [ke];recHits' % (i, eta_low, eta_high)
+        hname = "h1_q_EtaBin%d" % i
+        htitle = "h1_q_Eta bin %d (%.2f < #eta < %.2f);Q [ke];recHits" % (i, eta_low, eta_high)
         q_inEtaBinTH1.append( ROOT.TH1F(hname,htitle,80,0.,400.))
+
+        hname = "h1_spreadX_EtaBin%d" % i
+        htitle = "h1_spreadX_Eta bin %d (%.2f < #eta < %.2f); spreadX;recHits" % (i, eta_low, eta_high)
+        spreadX_inEtaBinTH1.append( ROOT.TH1F(hname,htitle,15,0.5,15.5))
+
+        hname = "h1_spreadY_EtaBin%d" % i
+        htitle = "h1_spreadY_Eta bin %d (%.2f < #eta < %.2f); spreadY;recHits" % (i, eta_low, eta_high)
+        spreadY_inEtaBinTH1.append( ROOT.TH1F(hname,htitle,15,0.5,15.5))
+
+
+        hname = "h1_dz_closesthit_EtaBin%d" % i
+        htitle = "h1_dz_closesthit_Eta bin %d (%.2f < #eta < %.2f); dz_{min} [#mum];recHits" % (i, eta_low, eta_high)
+        dz_closesthit_inEtaBinTH1.append( ROOT.TH1F(hname,htitle,100,0.,15000.))
         
-        hname = 'h2_nyVSq_EtaBin%d' % i
-        htitle = 'h2_nyVSq_Eta bin %d (%.2f < #eta < %.2f);Q [ke]; spreadY; recHits' % (i, eta_low, eta_high)
+        hname = "h2_nyVSq_EtaBin%d" % i
+        htitle = "h2_nyVSq_Eta bin %d (%.2f < #eta < %.2f);Q [ke]; spreadY; recHits" % (i, eta_low, eta_high)
         nyVSq_inEtaBinTH2.append( ROOT.TH2F(hname,htitle,80,0.,400.,11,-0.5,10.5))
+
 
     ### rPhi residuals 
     output_root_file.cd() 
-    output_root_file.mkdir('residualsX')         
-    output_root_file.cd('residualsX')         
-    hp_resRPhivseta_qlow = ROOT.TProfile('hp_resRPhivseta_qlow','hp_resRPhivseta_qlow;#eta;#Delta(R#phi) [cm]',n_eta_bins,eta_min,eta_max,'s')
-    hp_resRPhivseta_qhigh = ROOT.TProfile('hp_resRPhivseta_qhigh','hp_resRPhivseta_qhigh;#eta;#Delta(R#phi) [cm]',n_eta_bins,eta_min,eta_max,'s')
+    output_root_file.mkdir("residualsX")         
+    output_root_file.cd("residualsX")         
+    hp_resRPhivseta_qlow = ROOT.TProfile("hp_resRPhivseta_qlow","hp_resRPhivseta_qlow;#eta;#Delta(R#phi) [cm]",n_eta_bins,eta_min,eta_max,"s")
+    hp_resRPhivseta_qhigh = ROOT.TProfile("hp_resRPhivseta_qhigh","hp_resRPhivseta_qhigh;#eta;#Delta(R#phi) [cm]",n_eta_bins,eta_min,eta_max,"s")
 
     resX_qall_inEtaBinTH1 = []
     resX_qlow_inEtaBinTH1 = []
@@ -247,31 +304,39 @@ def main():
         eta_low = 0.+i*eta_span
         eta_high = eta_low+eta_span
         
-        hname = 'h1_resX_qall_EtaBin%d' % i
-        htitle = 'h1_resX_qall_Eta bin %d (%.2f < #eta < %.2f);[#mum];recHits' % (i, eta_low, eta_high)
+        hname = "h1_resX_qall_EtaBin%d" % i
+        htitle = "h1_resX_qall_Eta bin %d (%.2f < #eta < %.2f);[#mum];recHits" % (i, eta_low, eta_high)
         resX_qall_inEtaBinTH1.append( ROOT.TH1F(hname,htitle,100,-100.,100.))
-        hname = 'h1_resX_qlow_EtaBin%d' % i
-        htitle = 'h1_resX_qlow_Eta bin %d (%.2f < #eta < %.2f);[#mum];recHits' % (i, eta_low, eta_high)
+        hname = "h1_resX_qlow_EtaBin%d" % i
+        htitle = "h1_resX_qlow_Eta bin %d (%.2f < #eta < %.2f);[#mum];recHits" % (i, eta_low, eta_high)
         resX_qlow_inEtaBinTH1.append( ROOT.TH1F(hname,htitle,100,-100.,100.))
-        hname = 'h1_resX_qhigh_EtaBin%d' % i
-        htitle = 'h1_resX_qhigh_Eta bin %d (%.2f < #eta < %.2f);[#mum];recHits' % (i, eta_low, eta_high)
+        hname = "h1_resX_qhigh_EtaBin%d" % i
+        htitle = "h1_resX_qhigh_Eta bin %d (%.2f < #eta < %.2f);[#mum];recHits" % (i, eta_low, eta_high)
         resX_qhigh_inEtaBinTH1.append( ROOT.TH1F(hname,htitle,100,-100.,100.))
         
     # final histograms
-    h_resRPhivseta_qall  = ROOT.TH1F('h_resRPhivseta_qall','Barrel #varphi-Hit Resolution;|#eta|;gaussian standard deviation #sigma [#mum]',n_eta_bins,eta_min,eta_max)
-    h_resRPhivseta_qlow  = ROOT.TH1F('h_resRPhivseta_qlow','Barrel #varphi-Hit Resolution;|#eta|;gaussian standard deviation #sigma [#mum]',n_eta_bins,eta_min,eta_max)
-    h_resRPhivseta_qhigh = ROOT.TH1F('h_resRPhivseta_qhigh','Barrel #varphi-Hit Resolution;|#eta|;gaussian standard deviation #sigma [#mum]',n_eta_bins,eta_min,eta_max)
+    if chopt == "G":
+        extra_ytitle_res  = "gaussian stdDev #sigma [#mum]" 
+        extra_ytitle_bias = "gaussian #mu [#mum]"
+    else:
+        extra_ytitle_res  = "RMS [#mum]" 
+        extra_ytitle_bias = "mean [#mum]"
+
+            
+    h_resRPhivseta_qall  = ROOT.TH1F("h_resRPhivseta_qall", "Barrel #varphi-Hit Resolution;|#eta|;"+extra_ytitle_res,n_eta_bins,eta_min,eta_max)
+    h_resRPhivseta_qlow  = ROOT.TH1F("h_resRPhivseta_qlow", "Barrel #varphi-Hit Resolution;|#eta|;"+extra_ytitle_res,n_eta_bins,eta_min,eta_max)
+    h_resRPhivseta_qhigh = ROOT.TH1F("h_resRPhivseta_qhigh","Barrel #varphi-Hit Resolution;|#eta|;"+extra_ytitle_res,n_eta_bins,eta_min,eta_max)
     
-    h_biasRPhivseta_qall  = ROOT.TH1F('h_biasRPhivseta_qall','Barrel #varphi-Hit Bias;|#eta|;gaussian fit #mu [#mum]',n_eta_bins,eta_min,eta_max)
-    h_biasRPhivseta_qlow  = ROOT.TH1F('h_biasRPhivseta_qlow','Barrel #varphi-Hit Bias;|#eta|;gaussian fit #mu [#mum]',n_eta_bins,eta_min,eta_max)
-    h_biasRPhivseta_qhigh = ROOT.TH1F('h_biasRPhivseta_qhigh','Barrel #varphi-Hit Bias;|#eta|;gaussian fit #mu [#mum]',n_eta_bins,eta_min,eta_max)
+    h_biasRPhivseta_qall  = ROOT.TH1F("h_biasRPhivseta_qall", "Barrel #varphi-Hit Bias;|#eta|;"+extra_ytitle_bias,n_eta_bins,eta_min,eta_max)
+    h_biasRPhivseta_qlow  = ROOT.TH1F("h_biasRPhivseta_qlow", "Barrel #varphi-Hit Bias;|#eta|;"+extra_ytitle_bias,n_eta_bins,eta_min,eta_max)
+    h_biasRPhivseta_qhigh = ROOT.TH1F("h_biasRPhivseta_qhigh","Barrel #varphi-Hit Bias;|#eta|;"+extra_ytitle_bias,n_eta_bins,eta_min,eta_max)
 
     ### z residuals 
     output_root_file.cd() 
-    output_root_file.mkdir('residualsY')         
-    output_root_file.cd('residualsY')         
-    hp_resZvseta_qlow = ROOT.TProfile('hp_resZvseta_qlow','hp_resZvseta_qlow;#eta;#Delta(Z) [cm]',n_eta_bins,eta_min,eta_max,'s')
-    hp_resZvseta_qhigh = ROOT.TProfile('hp_resZvseta_qhigh','hp_resZvseta_qhigh;#eta;#Delta(Z) [cm]',n_eta_bins,eta_min,eta_max,'s')
+    output_root_file.mkdir("residualsY")         
+    output_root_file.cd("residualsY")         
+    hp_resZvseta_qlow = ROOT.TProfile("hp_resZvseta_qlow","hp_resZvseta_qlow;#eta;#Delta(Z) [cm]",n_eta_bins,eta_min,eta_max,"s")
+    hp_resZvseta_qhigh = ROOT.TProfile("hp_resZvseta_qhigh","hp_resZvseta_qhigh;#eta;#Delta(Z) [cm]",n_eta_bins,eta_min,eta_max,"s")
     
     resY_qall_inEtaBinTH1 = []
     resY_qlow_inEtaBinTH1 = []
@@ -280,30 +345,40 @@ def main():
         eta_low = 0.+i*eta_span
         eta_high = eta_low+eta_span
         
-        hname = 'h1_resY_qall_EtaBin%d' % i
-        htitle = 'h1_resY_qall_Eta bin %d (%.2f < #eta < %.2f);[#mum];recHits' % (i, eta_low, eta_high)
+        hname = "h1_resY_qall_EtaBin%d" % i
+        htitle = "h1_resY_qall_Eta bin %d (%.2f < #eta < %.2f);[#mum];recHits" % (i, eta_low, eta_high)
         resY_qall_inEtaBinTH1.append( ROOT.TH1F(hname,htitle,100,-100.,100.))
-        hname = 'h1_resY_qlow_EtaBin%d' % i
-        htitle = 'h1_resY_qlow_Eta bin %d (%.2f < #eta < %.2f);[#mum];recHits' % (i, eta_low, eta_high)
+        hname = "h1_resY_qlow_EtaBin%d" % i
+        htitle = "h1_resY_qlow_Eta bin %d (%.2f < #eta < %.2f);[#mum];recHits" % (i, eta_low, eta_high)
         resY_qlow_inEtaBinTH1.append( ROOT.TH1F(hname,htitle,100,-100.,100.))
-        hname = 'h1_resY_qhigh_EtaBin%d' % i
-        htitle = 'h1_resY_qhigh_Eta bin %d (%.2f < #eta < %.2f);[#mum];recHits' % (i, eta_low, eta_high)
+        hname = "h1_resY_qhigh_EtaBin%d" % i
+        htitle = "h1_resY_qhigh_Eta bin %d (%.2f < #eta < %.2f);[#mum];recHits" % (i, eta_low, eta_high)
         resY_qhigh_inEtaBinTH1.append( ROOT.TH1F(hname,htitle,100,-100.,100.))
 
-    # final histograms
-    
-    h_resZvseta_qall = ROOT.TH1F('h_resZvseta_qall','Barrel z-Hit Resolution;|#eta|;gaussian standard deviation #sigma [#mum]',n_eta_bins,eta_min,eta_max) 
-    h_resZvseta_qlow = ROOT.TH1F('h_resZvseta_qlow','Barrel z-Hit Resolution;|#eta|;gaussian standard deviation #sigma [#mum]',n_eta_bins,eta_min,eta_max) 
-    h_resZvseta_qhigh= ROOT.TH1F('h_resZvseta_qhigh','Barrel z-Hit Resolution;|#eta|;gaussian standard deviation #sigma [#mum]',n_eta_bins,eta_min,eta_max)
+    # final histograms    
+    h_resZvseta_qall = ROOT.TH1F("h_resZvseta_qall", "Barrel z-Hit Resolution;|#eta|;"+extra_ytitle_res,n_eta_bins,eta_min,eta_max) 
+    h_resZvseta_qlow = ROOT.TH1F("h_resZvseta_qlow", "Barrel z-Hit Resolution;|#eta|;"+extra_ytitle_res,n_eta_bins,eta_min,eta_max) 
+    h_resZvseta_qhigh= ROOT.TH1F("h_resZvseta_qhigh","Barrel z-Hit Resolution;|#eta|;"+extra_ytitle_res,n_eta_bins,eta_min,eta_max)
 
-    h_biasZvseta_qall = ROOT.TH1F('h_biasZvseta_qall','Barrel z-Hit Bias;|#eta|;gaussian fit #mu [#mum]',n_eta_bins,eta_min,eta_max) 
-    h_biasZvseta_qlow = ROOT.TH1F('h_biasZvseta_qlow','Barrel z-Hit Bias;|#eta|;gaussian fit #mu [#mum]',n_eta_bins,eta_min,eta_max) 
-    h_biasZvseta_qhigh= ROOT.TH1F('h_biasZvseta_qhigh','Barrel z-Hit Bias;|#eta|;gaussian fit #mu [#mum]',n_eta_bins,eta_min,eta_max)
+    h_biasZvseta_qall = ROOT.TH1F("h_biasZvseta_qall", "Barrel z-Hit Bias;|#eta|;"+extra_ytitle_bias,n_eta_bins,eta_min,eta_max) 
+    h_biasZvseta_qlow = ROOT.TH1F("h_biasZvseta_qlow", "Barrel z-Hit Bias;|#eta|;"+extra_ytitle_bias,n_eta_bins,eta_min,eta_max) 
+    h_biasZvseta_qhigh= ROOT.TH1F("h_biasZvseta_qhigh","Barrel z-Hit Bias;|#eta|;"+extra_ytitle_bias,n_eta_bins,eta_min,eta_max)
 
     ######## 1st loop on the tree
-    all_entries = input_tree.GetEntries()
+    if investigate_cluster_breakage:
+        all_entries = skim_input_tree.GetEntries()
+        all_entries = 500000 
+    else:
+        all_entries = input_tree.GetEntries()
+    print "all_entries ", all_entries
+    
     for this_entry in xrange(all_entries):
-        input_tree.GetEntry(this_entry)
+        if investigate_cluster_breakage:
+            skim_input_tree.GetEntry(this_entry)
+        else:
+            input_tree.GetEntry(this_entry)
+        if this_entry % 50000 == 0:
+            print "Procesing Event: ", this_entry
 
         # global position of the rechit
         # NB sin(theta) = tv3.Perp()/tv3.Mag()
@@ -321,24 +396,60 @@ def main():
             h2_rzhitmap.Fill(tv3.z(),tv3.Perp())
             hp_qvseta.Fill(math.fabs(tv3.Eta()),pixel_recHit.q*0.001)
 
-            # ionization corrected for incident angle (only central) 
+            # ionization corrected for incident angle (only central eta) 
             if(math.fabs(tv3.Eta())<0.25):
                 h1_qcorr.Fill(pixel_recHit.q*0.001*tv3.Perp()/tv3.Mag())
 
             if(math.fabs(tv3.Eta())<eta_max):
                 index = hp_qvseta_xAxis.FindBin(math.fabs(tv3.Eta()))
                 q_inEtaBinTH1[index-1].Fill(pixel_recHit.q*0.001)
+
+                spreadX_inEtaBinTH1[index-1].Fill(min(pixel_recHit.spreadx, 15))
+                spreadY_inEtaBinTH1[index-1].Fill(min(pixel_recHit.spready, 15))
+                
                 nyVSq_inEtaBinTH2[index-1].Fill(pixel_recHit.q*0.001, min(pixel_recHit.spready,10.))
+
+            # investigation of cluster breakage
+            # http://root.cern.ch/phpBB3/viewtopic.php?t=7804
+            if investigate_cluster_breakage:
+                distance3D_min = float("inf")
+                delta_gz = float("inf")
+                bpix_cut = ROOT.TCut("pixel_recHit.subid==1")
+                layer1_cut = ROOT.TCut("pixel_recHit.layer==1")
+                evtnum_cut = ROOT.TCut("evtnum == "+str(evt.evtnum))
+                elist = ROOT.TEntryList("elist","selection of entries with the same evtnum");
+                skim_input_tree.Draw(">>elist",evtnum_cut+bpix_cut+layer1_cut ,"entrylist")
+                # print evtnum_cut            
+                # print "---------------------"
+                for matched_entry in range(0,elist.GetN()):
+                    n = elist.Next()
+                    skim_input_tree.GetEntry(n)                    
+                    if  (pixel_recHit.subid==1 and pixel_recHit.layer==1):
+                      # debug 
+                      # print tv3.z(), pixel_recHit.gz, pixel_recHit.module 
+                        if tv3.z() != pixel_recHit.gz:
+                            tv3_tmp = ROOT.TVector3(pixel_recHit.gx, pixel_recHit.gy, pixel_recHit.gz)
+                            if (tv3_tmp-tv3).Mag() < distance3D_min: 
+                                distance3D_min = (tv3_tmp-tv3).Mag()
+                                delta_gz = tv3.z() - pixel_recHit.gz
+                        
+
+                dz_closesthit_inEtaBinTH1[index-1].Fill(min(15000,math.fabs(delta_gz)*10000)) # 15000 should not be hardcoded....
+
+
 
     # check where is the 70%/30% boundary in the distribution of the ionization corrected for incident angle
     output_root_file.cd() 
-    output_root_file.cd('dEdx') 
+    output_root_file.cd("dEdx") 
     h1_qcorr_norm = getTH1cdf(h1_qcorr)
     Qave = h1_qcorr.GetMean()
 
     ######## 2nd loop on the tree
     for this_entry in xrange(all_entries):
-        input_tree.GetEntry(this_entry)
+        if investigate_cluster_breakage:
+            skim_input_tree.GetEntry(this_entry)
+        else:
+            input_tree.GetEntry(this_entry)
         # BPIX only (layer 1)
         if (pixel_recHit.subid==1 and pixel_recHit.layer==1):
 
@@ -375,6 +486,14 @@ def main():
     c1_qclus.SetFillColor(ROOT.kWhite)
     c1_qclus.Divide(int(w),int(h))
 
+    c1_dzmin_clus = ROOT.TCanvas("c1_dzmin_clus","c1_dzmin_clus",900,900)
+    c1_dzmin_clus.SetFillColor(ROOT.kWhite)
+    c1_dzmin_clus.Divide(int(w),int(h))
+
+    c1_spreadXY = ROOT.TCanvas("c1_spreadXY","c1_spreadXY",900,900)
+    c1_spreadXY.SetFillColor(ROOT.kWhite)
+    c1_spreadXY.Divide(int(w),int(h))
+
     c1_rPhi_qall = ROOT.TCanvas("c1_rPhi_qall","c1_rPhi_qall",900,900)
     c1_rPhi_qall.SetFillColor(ROOT.kWhite)
     c1_rPhi_qall.Divide(int(w),int(h))
@@ -398,59 +517,95 @@ def main():
     # need to store TLines in a list otherwise only the lines for the last pad are kept on the canvas
     line1 = []
     line2 = []
+    line3 = []
+    line1s = []
+    line2s = []
     # initialize the counter (there is only one instance of the function getTH1GausFit)
     getTH1GausFit.icnt = 0 
     for i in xrange(h1_eta.GetNbinsX()):
 
-        # charge ditribution (not normalized)
+        ### charge distribution (not normalized)
         # vertical lines are Qave/sin(theta) for the low/up edge of the bin (NB: Qave is normalized)
         c1_qclus.cd(i+1)
         q_inEtaBinTH1[i].Draw()
+        q_inEtaBinTH1[i].SetMaximum(q_inEtaBinTH1[i].GetMaximum()*1.1)
         ymax = q_inEtaBinTH1[i].GetMaximum()
+
         xlow = h1_eta.GetXaxis().GetBinLowEdge(i+1)
         tmp1 = math.exp(-xlow)               # t=tg(theta/2) = exp(-eta)  
         tmp2 = (1.0+tmp1*tmp1)/(2.0*tmp1)    # 1/sin(theta)=(1+t^2)/(2*t)
-        line1.append(ROOT.TLine(Qave*tmp2,0,Qave*tmp2,0.5*ymax))
-        line1[i].SetLineColor(ROOT.kRed)
-        line1[i].Draw('same')
+        line1.append(ROOT.TLine(Qave*tmp2,0.6*ymax,Qave*tmp2,ymax))
+        line1[i].SetLineColor(ROOT.kMagenta)
+        line1[i].Draw("same")
+
         xup = h1_eta.GetXaxis().GetBinUpEdge(i+1)
         tmp1 = math.exp(-xup)               # t=tg(theta/2) = exp(-eta)  
         tmp2 = (1.0+tmp1*tmp1)/(2.0*tmp1)   # 1/sin(theta)=(1+t^2)/(2*t)
-        line2.append(ROOT.TLine(Qave*tmp2,0,Qave*tmp2,0.5*ymax))
-        line2[i].SetLineColor(ROOT.kRed)
-        line2[i].Draw('same')
+        line2.append(ROOT.TLine(Qave*tmp2,0.6*ymax,Qave*tmp2,ymax))
+        line2[i].SetLineColor(ROOT.kMagenta)
+        line2[i].Draw("same")
 
+        line3.append(ROOT.TLine(q_inEtaBinTH1[i].GetMean(),0,q_inEtaBinTH1[i].GetMean(),0.4*ymax))
+        line3[i].SetLineColor(ROOT.kRed)
+        line3[i].Draw("same")
+
+        ###
+        c1_spreadXY.cd(i+1)
+        spreadX_inEtaBinTH1[i].SetLineColor(ROOT.kRed)
+        spreadX_inEtaBinTH1[i].Draw()
+        spreadY_inEtaBinTH1[i].SetLineColor(ROOT.kBlue)
+        spreadY_inEtaBinTH1[i].Draw("same")
+
+        ymax = spreadX_inEtaBinTH1[i].GetMaximum()
+        
+        line1s.append(ROOT.TLine(spreadX_inEtaBinTH1[i].GetMean(),0,spreadX_inEtaBinTH1[i].GetMean(),0.4*ymax))
+        line1s[i].SetLineStyle(ROOT.kDotted)
+        line1s[i].SetLineColor(ROOT.kRed)
+        line1s[i].Draw("same")
+        line2s.append(ROOT.TLine(spreadY_inEtaBinTH1[i].GetMean(),0,spreadY_inEtaBinTH1[i].GetMean(),0.4*ymax))
+        line2s[i].SetLineStyle(ROOT.kDotted)
+        line2s[i].SetLineColor(ROOT.kBlue)
+        line2s[i].Draw("same")
+
+        
+        ### dz of the closest recHit
+        c1_dzmin_clus.cd(i+1)
+        dz_closesthit_inEtaBinTH1[i].Draw()
+
+        ### residuals
         c1_rPhi_qall.cd(i+1)
-        mu, sigma = getTH1GausFit(resX_qall_inEtaBinTH1[i], c1_rPhi_qall.GetPad(i+1))
+        mu, sigma = getTH1GausFit(resX_qall_inEtaBinTH1[i], c1_rPhi_qall.GetPad(i+1), chopt)
         h_resRPhivseta_qall.SetBinContent(i+1,sigma)
         h_biasRPhivseta_qall.SetBinContent(i+1,mu)
 
         c1_rPhi_qlow.cd(i+1)        
-        mu, sigma = getTH1GausFit(resX_qlow_inEtaBinTH1[i], c1_rPhi_qlow.GetPad(i+1))
+        mu, sigma = getTH1GausFit(resX_qlow_inEtaBinTH1[i], c1_rPhi_qlow.GetPad(i+1), chopt)
         h_resRPhivseta_qlow.SetBinContent(i+1,sigma)
         h_biasRPhivseta_qlow.SetBinContent(i+1,mu)
 
         c1_rPhi_qhigh.cd(i+1)        
-        mu, sigma = getTH1GausFit(resX_qhigh_inEtaBinTH1[i], c1_rPhi_qhigh.GetPad(i+1))
+        mu, sigma = getTH1GausFit(resX_qhigh_inEtaBinTH1[i], c1_rPhi_qhigh.GetPad(i+1), chopt)
         h_resRPhivseta_qhigh.SetBinContent(i+1,sigma)
         h_biasRPhivseta_qhigh.SetBinContent(i+1,mu)
 
         c1_z_qall.cd(i+1)
-        mu, sigma = getTH1GausFit(resY_qall_inEtaBinTH1[i], c1_z_qall.GetPad(i+1))
+        mu, sigma = getTH1GausFit(resY_qall_inEtaBinTH1[i], c1_z_qall.GetPad(i+1), chopt)
         h_resZvseta_qall.SetBinContent(i+1,sigma)
         h_biasZvseta_qall.SetBinContent(i+1,mu)
 
         c1_z_qlow.cd(i+1)        
-        mu, sigma = getTH1GausFit(resY_qlow_inEtaBinTH1[i], c1_z_qlow.GetPad(i+1))
+        mu, sigma = getTH1GausFit(resY_qlow_inEtaBinTH1[i], c1_z_qlow.GetPad(i+1), chopt)
         h_resZvseta_qlow.SetBinContent(i+1,sigma)
         h_biasZvseta_qlow.SetBinContent(i+1,mu)
 
         c1_z_qhigh.cd(i+1)        
-        mu, sigma = getTH1GausFit(resY_qhigh_inEtaBinTH1[i], c1_z_qhigh.GetPad(i+1))
+        mu, sigma = getTH1GausFit(resY_qhigh_inEtaBinTH1[i], c1_z_qhigh.GetPad(i+1), chopt)
         h_resZvseta_qhigh.SetBinContent(i+1,sigma)
         h_biasZvseta_qhigh.SetBinContent(i+1,mu)
 
     c1_qclus.SaveAs("c1_qclus.pdf")
+    c1_spreadXY.SaveAs("c1_spreadXY.pdf")
+    c1_dzmin_clus.SaveAs("c1_dzmin_clus.pdf")
 
     c1_rPhi_qall.SaveAs ("c1_rPhi_qall.pdf")
     c1_rPhi_qlow.SaveAs ("c1_rPhi_qlow.pdf")
@@ -522,4 +677,4 @@ def main():
 
 ##################################
 if __name__ == "__main__":        
-    main()
+    main(sys.argv[1:])

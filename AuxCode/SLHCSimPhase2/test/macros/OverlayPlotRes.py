@@ -18,6 +18,11 @@ def getModifiedTH1Fs(file, color, canvas):
         if ca.InheritsFrom('TH1F'):
             ca.SetMarkerColor(color)
             ca.SetLineColor(color)
+            ca.SetLineWidth(3)
+            ca.GetXaxis().SetLabelSize(0.07)
+            ca.GetYaxis().SetLabelSize(0.07)
+            ca.GetXaxis().SetTitleSize(0.07)
+            ca.GetYaxis().SetTitleSize(0.07)
             h1array.append(ca)
 
     return h1array
@@ -31,16 +36,19 @@ def main():
 
 ### overlay residuals in rphi
     # dictionary 
-    dict_rphi = {'rmsVsEta_rphi_A':ROOT.kBlack,\
-               'rmsVsEta_rphi_B':ROOT.kRed}
+    dict_rphi = {'rmsVsEta_rphi_phase1':ROOT.kBlack,\
+                 'rmsVsEta_rphi_phase1_v0':ROOT.kRed,\
+                 'rmsVsEta_rphi_phase1_v2':ROOT.kBlue}
     
-    legRMS_rphi = ROOT.TLegend(0.12,0.13,0.47,0.26)
+    legRMS_rphi = ROOT.TLegend(0.18,0.60,0.48,0.86)
     legRMS_rphi.SetFillColor(0)
     legRMS_rphi.SetTextFont(42)
-    legRMS_rphi.SetTextSize(0.03)
+    legRMS_rphi.SetTextSize(0.04)
     legRMS_rphi.SetBorderSize(0)
 
-    cRMSVsEta_rphi = ROOT.TCanvas('cRMSVsEta_rphi','cRMSVsEta_rphi',500,500)
+    cRMSVsEta_rphi = ROOT.TCanvas('cRMSVsEta_rphi','cRMSVsEta_rphi',800,600)
+    cRMSVsEta_rphi.SetLeftMargin(0.15)
+    cRMSVsEta_rphi.SetBottomMargin(0.15)
     cRMSVsEta_rphi.SetGridy()
     
     first = True
@@ -56,10 +64,10 @@ def main():
 
                 h1.GetXaxis().SetTitle('|#eta|')
                 h1.GetXaxis().CenterTitle(ROOT.kFALSE)
-
-                h1.GetYaxis().SetRangeUser(0,30)
-                h1.GetYaxis().SetTitleOffset(0.7)
-                h1.GetYaxis().SetTitle('[#mum]')
+                h1.GetXaxis().SetTitleOffset(1.)
+                h1.GetYaxis().SetRangeUser(0.,30.)
+                h1.GetYaxis().SetTitleOffset(1.)
+                h1.GetYaxis().SetTitle('RMS [#mum]')
                 h1.GetYaxis().CenterTitle(ROOT.kFALSE)
             else:
                 h1.Draw("Csame")
@@ -68,31 +76,49 @@ def main():
             # extraLabel should be set to describe the input dataset
             extraLabel = ' ' 
             if h1.GetLineColor() == ROOT.kBlack:
-                extraLabel += 'Text A '         
+                extraLabel += 'PhaseI'         
             elif h1.GetLineColor() == ROOT.kRed:
-                extraLabel += 'Text B '         
+                extraLabel += 'PhaseI_v0'         
+            elif h1.GetLineColor() == ROOT.kBlue:
+                extraLabel += 'PhaseI_v2 (*)'         
 
             if h1.GetLineStyle() == ROOT.kSolid:
                 legRMS_rphi.AddEntry(h1,'Q/Q_{av}<1'+extraLabel,'L') 
             elif h1.GetLineStyle() == ROOT.kDashed:
                 legRMS_rphi.AddEntry(h1,'1<Q/Q_{av}<1.5'+extraLabel,'L')
 
+            bv1 = ROOT.TBox(1.5,0.,2.5,30.)
+            bv1.SetFillColor(1)
+            bv1.SetFillColor(ROOT.kGray)
+            #bv1.SetFillStyle(3144)
+            bv1.Draw()       
+ 
+            tpv1 = ROOT.TPaveText(0.65,0.45,0.85,0.55,"NDC")
+            tpv1.SetFillColor(ROOT.kGray)
+            tpv1.SetTextFont(72)
+            tpv1.SetTextAlign(11)
+            tpv1.SetTextColor(ROOT.kBlue)
+            tpv1.AddText("Blinded")
+            tpv1.Draw("same")
 
     legRMS_rphi.Draw('same');
-    cRMSVsEta_rphi.SaveAs('foo_rphi.png')
+    cRMSVsEta_rphi.SaveAs('foo_rphi_vsv0.pdf')
 
 ### overlay residuals in rz
     # dictionary 
-    dict_rz = {'rmsVsEta_rz_A':ROOT.kBlack,\
-               'rmsVsEta_rz_B':ROOT.kRed}
+    dict_rz = {'rmsVsEta_rz_phase1':ROOT.kBlack,\
+               'rmsVsEta_rz_phase1_v0':ROOT.kRed,\
+               'rmsVsEta_rz_phase1_v2':ROOT.kBlue}
     
-    legRMS_rz = ROOT.TLegend(0.12,0.13,0.47,0.26)
+    legRMS_rz = ROOT.TLegend(0.18,0.60,0.48,0.86)
     legRMS_rz.SetFillColor(0)
     legRMS_rz.SetTextFont(42)
-    legRMS_rz.SetTextSize(0.03)
+    legRMS_rz.SetTextSize(0.04)
     legRMS_rz.SetBorderSize(0)
 
-    cRMSVsEta_rz = ROOT.TCanvas('cRMSVsEta_rz','cRMSVsEta_rz',500,500)
+    cRMSVsEta_rz = ROOT.TCanvas('cRMSVsEta_rz','cRMSVsEta_rz',800,600)
+    cRMSVsEta_rz.SetLeftMargin(0.15)
+    cRMSVsEta_rz.SetBottomMargin(0.15)
     cRMSVsEta_rz.SetGridy()
     
     first = True
@@ -108,10 +134,10 @@ def main():
 
                 h1.GetXaxis().SetTitle('|#eta|')
                 h1.GetXaxis().CenterTitle(ROOT.kFALSE)
-
-                h1.GetYaxis().SetRangeUser(0,30)
-                h1.GetYaxis().SetTitleOffset(0.7)
-                h1.GetYaxis().SetTitle('[#mum]')
+                h1.GetXaxis().SetTitleOffset(1.)
+                h1.GetYaxis().SetRangeUser(10.,40.)
+                h1.GetYaxis().SetTitleOffset(1.)
+                h1.GetYaxis().SetTitle('RMS [#mum]')
                 h1.GetYaxis().CenterTitle(ROOT.kFALSE)
             else:
                 h1.Draw("Csame")
@@ -120,18 +146,42 @@ def main():
             # extraLabel should be set to describe the input dataset
             extraLabel = ' ' 
             if h1.GetLineColor() == ROOT.kBlack:
-                extraLabel += 'Text A '         
+                extraLabel += 'PhaseI'         
             elif h1.GetLineColor() == ROOT.kRed:
-                extraLabel += 'Text B '         
+                extraLabel += 'PhaseI_v0'         
+            elif h1.GetLineColor() == ROOT.kBlue:
+                extraLabel += 'PhaseI_v2 (*)'         
 
             if h1.GetLineStyle() == ROOT.kSolid:
                 legRMS_rz.AddEntry(h1,'Q/Q_{av}<1'+extraLabel,'L') 
             elif h1.GetLineStyle() == ROOT.kDashed:
                 legRMS_rz.AddEntry(h1,'1<Q/Q_{av}<1.5'+extraLabel,'L')
 
+            # xl = 0.2 # "left" line
+            # xm = 0.4 # "middle" line
+            # xr = 0.6 # "right" line
+            # x1 = h1.GetXaxis().GetXmin()
+            # #y1 = h1.GetYaxis().GetXmin()
+            # y1 = cRMSVsEta_rz.GetUymin()
+            # x2 = h1.GetXaxis().GetXmax()
+            # #y2 = h1.GetYaxis().GetXmax()
+            # y2 = cRMSVsEta_rz.GetUymax()
 
-    legRMS_rz.Draw('same');
-    cRMSVsEta_rz.SaveAs('foo_rz.png')
+            bv = ROOT.TBox(1.5,10.,2.5,40.)
+            bv.SetFillColor(ROOT.kGray)
+            #bv.SetFillStyle(3005)
+            bv.Draw()    
+
+            tpv1 = ROOT.TPaveText(0.65,0.45,0.85,0.55,"NDC")
+            tpv1.SetFillColor(ROOT.kGray)
+            tpv1.SetTextFont(72)
+            tpv1.SetTextAlign(11)
+            tpv1.SetTextColor(ROOT.kBlue)
+            tpv1.AddText("Blinded")
+            tpv1.Draw("same")
+
+    legRMS_rz.Draw('same')
+    cRMSVsEta_rz.SaveAs('foo_rz_vsv0.pdf')
 
 
 ##################################
