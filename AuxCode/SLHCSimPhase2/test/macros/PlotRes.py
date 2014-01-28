@@ -434,7 +434,7 @@ def main(argv):
                                 delta_gz = tv3.z() - pixel_recHit.gz
                         
 
-                dz_closesthit_inEtaBinTH1[index-1].Fill(min(15000,math.fabs(delta_gz)*10000)) # 15000 should not be hardcoded....
+                dz_closesthit_inEtaBinTH1[index-1].Fill(min(14999,math.fabs(delta_gz)*10000)) # 15000 should not be hardcoded....
 
 
 
