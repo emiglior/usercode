@@ -273,11 +273,11 @@ def main(argv):
         q_inEtaBinTH1.append( ROOT.TH1F(hname,htitle,80,0.,400.))
 
         hname = "h1_spreadX_EtaBin%d" % i
-        htitle = "h1_spreadX_Eta bin %d (%.2f < #eta < %.2f); spreadX;recHits" % (i, eta_low, eta_high)
+        htitle = "h1_spreadX_Eta bin %d (%.2f < #eta < %.2f); spread;recHits" % (i, eta_low, eta_high)
         spreadX_inEtaBinTH1.append( ROOT.TH1F(hname,htitle,15,0.5,15.5))
 
         hname = "h1_spreadY_EtaBin%d" % i
-        htitle = "h1_spreadY_Eta bin %d (%.2f < #eta < %.2f); spreadY;recHits" % (i, eta_low, eta_high)
+        htitle = "h1_spreadY_Eta bin %d (%.2f < #eta < %.2f); spread;recHits" % (i, eta_low, eta_high)
         spreadY_inEtaBinTH1.append( ROOT.TH1F(hname,htitle,15,0.5,15.5))
 
 
