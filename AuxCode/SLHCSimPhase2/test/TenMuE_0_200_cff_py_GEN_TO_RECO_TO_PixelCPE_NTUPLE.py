@@ -124,7 +124,8 @@ process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:upgrade2017', '')
 
 process.generator = cms.EDProducer("FlatRandomEGunProducer",
     PGunParameters = cms.PSet(
-        PartID = cms.vint32(-13, -13, -13, -13, -13),
+        #PartID = cms.vint32(-13, -13, -13, -13, -13),
+	PartID = cms.vint32(-13),
         MaxEta = cms.double(2.5),
         MaxPhi = cms.double(3.14159265359),
         MinEta = cms.double(-2.5),
@@ -135,7 +136,7 @@ process.generator = cms.EDProducer("FlatRandomEGunProducer",
     ),
     Verbosity = cms.untracked.int32(0),
     psethack = cms.string('Ten mu e 0 to 200'),
-    AddAntiParticle = cms.bool(True),
+    AddAntiParticle = cms.bool(True),				   
     firstRun = cms.untracked.uint32(1)
 )
 

@@ -55,7 +55,7 @@ def mkdir_eos(out_path):
             (out, err) = p.communicate()
             p.wait()
 
-# now check that the directory exists
+    # now check that the directory exists
     p = subprocess.Popen(["cmsLs",out_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     (out, err) = p.communicate()
     p.wait()
@@ -89,11 +89,8 @@ class Job:
         self.islocal=islocal
         self.launch_dir=LAUNCH_BASE
 
-# >>>>>>>>> BA
-#        self.out_dir=os.path.join("/lustre/cms/store/user",USER,"SLHCSimPhase2/out2","PixelROCRows_" +pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness,"BPixThr_"+bpixthr)
         self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/out","PixelROCRows_" +pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness,"BPixThr_"+bpixthr)
-# <<<<<<<<< LXBATCH
-#        os.system("mkdir -p "+self.out_dir)
+
         if(self.job_id==1):
             mkdir_eos(self.out_dir)
 
@@ -102,14 +99,14 @@ class Job:
         self.cfg_dir=None
         self.outputPSetName=None
 
-# PBS variables        
+        # PBS variables        
         self.output_PBS_name=None
 
 ###############################
     def createThePBSFile(self):
 ###############################
 
-# directory to store the PBS to be submitted
+        # directory to store the PBS to be submitted
         self.pbs_dir = PBS_DIR
         if not os.path.exists(self.pbs_dir):
             os.makedirs(self.pbs_dir)
@@ -125,32 +122,17 @@ class Job:
             os.makedirs(LOG_DIR)
 
         fout.write("#!/bin/sh \n") 
-# >>>>>>>>> BA
-#        fout.write("#PBS -S /bin/sh\n")       
-#        fout.write("#PBS -N "+self.job_basename+"\n")
-#        fout.write("#PBS -j oe \n")
-#        fout.write("#PBS -o "+os.path.join(LOG_DIR,self.job_basename)+".log"+"\n")
-#        fout.write("#PBS -q local \n")
+
         fout.write("#BSUB -L /bin/sh \n")       
         fout.write("#BSUB -J "+self.job_basename+"\n")
-# CT        fout.write("#BSUB -e "+os.path.join(LOG_DIR,self.job_basename)+".err \n")
-# CT       fout.write("#BSUB -o "+os.path.join(LOG_DIR,self.job_basename)+".out \n")
-# CT       fout.write("#BSUB -q gr1cmsq \n")
+
         fout.write("#BSUB -oo "+os.path.join(LOG_DIR,self.job_basename)+".log \n") # LXBATCH
         fout.write("#BSUB -q cmscaf1nd \n")                                        # LXBATCH
-# <<<<<<<<< CT        
+     
         fout.write("### Auto-Generated Script by LoopCMSSWBuildAndRun.py ### \n")
         fout.write("JobName="+self.job_basename+" \n")
         fout.write("OUT_DIR="+self.out_dir+" \n")
         fout.write("islocal="+str(self.islocal)+" \n")
-
-        if(self.islocal):
-            fout.write("echo \"I AM IN LOCAL MODE\" \n")
-            fout.write("export PKG_DIR="+self.launch_dir+"/src/AuxCode/SLHCSimPhase2/test \n")
-        else:
-            fout.write("echo \"I AM NOT IN LOCAL MODE\" \n")
-            fout.write("export PKG_DIR=AuxCode/SLHCSimPhase2/test \n")
-
         fout.write("maxevents="+str(self.maxevents)+" \n")
         fout.write("pixelroccols="+self.pixelroccols+" \n")
         fout.write("pixelrocrows="+self.pixelrocrows+" \n")
@@ -158,33 +140,15 @@ class Job:
         fout.write("bpixthr="+self.bpixthr+" \n")
         fout.write("myseed="+str(self.myseed)+" \n")
         
-# >>>>>>>>> BA
-# specific for cmssusy.ba.infn.it https://www.ba.infn.it/pagine-utenti.html?task=viewpage&user_id=111&pageid=96
-#       fout.write("if [ \"$PBS_ENVIRONMENT\" == \"PBS_BATCH\" ]; then \n")
-#       fout.write("echo \"I AM IN BATCH\" \n")
-#       fout.write("mkdir -p /home/tmp/$USER/$PBS_JOBID \n")
-#       fout.write("export HOME=/home/tmp/$USER/$PBS_JOBID \n")
-#       fout.write("cd \n")
-#       fout.write("export PBS_O_WORKDIR=$HOME \n")
-#       fout.write("fi \n")
-#       fout.write("echo '$PBS_ENVIRONMENT is ' $PBS_ENVIRONMENT \n")
         fout.write("if [ ! \"$LSB_JOBID\" = \"\" ]; then \n")
         fout.write("echo \"I AM IN BATCH\" \n")
-# CT       fout.write("mkdir -p /tmp/$USER/$LSB_JOBID \n")
-# CT       fout.write("export HOME=/tmp/$USER/$LSB_JOBID \n")
+
         fout.write("export HOME=$WORKDIR \n") # LXBATCH
         fout.write("cd \n")
         fout.write("fi \n")
-# <<<<<<<<< CT
                    
         fout.write("export SCRAM_ARCH=slc5_amd64_gcc472 \n")
         fout.write("# Setup variables   \n")
-# >>>>>>>>> BA
-#        fout.write("VO_CMS_SW_DIR=/cvmfs/cms.cern.ch \n")
-#        fout.write("VO_CMS_SW_DIR=/swcms_slc5/CMSSW \n")
-# <<<<<<<<< CT
-#        fout.write("source $VO_CMS_SW_DIR/cmsset_default.sh \n")  # LXBATCH
-
                                       
         fout.write("cmssw_ver="+CMSSW_VER+" \n")
         fout.write("# Install and Compile CMSSW on batch node  \n")
@@ -192,13 +156,19 @@ class Job:
         fout.write("cd ${cmssw_ver}/src \n")
         fout.write("eval `scram r -sh` \n")
 
-         # implement in the PBS script E.Brownson's recipe for changing the size of the pixels / part #1
+        if(self.islocal):
+            fout.write("echo \"I AM IN LOCAL MODE\" \n")
+            fout.write("export PKG_DIR="+self.launch_dir+"/src/AuxCode/NewStdHitNtuplizer/test \n")
+        else:
+            fout.write("echo \"I AM NOT IN LOCAL MODE\" \n")
+            fout.write("export PKG_DIR=${CMSSW_BASE}/src/AuxCode/NewStdHitNtuplizer/test \n"
+
+        # implement in the PBS script E.Brownson's recipe for changing the size of the pixels / part #1
         fout.write("# Eric Brownson's recipe to change the size of the pixels \n")
         fout.write("### 1: checkout CMSSW patches \n")
-# >>>>>>>>> BA
-#       fout.write("if [ \"$PBS_ENVIRONMENT\" == \"PBS_BATCH\" ]; then \n")
+
         fout.write("if [ ! \"$LSB_JOBID\" = \"\" ]; then \n")
-# <<<<<<<<< CT
+
         fout.write("cd \n")
         fout.write("# git config needed to avoid \n")
         fout.write("# error: SSL certificate problem: unable to get local issuer certificate while accessing \n")
@@ -273,11 +243,7 @@ class Job:
     def submit(self):
 ############################################
         os.system("chmod u+x " + os.path.join(self.pbs_dir,'jobs',self.output_PBS_name))
-# >>>>>>>>> BA
-#        os.system("qsub < "+os.path.join(self.pbs_dir,'jobs',self.output_PBS_name))
-# CT        os.system("/sw/lsf/7.0/linux2.6-glibc2.3-x86_64/bin/bsub < "+os.path.join(self.pbs_dir,'jobs',self.output_PBS_name))
         os.system("bsub < "+os.path.join(self.pbs_dir,'jobs',self.output_PBS_name)) #LXBATCH
-# <<<<<<<<< CT
 
 #################
 def main():            
@@ -372,8 +338,6 @@ def main():
 
     for theseed in range(1,int(mJobsInTask)+1):
 
-        #ajob=Job(opts.jobname, nEvents, mAgeing, mRocRows, mRocCols, mBPixThr, mL0Thick,theseed)
-        #ajob=Job(theseed, nEvents, mAgeing, mRocRows, mRocCols, mBPixThr, mL0Thick,theseed)
         ajob=Job(theseed, nEvents, mAgeing, mRocRows, mRocCols, mBPixThr, mL0Thick, theseed, opts.localmode)
         ajob.createThePBSFile()        
 
@@ -405,13 +369,14 @@ def main():
     fout=open(harvestingname,"w")
 
     fout.write("#!/bin/tcsh \n")
+    fout.write("set COUNT=0 \n")
     fout.write("OUT_DIR="+out_dir+" \n")
     fout.write("mkdir /tmp/$USER/"+link_name+" \n")
     fout.write("foreach inputfile (`cmsLs "+out_dir+"`) \n")
     fout.write("set namebase=`echo $inputfile |awk '{split($0,b,\"/\"); print b[11]}'` \n")
     fout.write("if (\"$namebase\" =~ *\"stdgrechitfullph1g\"*) then \n")
-    fout.write("echo \"copying: $COUNT $myDir/$namebase\" \n") 
-    fout.write("cmsStage $myDir/$namebase /tmp/$USER/"+link_name+" \n")
+    fout.write("echo \"copying: $COUNT $OUT_DIR/$namebase\" \n") 
+    fout.write("cmsStage $OUT_DIR/$namebase /tmp/$USER/"+link_name+" \n")
     fout.write("@ COUNT+=1 \n")
     fout.write("if ($COUNT == "+mJobsInTask+") then \n")
     fout.write("break \n")
