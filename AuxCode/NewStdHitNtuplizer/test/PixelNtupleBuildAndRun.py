@@ -7,7 +7,6 @@ import subprocess
 import ConfigParser
 from optparse import OptionParser
 
-
 ##### method to parse the input file ################################
 
 def ConfigSectionMap(config, section):
@@ -67,7 +66,7 @@ class Job:
     """Main class to create and submit PBS jobs"""
 ###########################################################################
 
-    def __init__(self, job_id, maxevents, bpixthr, myseed, islocal):
+    def __init__(self, job_id, maxevents, myseed, islocal):
 ############################################################################################################################
         
         # store the job-ID (since it is created in a for loop)
@@ -79,17 +78,16 @@ class Job:
         ## FIXME: always check that these are specified
         
         # parameters of the pixel digitizer 
-        self.bpixthr=bpixthr
         self.myseed=myseed
         self.islocal=islocal
         self.launch_dir=LAUNCH_BASE
 
-        self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/out","BPixThr_"+bpixthr)
+        self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/out","53X_phase0")
 
         if(self.job_id==1):
             mkdir_eos(self.out_dir)
 
-        self.job_basename= 'pixelCPE_BPixThr' + self.bpixthr +"_seed" +str(self.myseed)
+        self.job_basename= "pixelCPE_53X_phase0_seed"+str(self.myseed)
         
         self.cfg_dir=None
         self.outputPSetName=None
@@ -126,16 +124,7 @@ class Job:
         fout.write("JobName="+self.job_basename+" \n")
         fout.write("OUT_DIR="+self.out_dir+" \n")
         fout.write("islocal="+str(self.islocal)+" \n")
-
-        if(self.islocal):
-            fout.write("echo \"I AM IN LOCAL MODE\" \n")
-            fout.write("export PKG_DIR="+self.launch_dir+"/src/AuxCode/NewStdHitNtuplizer/test \n")
-        else:
-            fout.write("echo \"I AM NOT IN LOCAL MODE\" \n")
-            fout.write("export PKG_DIR=AuxCode/NewStdHitNtuplizer/test \n")
-
         fout.write("maxevents="+str(self.maxevents)+" \n")
-        fout.write("bpixthr="+self.bpixthr+" \n")
         fout.write("myseed="+str(self.myseed)+" \n")
         
         fout.write("if [ ! \"$LSB_JOBID\" = \"\" ]; then \n")
@@ -152,6 +141,13 @@ class Job:
         fout.write("scram p CMSSW $cmssw_ver  \n")
         fout.write("cd ${cmssw_ver}/src \n")
         fout.write("eval `scram r -sh` \n")
+
+        if(self.islocal):
+            fout.write("echo \"I AM IN LOCAL MODE\" \n")
+            fout.write("export PKG_DIR="+self.launch_dir+"/src/AuxCode/NewStdHitNtuplizer/test \n")
+        else:
+            fout.write("echo \"I AM NOT IN LOCAL MODE\" \n")
+            fout.write("export PKG_DIR=${CMSSW_BASE}/src/AuxCode/NewStdHitNtuplizer/test \n")
 
          # implement in the PBS script E.Brownson's recipe for changing the size of the pixels / part #1
         fout.write("# Eric Brownson's recipe to change the size of the pixels \n")
@@ -183,8 +179,8 @@ class Job:
         fout.write("eval `scram r -sh` \n")
         
         fout.write("# Run CMSSW for GEN-NTUPLE steps \n")
-        fout.write("cd "+os.path.join("AuxCode","NewStdHitNtuplize","test")+"\n")  
-        fout.write("cmsRun ${PKG_DIR}/test_PixelCPE_NTUPLE.py maxEvents=${maxevents} BPixThr=${bpixthr} MySeed=${myseed} \n")
+        fout.write("cd "+os.path.join("AuxCode","NewStdHitNtuplizer","test")+"\n")  
+        fout.write("cmsRun ${PKG_DIR}/test_PixelCPE_NTUPLE.py maxEvents=${maxevents} MySeed=${myseed} \n")
         fout.write("ls -lh . \n")
         fout.write("cmsStage -f ${PKG_DIR}/test_PixelCPE_NTUPLE.py ${OUT_DIR}/test_PixelCPE_NTUPLE.py \n")
       
@@ -209,14 +205,12 @@ def main():
     parser.add_option('-n','--numberofevents', help='number of events', dest='numberofevents', action='store', default='1')
     parser.add_option('-N','--jobsInTask', help='number of jobs in this task', dest='jobsInTask', action='store',default='500')  
     parser.add_option('-j','--jobname', help='task name', dest='jobname', action='store', default='myjob')
-    parser.add_option('-T','--BPixThr',help='BPix Threshold', dest='bpixthr', action='store', default='3500')
- 
+   
     parser.add_option('-i','--input',help='set input configuration (overrides default)',dest='inputconfig',action='store',default=None)
     (opts, args) = parser.parse_args()
 
     # initialize needed input 
    
-    mBPixthr = None
     mJobsInTask=None
  
     ConfigFile = opts.inputconfig
@@ -228,9 +222,7 @@ def main():
         
         config = ConfigParser.ConfigParser()
         config.read(ConfigFile)
-        
-        mBPixThr   = ConfigSectionMap(config,"PixelConfiguration")['bpixthr']   
-      
+         
         mNOfEvents = ConfigSectionMap(config,"JobConfiguration")['numberofevents']
         mJobsInTask= opts.jobsInTask
 
@@ -239,9 +231,7 @@ def main():
         print "********************************************************"
         print "*             Parsing from command line                *"
         print "********************************************************"
-
-        mBPixThr   = opts.bpixthr
-     
+ 
         mNOfEvents = opts.numberofevents
         mJobsInTask= opts.jobsInTask
      
@@ -260,7 +250,6 @@ def main():
     print "- isLocal version            : ",opts.localmode
     print "- Jobs in Task               : ",mJobsInTask
     print "- Jobname                    : ",opts.jobname
-    print "- Clusterizer Threshold      : ",mBPixThr
     print "- Total events to run        : ",mNOfEvents     
 
     nEvents=int(mNOfEvents)
@@ -269,9 +258,7 @@ def main():
 
     for theseed in range(1,int(mJobsInTask)+1):
 
-        #ajob=Job(opts.jobname, nEvents, mAgeing, mRocRows, mRocCols, mBPixThr, mL0Thick,theseed)
-        #ajob=Job(theseed, nEvents, mAgeing, mRocRows, mRocCols, mBPixThr, mL0Thick,theseed)
-        ajob=Job(theseed, nEvents, mBPixThr, theseed, opts.localmode)
+        ajob=Job(theseed, nEvents, theseed, opts.localmode)
         ajob.createThePBSFile()        
 
         out_dir = ajob.out_dir # save for later usage
@@ -287,7 +274,7 @@ def main():
     # link the output folder
     #############################################
     
-    link_name="BPixThr_"+mBPixThr
+    link_name="53Xjobs"
     linkthedir="ln -fs "+out_dir+" "+os.path.join(LOG_DIR,link_name)     
     os.system(linkthedir)    
 
@@ -298,17 +285,18 @@ def main():
     # prepare the script for the harvesting step
     #############################################
 
-    harvestingname = PBS_DIR + "/jobs/PixelCPENtuple_"+opts.jobname+"_BPixThr"+mBPixThr+".csh"
+    harvestingname = PBS_DIR + "/jobs/PixelCPENtuple_"+opts.jobname+".csh"
     fout=open(harvestingname,"w")
 
     fout.write("#!/bin/tcsh \n")
+    fout.write("set COUNT=0 \n")
     fout.write("OUT_DIR="+out_dir+" \n")
     fout.write("mkdir /tmp/$USER/"+link_name+" \n")
     fout.write("foreach inputfile (`cmsLs "+out_dir+"`) \n")
-    fout.write("set namebase=`echo $inputfile |awk '{split($0,b,\"/\"); print b[11]}'` \n")
+    fout.write("set namebase=`echo $inputfile | awk '{split($0,b,\"/\"); print b[9]}'` \n")
     fout.write("if (\"$namebase\" =~ *\"stdgrechitfullph1g\"*) then \n")
-    fout.write("echo \"copying: $COUNT $myDir/$namebase\" \n") 
-    fout.write("cmsStage $myDir/$namebase /tmp/$USER/"+link_name+" \n")
+    fout.write("echo \"copying: $COUNT $OUT_DIR/$namebase\" \n") 
+    fout.write("cmsStage $OUT_DIR/$namebase /tmp/$USER/"+link_name+" \n")
     fout.write("@ COUNT+=1 \n")
     fout.write("if ($COUNT == "+mJobsInTask+") then \n")
     fout.write("break \n")
@@ -318,7 +306,7 @@ def main():
     fout.write("echo \"copied $COUNT files\" \n")
     fout.write("cd /tmp/$USER/"+link_name+" \n")
     fout.write("hadd stdgrechitfullph1g_ntuple_"+link_name+"*.root \n")
-    fout.write("cmsStage stdgrechitfullph1g_ntuple_"+link_name+"*.root /store/caf/user/$USER/SLHCSimPhase2/PixelNtuples \n")
+    fout.write("cmsStage -f stdgrechitfullph1g_ntuple_"+link_name+"*.root /store/caf/user/$USER/SLHCSimPhase2/PixelNtuples \n")
     fout.write("cd "+os.path.join("${CMSSW_BASE}","src","AuxCode","SLHCSimPhase2","test","Brownson")+"\n") 
     fout.write("make \n")
     fout.write("ln -fs /tmp/$USER/"+link_name+"/stdgrechitfullph1g_ntuple_"+link_name+"*.root ./stdgrechitfullph1g_ntuple.root \n")

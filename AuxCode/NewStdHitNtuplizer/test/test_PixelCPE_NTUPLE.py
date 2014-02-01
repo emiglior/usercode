@@ -86,8 +86,11 @@ process.configurationMetadata = cms.untracked.PSet(
 
 # Output definition
 
-outrootfile='file:TenMuE_0_200_cff_py_GEN_SIM_RECO.root'
-outntuplefile='stdgrechitfullph1g_ntuple_age_'+str(options.MySeed)+'.root'
+#outrootfile='file:TenMuE_0_200_cff_py_GEN_SIM_RECO.root'
+#outntuplefile='stdgrechitfullph1g_ntuple_age_'+str(options.MySeed)+'.root'
+
+outrootfile='file:TenMuE_0_200_cff_py_GEN_SIM_RECO_evts_'+str(options.maxEvents)+'_evts_seed_'+str(options.MySeed)+'.root'
+outntuplefile='stdgrechitfullph1g_ntuple_evts_'+str(options.maxEvents)+'_evts_seed_'+str(options.MySeed)+'.root'
 print 'output file name:', outrootfile, outntuplefile
 
 process.FEVTDEBUGoutput = cms.OutputModule("PoolOutputModule",
@@ -179,4 +182,5 @@ for path in process.paths:
 # customisation of the process.
 #print process.dumpPython()
 # End of customisation functions
+
 
