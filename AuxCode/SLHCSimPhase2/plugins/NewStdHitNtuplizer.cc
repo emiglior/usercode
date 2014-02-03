@@ -125,6 +125,8 @@ private:
    
   struct RecHit 
   {
+    int pdgid;
+    int process;
     float q;
     float x;
     float y;
@@ -194,14 +196,14 @@ void NewStdHitNtuplizer::beginJob()
   //Common Branch
   pixeltree_->Branch("evt",    &evt_,      "run/I:evtnum/I", bufsize);
   pixeltree_->Branch("pixel_recHit", &recHit_, 
-		      "q/F:x:y:xx:xy:yy:row:col:gx:gy:gz:subid/I:module:layer:ladder:disk:blade:panel:side:nsimhit:spreadx:spready:hx/F:hy:tx:ty:tz:theta:phi", bufsize);
+		      "pdgid/I:process:q/F:x:y:xx:xy:yy:row:col:gx:gy:gz:subid/I:module:layer:ladder:disk:blade:panel:side:nsimhit:spreadx:spready:hx/F:hy:tx:ty:tz:theta:phi", bufsize);
   pixeltree2_->Branch("evt",    &evt_,      "run/I:evtnum/I", bufsize);
   pixeltree2_->Branch("pixel_recHit", &recHit_, 
-		      "q/F:x:y:xx:xy:yy:row:col:gx:gy:gz:subid/I:module:layer:ladder:disk:blade:panel:side:nsimhit:spreadx:spready:hx/F:hy:tx:ty:tz:theta:phi", bufsize);
+		      "pdgid/I:process:q/F:x:y:xx:xy:yy:row:col:gx:gy:gz:subid/I:module:layer:ladder:disk:blade:panel:side:nsimhit:spreadx:spready:hx/F:hy:tx:ty:tz:theta:phi", bufsize);
   // Strip Branches 
   striptree_->Branch("evt",    &evt_,      "run/I:evtnum/I", bufsize);
   striptree_->Branch("strip_recHit", &striprecHit_,
-		     "q/F:x:y:xx:xy:yy:row:col:gx:gy:gz:subid/I:layer:nsimhit:hx/F:hy:tx:ty:tz:theta:phi", bufsize);
+		     "pdgid/I:process:q/F:x:y:xx:xy:yy:row:col:gx:gy:gz:subid/I:layer:nsimhit:hx/F:hy:tx:ty:tz:theta:phi", bufsize);
  
 }
  
@@ -769,6 +771,8 @@ void NewStdHitNtuplizer::fillPRecHit(const int subid,
   LocalPoint lp = pixeliter->localPosition();
   LocalError le = pixeliter->localPositionError();
  
+  recHit_.pdgid = (*closest_simhit).particleType();
+  recHit_.process= (*closest_simhit).processType();
   recHit_.x = lp.x();
   recHit_.y = lp.y();
   recHit_.xx = le.xx();
@@ -876,6 +880,8 @@ void NewStdHitNtuplizer::RecHit::init()
 {
   float dummy_float = 9999.0;
  
+  pdgid = 0;
+  process = 0;
   q = dummy_float;
   x = dummy_float;
   y = dummy_float;
