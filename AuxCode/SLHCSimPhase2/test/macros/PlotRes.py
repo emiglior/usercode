@@ -55,9 +55,9 @@ def getExtrema(h1array):
 ######################################################
 def MakeNiceTrendPlotStyle( hist, color, the_extrema):
 ######################################################
-    colors = [4,2,2,6]
-    markers = [20,24,24,25]
-    styles = [1,2,1,9]
+    colors  = [ROOT.kRed,       ROOT.kRed,       ROOT.kBlue,      ROOT.kMagenta]
+    markers = [ROOT.kOpenCircle,ROOT.kOpenCircle,ROOT.kFullCircle,ROOT.kOpenSquare]
+    styles  = [ROOT.kSolid,     ROOT.kDashed,    ROOT.kSolid,     ROOT.kDotted]
     hist.SetStats(ROOT.kFALSE)  
     hist.GetXaxis().CenterTitle(ROOT.kTRUE)
     hist.GetYaxis().CenterTitle(ROOT.kTRUE)
@@ -72,8 +72,8 @@ def MakeNiceTrendPlotStyle( hist, color, the_extrema):
     hist.GetYaxis().SetLabelSize(.06)
     hist.GetXaxis().SetLabelSize(.05)
     hist.SetMarkerSize(1.5)
-    if color == 0:
-        hist.SetMarkerStyle(markers[color])
+#    if color == 0:
+#        hist.SetMarkerStyle(markers[color])
     hist.SetLineColor(colors[color])
     hist.SetLineStyle(styles[color])
     hist.SetLineWidth(3)
@@ -157,6 +157,8 @@ def declare_struct():
     };" )
 
     ROOT.gROOT.ProcessLine("struct pixel_recHit_t {\
+    Int_t       pdgid;\
+    Int_t     process;\
     Float_t         q;\
     Float_t         x;\
     Float_t         y;\
@@ -194,7 +196,7 @@ def main(argv):
 ###############
     # toggle investigation of cluster breakage
     # WARNING: VERY TIME CONSUMING!
-    investigate_cluster_breakage = True
+    investigate_cluster_breakage = False
 
     # input root file
     try:
@@ -229,10 +231,10 @@ def main(argv):
     pixel_recHit = pixel_recHit_t()
     if investigate_cluster_breakage:
         skim_input_tree.SetBranchAddress("evt",ROOT.AddressOf(evt,"run"))        
-        skim_input_tree.SetBranchAddress("pixel_recHit",ROOT.AddressOf(pixel_recHit,"q"))
+        skim_input_tree.SetBranchAddress("pixel_recHit",ROOT.AddressOf(pixel_recHit,"pdgid"))
     else:
         input_tree.SetBranchAddress("evt",ROOT.AddressOf(evt,"run"))        
-        input_tree.SetBranchAddress("pixel_recHit",ROOT.AddressOf(pixel_recHit,"q"))
+        input_tree.SetBranchAddress("pixel_recHit",ROOT.AddressOf(pixel_recHit,"pdgid"))
 
     
     # TH1
@@ -260,6 +262,7 @@ def main(argv):
     h1_qcorr  = ROOT.TH1F("h1_qcorr","h1_qcorr;Q_{corr} [ke];recHits",80,0.,400.)
 
     q_inEtaBinTH1 = []
+    qsec_inEtaBinTH1 = []
     nyVSq_inEtaBinTH2 = []
     dz_closesthit_inEtaBinTH1 = []
     spreadX_inEtaBinTH1 = []
@@ -268,9 +271,15 @@ def main(argv):
         eta_low = 0.+i*eta_span
         eta_high = eta_low+eta_span
         
+        # Q cluster
         hname = "h1_q_EtaBin%d" % i
         htitle = "h1_q_Eta bin %d (%.2f < #eta < %.2f);Q [ke];recHits" % (i, eta_low, eta_high)
         q_inEtaBinTH1.append( ROOT.TH1F(hname,htitle,80,0.,400.))
+
+        # Q cluster (only secondaries)
+        hname = "h1_qsec_EtaBin%d" % i
+        htitle = "h1_qsec_Eta bin %d (%.2f < #eta < %.2f);Q [ke];recHits" % (i, eta_low, eta_high)
+        qsec_inEtaBinTH1.append( ROOT.TH1F(hname,htitle,80,0.,400.))
 
         hname = "h1_spreadX_EtaBin%d" % i
         htitle = "h1_spreadX_Eta bin %d (%.2f < #eta < %.2f); spread;recHits" % (i, eta_low, eta_high)
@@ -300,6 +309,7 @@ def main(argv):
     resX_qall_inEtaBinTH1 = []
     resX_qlow_inEtaBinTH1 = []
     resX_qhigh_inEtaBinTH1 = []
+    resX_qprim_inEtaBinTH1 = []
     for i in range(n_eta_bins):
         eta_low = 0.+i*eta_span
         eta_high = eta_low+eta_span
@@ -313,6 +323,9 @@ def main(argv):
         hname = "h1_resX_qhigh_EtaBin%d" % i
         htitle = "h1_resX_qhigh_Eta bin %d (%.2f < #eta < %.2f);[#mum];recHits" % (i, eta_low, eta_high)
         resX_qhigh_inEtaBinTH1.append( ROOT.TH1F(hname,htitle,100,-100.,100.))
+        hname = "h1_resX_qprim_EtaBin%d" % i
+        htitle = "h1_resX_qprim_Eta bin %d (%.2f < #eta < %.2f);[#mum];recHits" % (i, eta_low, eta_high)
+        resX_qprim_inEtaBinTH1.append( ROOT.TH1F(hname,htitle,100,-100.,100.))
         
     # final histograms
     if chopt == "G":
@@ -326,10 +339,12 @@ def main(argv):
     h_resRPhivseta_qall  = ROOT.TH1F("h_resRPhivseta_qall", "Barrel #varphi-Hit Resolution;|#eta|;"+extra_ytitle_res,n_eta_bins,eta_min,eta_max)
     h_resRPhivseta_qlow  = ROOT.TH1F("h_resRPhivseta_qlow", "Barrel #varphi-Hit Resolution;|#eta|;"+extra_ytitle_res,n_eta_bins,eta_min,eta_max)
     h_resRPhivseta_qhigh = ROOT.TH1F("h_resRPhivseta_qhigh","Barrel #varphi-Hit Resolution;|#eta|;"+extra_ytitle_res,n_eta_bins,eta_min,eta_max)
+    h_resRPhivseta_qprim = ROOT.TH1F("h_resRPhivseta_qprim","Barrel #varphi-Hit Resolution;|#eta|;"+extra_ytitle_res,n_eta_bins,eta_min,eta_max)
     
     h_biasRPhivseta_qall  = ROOT.TH1F("h_biasRPhivseta_qall", "Barrel #varphi-Hit Bias;|#eta|;"+extra_ytitle_bias,n_eta_bins,eta_min,eta_max)
     h_biasRPhivseta_qlow  = ROOT.TH1F("h_biasRPhivseta_qlow", "Barrel #varphi-Hit Bias;|#eta|;"+extra_ytitle_bias,n_eta_bins,eta_min,eta_max)
     h_biasRPhivseta_qhigh = ROOT.TH1F("h_biasRPhivseta_qhigh","Barrel #varphi-Hit Bias;|#eta|;"+extra_ytitle_bias,n_eta_bins,eta_min,eta_max)
+    h_biasRPhivseta_qprim = ROOT.TH1F("h_biasRPhivseta_qprim","Barrel #varphi-Hit Bias;|#eta|;"+extra_ytitle_bias,n_eta_bins,eta_min,eta_max)
 
     ### z residuals 
     output_root_file.cd() 
@@ -341,6 +356,7 @@ def main(argv):
     resY_qall_inEtaBinTH1 = []
     resY_qlow_inEtaBinTH1 = []
     resY_qhigh_inEtaBinTH1 = []
+    resY_qprim_inEtaBinTH1 = []
     for i in range(n_eta_bins):
         eta_low = 0.+i*eta_span
         eta_high = eta_low+eta_span
@@ -354,20 +370,24 @@ def main(argv):
         hname = "h1_resY_qhigh_EtaBin%d" % i
         htitle = "h1_resY_qhigh_Eta bin %d (%.2f < #eta < %.2f);[#mum];recHits" % (i, eta_low, eta_high)
         resY_qhigh_inEtaBinTH1.append( ROOT.TH1F(hname,htitle,100,-100.,100.))
+        hname = "h1_resY_qprim_EtaBin%d" % i
+        htitle = "h1_resY_qprim_Eta bin %d (%.2f < #eta < %.2f);[#mum];recHits" % (i, eta_low, eta_high)
+        resY_qprim_inEtaBinTH1.append( ROOT.TH1F(hname,htitle,100,-100.,100.))
 
     # final histograms    
     h_resZvseta_qall = ROOT.TH1F("h_resZvseta_qall", "Barrel z-Hit Resolution;|#eta|;"+extra_ytitle_res,n_eta_bins,eta_min,eta_max) 
     h_resZvseta_qlow = ROOT.TH1F("h_resZvseta_qlow", "Barrel z-Hit Resolution;|#eta|;"+extra_ytitle_res,n_eta_bins,eta_min,eta_max) 
     h_resZvseta_qhigh= ROOT.TH1F("h_resZvseta_qhigh","Barrel z-Hit Resolution;|#eta|;"+extra_ytitle_res,n_eta_bins,eta_min,eta_max)
+    h_resZvseta_qprim= ROOT.TH1F("h_resZvseta_qprim","Barrel z-Hit Resolution;|#eta|;"+extra_ytitle_res,n_eta_bins,eta_min,eta_max)
 
     h_biasZvseta_qall = ROOT.TH1F("h_biasZvseta_qall", "Barrel z-Hit Bias;|#eta|;"+extra_ytitle_bias,n_eta_bins,eta_min,eta_max) 
     h_biasZvseta_qlow = ROOT.TH1F("h_biasZvseta_qlow", "Barrel z-Hit Bias;|#eta|;"+extra_ytitle_bias,n_eta_bins,eta_min,eta_max) 
     h_biasZvseta_qhigh= ROOT.TH1F("h_biasZvseta_qhigh","Barrel z-Hit Bias;|#eta|;"+extra_ytitle_bias,n_eta_bins,eta_min,eta_max)
+    h_biasZvseta_qprim= ROOT.TH1F("h_biasZvseta_qprim","Barrel z-Hit Bias;|#eta|;"+extra_ytitle_bias,n_eta_bins,eta_min,eta_max)
 
     ######## 1st loop on the tree
     if investigate_cluster_breakage:
         all_entries = skim_input_tree.GetEntries()
-        all_entries = 500000 
     else:
         all_entries = input_tree.GetEntries()
     print "all_entries ", all_entries
@@ -404,6 +424,10 @@ def main(argv):
                 index = hp_qvseta_xAxis.FindBin(math.fabs(tv3.Eta()))
                 q_inEtaBinTH1[index-1].Fill(pixel_recHit.q*0.001)
 
+                # Q cluster (only secondaries)
+                if pixel_recHit.process != 2:
+                    qsec_inEtaBinTH1[index-1].Fill(pixel_recHit.q*0.001)
+
                 spreadX_inEtaBinTH1[index-1].Fill(min(pixel_recHit.spreadx, 15))
                 spreadY_inEtaBinTH1[index-1].Fill(min(pixel_recHit.spready, 15))
                 
@@ -434,7 +458,7 @@ def main(argv):
                                 delta_gz = tv3.z() - pixel_recHit.gz
                         
 
-                dz_closesthit_inEtaBinTH1[index-1].Fill(min(14999,math.fabs(delta_gz)*10000)) # 15000 should not be hardcoded....
+                dz_closesthit_inEtaBinTH1[index-1].Fill(min(15000,math.fabs(delta_gz)*10000)) # 15000 should not be hardcoded....
 
 
 
@@ -452,6 +476,11 @@ def main(argv):
             input_tree.GetEntry(this_entry)
         # BPIX only (layer 1)
         if (pixel_recHit.subid==1 and pixel_recHit.layer==1):
+
+            # residuals from primaries only
+            if  pixel_recHit.process == 2:
+                resX_qprim_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hx-pixel_recHit.x))
+                resY_qprim_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hy-pixel_recHit.y))
 
             tv3 = ROOT.TVector3(pixel_recHit.gx, pixel_recHit.gy, pixel_recHit.gz)
 
@@ -503,6 +532,9 @@ def main(argv):
     c1_rPhi_qhigh = ROOT.TCanvas("c1_rPhi_qhigh","c1_rPhi_qhigh",900,900)
     c1_rPhi_qhigh.SetFillColor(ROOT.kWhite)
     c1_rPhi_qhigh.Divide(int(w),int(h))
+    c1_rPhi_qprim = ROOT.TCanvas("c1_rPhi_qprim","c1_rPhi_qprim",900,900)
+    c1_rPhi_qprim.SetFillColor(ROOT.kWhite)
+    c1_rPhi_qprim.Divide(int(w),int(h))
 
     c1_z_qall = ROOT.TCanvas("c1_z_qall","c1_z_qall",900,900)
     c1_z_qall.SetFillColor(ROOT.kWhite)
@@ -513,6 +545,9 @@ def main(argv):
     c1_z_qhigh = ROOT.TCanvas("c1_z_qhigh","c1_z_qhigh",900,900)
     c1_z_qhigh.SetFillColor(ROOT.kWhite)
     c1_z_qhigh.Divide(int(w),int(h))
+    c1_z_qprim = ROOT.TCanvas("c1_z_qprim","c1_z_qprim",900,900)
+    c1_z_qprim.SetFillColor(ROOT.kWhite)
+    c1_z_qprim.Divide(int(w),int(h))
 
     # need to store TLines in a list otherwise only the lines for the last pad are kept on the canvas
     line1 = []
@@ -548,6 +583,10 @@ def main(argv):
         line3.append(ROOT.TLine(q_inEtaBinTH1[i].GetMean(),0,q_inEtaBinTH1[i].GetMean(),0.4*ymax))
         line3[i].SetLineColor(ROOT.kRed)
         line3[i].Draw("same")
+
+        # draw Q_cluster for particle from secondry interactions
+        qsec_inEtaBinTH1[i].SetLineColor(ROOT.kGreen)
+        qsec_inEtaBinTH1[i].Draw("same")
 
         ###
         c1_spreadXY.cd(i+1)
@@ -588,6 +627,11 @@ def main(argv):
         h_resRPhivseta_qhigh.SetBinContent(i+1,sigma)
         h_biasRPhivseta_qhigh.SetBinContent(i+1,mu)
 
+        c1_rPhi_qprim.cd(i+1)        
+        mu, sigma = getTH1GausFit(resX_qprim_inEtaBinTH1[i], c1_rPhi_qprim.GetPad(i+1), chopt)
+        h_resRPhivseta_qprim.SetBinContent(i+1,sigma)
+        h_biasRPhivseta_qprim.SetBinContent(i+1,mu)
+
         c1_z_qall.cd(i+1)
         mu, sigma = getTH1GausFit(resY_qall_inEtaBinTH1[i], c1_z_qall.GetPad(i+1), chopt)
         h_resZvseta_qall.SetBinContent(i+1,sigma)
@@ -603,6 +647,11 @@ def main(argv):
         h_resZvseta_qhigh.SetBinContent(i+1,sigma)
         h_biasZvseta_qhigh.SetBinContent(i+1,mu)
 
+        c1_z_qprim.cd(i+1)        
+        mu, sigma = getTH1GausFit(resY_qprim_inEtaBinTH1[i], c1_z_qprim.GetPad(i+1), chopt)
+        h_resZvseta_qprim.SetBinContent(i+1,sigma)
+        h_biasZvseta_qprim.SetBinContent(i+1,mu)
+
     c1_qclus.SaveAs("c1_qclus.pdf")
     c1_spreadXY.SaveAs("c1_spreadXY.pdf")
     c1_dzmin_clus.SaveAs("c1_dzmin_clus.pdf")
@@ -610,10 +659,12 @@ def main(argv):
     c1_rPhi_qall.SaveAs ("c1_rPhi_qall.pdf")
     c1_rPhi_qlow.SaveAs ("c1_rPhi_qlow.pdf")
     c1_rPhi_qhigh.SaveAs("c1_rPhi_qhigh.pdf")
+    c1_rPhi_qprim.SaveAs("c1_rPhi_qprimaries.pdf")
 
     c1_z_qall.SaveAs("c1_z_qall.pdf")
     c1_z_qlow.SaveAs("c1_z_qlow.pdf")
     c1_z_qhigh.SaveAs("c1_z_qhigh.pdf")
+    c1_z_qprim.SaveAs("c1_z_qprimaries.pdf")
 
 # draw nice trend plots
     setStyle()
@@ -631,20 +682,24 @@ def main(argv):
 #    rphi_arr.append(h_resRPhivseta_qall)
     rphi_arr.append(h_resRPhivseta_qlow)
     rphi_arr.append(h_resRPhivseta_qhigh)
+    rphi_arr.append(h_resRPhivseta_qprim)
   
     the_extrema = getExtrema(rphi_arr)
 
 #    MakeNiceTrendPlotStyle(h_resRPhivseta_qall,0,the_extrema)
 #    h_resRPhivseta_qall.Draw("C")
 #    h_resRPhivseta_qall.Draw("Psame")
-    MakeNiceTrendPlotStyle(h_resRPhivseta_qhigh,1,the_extrema)
+    MakeNiceTrendPlotStyle(h_resRPhivseta_qlow,0,the_extrema)
     h_resRPhivseta_qlow.Draw("C")
-    MakeNiceTrendPlotStyle(h_resRPhivseta_qlow,2,the_extrema)
+    MakeNiceTrendPlotStyle(h_resRPhivseta_qhigh,1,the_extrema)
     h_resRPhivseta_qhigh.Draw("Csame")
+    MakeNiceTrendPlotStyle(h_resRPhivseta_qprim,3,the_extrema)
+    h_resRPhivseta_qprim.Draw("Csame")
 
 #    lego.AddEntry(h_resRPhivseta_qall,"Q/#LTQ#GT<1.5") 
     lego.AddEntry(h_resRPhivseta_qlow,"Q/#LTQ#GT<1.") 
     lego.AddEntry(h_resRPhivseta_qhigh,"1.<Q/#LTQ#GT<1.5")
+    lego.AddEntry(h_resRPhivseta_qprim,"primaries only")
 
     lego.Draw("same")
     cResVsEta_1.SaveAs("rmsVsEta_rphi.root")
@@ -654,16 +709,19 @@ def main(argv):
 #    z_arr.append(h_resZvseta_qall)
     z_arr.append(h_resZvseta_qlow)
     z_arr.append(h_resZvseta_qhigh)
+    z_arr.append(h_resZvseta_qprim)
     
     the_extrema = getExtrema(z_arr)
   
  #   MakeNiceTrendPlotStyle(h_resZvseta_qall,0,the_extrema)
  #   h_resZvseta_qall.Draw("C")
  #   h_resZvseta_qall.Draw("Psame")
-    MakeNiceTrendPlotStyle(h_resZvseta_qhigh,1,the_extrema)
+    MakeNiceTrendPlotStyle(h_resZvseta_qlow,0,the_extrema)
     h_resZvseta_qlow.Draw("C")
-    MakeNiceTrendPlotStyle(h_resZvseta_qlow,2,the_extrema)
+    MakeNiceTrendPlotStyle(h_resZvseta_qhigh,1,the_extrema)
     h_resZvseta_qhigh.Draw("Csame")
+    MakeNiceTrendPlotStyle(h_resZvseta_qprim,3,the_extrema)
+    h_resZvseta_qprim.Draw("Csame")
 
     lego.Draw("same")
     cResVsEta_2.SaveAs("rmsVsEta_rz.root")

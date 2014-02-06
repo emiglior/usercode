@@ -15,6 +15,7 @@ def getModifiedTH1Fs(file, color, canvas):
 # 
     for ca in cIn.GetListOfPrimitives():
 # Get TGraph from MultiGraph        
+#        if ca.InheritsFrom('TH1F') and ca.GetLineStyle() == ROOT.kDotted: # ad-hoc to select only the primaries
         if ca.InheritsFrom('TH1F'):
             ca.SetMarkerColor(color)
             ca.SetLineColor(color)
@@ -36,14 +37,14 @@ def main():
 
 ### overlay residuals in rphi
     # dictionary 
-    dict_rphi = {'rmsVsEta_rphi_phase1':ROOT.kBlack,\
-                 'rmsVsEta_rphi_phase1_v0':ROOT.kRed,\
-                 'rmsVsEta_rphi_phase1_v2':ROOT.kBlue}
+    dict_rphi = {'phase1/rmsVsEta_rphi_phase1':ROOT.kBlack,\
+                 'phase1_v0/rmsVsEta_rphi_phase1_v0':ROOT.kRed,\
+                 'phase1_v2/rmsVsEta_rphi_phase1_v2':ROOT.kBlue}
     
     legRMS_rphi = ROOT.TLegend(0.18,0.60,0.48,0.86)
     legRMS_rphi.SetFillColor(0)
     legRMS_rphi.SetTextFont(42)
-    legRMS_rphi.SetTextSize(0.04)
+    legRMS_rphi.SetTextSize(0.02)
     legRMS_rphi.SetBorderSize(0)
 
     cRMSVsEta_rphi = ROOT.TCanvas('cRMSVsEta_rphi','cRMSVsEta_rphi',800,600)
@@ -86,12 +87,14 @@ def main():
                 legRMS_rphi.AddEntry(h1,'Q/Q_{av}<1'+extraLabel,'L') 
             elif h1.GetLineStyle() == ROOT.kDashed:
                 legRMS_rphi.AddEntry(h1,'1<Q/Q_{av}<1.5'+extraLabel,'L')
+            elif h1.GetLineStyle() == ROOT.kDotted:
+                legRMS_rphi.AddEntry(h1,'Q_{primary}'+extraLabel,'L')
 
             bv1 = ROOT.TBox(1.5,0.,2.5,30.)
             bv1.SetFillColor(1)
             bv1.SetFillColor(ROOT.kGray)
-            #bv1.SetFillStyle(3144)
-            bv1.Draw()       
+            # bv1.SetFillStyle(3144)
+            # bv1.Draw()       
  
             tpv1 = ROOT.TPaveText(0.65,0.45,0.85,0.55,"NDC")
             tpv1.SetFillColor(ROOT.kGray)
@@ -99,21 +102,21 @@ def main():
             tpv1.SetTextAlign(11)
             tpv1.SetTextColor(ROOT.kBlue)
             tpv1.AddText("Blinded")
-            tpv1.Draw("same")
+            # tpv1.Draw("same")
 
     legRMS_rphi.Draw('same');
     cRMSVsEta_rphi.SaveAs('foo_rphi_vsv0.pdf')
 
 ### overlay residuals in rz
     # dictionary 
-    dict_rz = {'rmsVsEta_rz_phase1':ROOT.kBlack,\
-               'rmsVsEta_rz_phase1_v0':ROOT.kRed,\
-               'rmsVsEta_rz_phase1_v2':ROOT.kBlue}
+    dict_rz = {'phase1/rmsVsEta_rz_phase1':ROOT.kBlack,\
+               'phase1_v0/rmsVsEta_rz_phase1_v0':ROOT.kRed,\
+               'phase1_v2/rmsVsEta_rz_phase1_v2':ROOT.kBlue}
     
     legRMS_rz = ROOT.TLegend(0.18,0.60,0.48,0.86)
     legRMS_rz.SetFillColor(0)
     legRMS_rz.SetTextFont(42)
-    legRMS_rz.SetTextSize(0.04)
+    legRMS_rz.SetTextSize(0.02)
     legRMS_rz.SetBorderSize(0)
 
     cRMSVsEta_rz = ROOT.TCanvas('cRMSVsEta_rz','cRMSVsEta_rz',800,600)
@@ -156,6 +159,9 @@ def main():
                 legRMS_rz.AddEntry(h1,'Q/Q_{av}<1'+extraLabel,'L') 
             elif h1.GetLineStyle() == ROOT.kDashed:
                 legRMS_rz.AddEntry(h1,'1<Q/Q_{av}<1.5'+extraLabel,'L')
+            elif h1.GetLineStyle() == ROOT.kDotted:
+                legRMS_rz.AddEntry(h1,'Q_{primary}'+extraLabel,'L')
+
 
             # xl = 0.2 # "left" line
             # xm = 0.4 # "middle" line
@@ -169,8 +175,8 @@ def main():
 
             bv = ROOT.TBox(1.5,10.,2.5,40.)
             bv.SetFillColor(ROOT.kGray)
-            #bv.SetFillStyle(3005)
-            bv.Draw()    
+            # bv.SetFillStyle(3005)
+            # bv.Draw()    
 
             tpv1 = ROOT.TPaveText(0.65,0.45,0.85,0.55,"NDC")
             tpv1.SetFillColor(ROOT.kGray)
@@ -178,7 +184,7 @@ def main():
             tpv1.SetTextAlign(11)
             tpv1.SetTextColor(ROOT.kBlue)
             tpv1.AddText("Blinded")
-            tpv1.Draw("same")
+            # tpv1.Draw("same")
 
     legRMS_rz.Draw('same')
     cRMSVsEta_rz.SaveAs('foo_rz_vsv0.pdf')
