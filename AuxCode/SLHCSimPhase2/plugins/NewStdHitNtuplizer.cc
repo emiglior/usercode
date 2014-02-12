@@ -102,7 +102,12 @@ protected:
 		   const int num_simhit,
 		   std::vector<PSimHit>::const_iterator closest_simhit,
 		   const GeomDet* PixGeom);
-  void fillPRecHit(const int subid, trackingRecHit_iterator pixeliter,
+  void fillPRecHit(const int subid,
+		   const int layer_num,const int ladder_num,const int module_num,
+		   const int disk_num,const int blade_num,const int panel_num,const int side_num,
+		   trackingRecHit_iterator pixeliter,
+		   const int num_simhit,
+		   std::vector<PSimHit>::const_iterator closest_simhit,
 		   const GeomDet* PixGeom);
  
 private:
@@ -227,6 +232,9 @@ void NewStdHitNtuplizer::analyze(const edm::Event& e, const edm::EventSetup& es)
   //hitProducer = conf_.getParameter<edm::InputTag>("HitProducer");
   //e.getByLabel(hitProducer, theGSRecHits);
  
+  std::vector<PSimHit> matched;
+  std::vector<PSimHit>::const_iterator closest_simhit;
+
   edm::Handle<SiPixelRecHitCollection> recHitColl;
   e.getByLabel( src_, recHitColl);
  
@@ -239,9 +247,7 @@ void NewStdHitNtuplizer::analyze(const edm::Event& e, const edm::EventSetup& es)
     SiPixelRecHitCollection::const_iterator recHitIdIteratorEnd   = (recHitColl.product())->end();
  
     std::string detname ;
-    std::vector<PSimHit> matched;
-    std::vector<PSimHit>::const_iterator closest_simhit;
- 
+
     // Loop over Detector IDs
     for ( ; recHitIdIterator != recHitIdIteratorEnd; recHitIdIterator++) {
       SiPixelRecHitCollection::DetSet detset = *recHitIdIterator;
@@ -276,8 +282,8 @@ void NewStdHitNtuplizer::analyze(const edm::Event& e, const edm::EventSetup& es)
 	      float sim_y2 = (*m).exitPoint().y();
 	      float sim_ypos = 0.5*(sim_y1+sim_y2);
              
-	      float x_res = fabs(sim_xpos - rechit_x);
-	      float y_res = fabs(sim_ypos - rechit_y);
+	      float x_res = sim_xpos - rechit_x;
+	      float y_res = sim_ypos - rechit_y;
 	      float dist = sqrt(x_res*x_res + y_res*y_res);
 	      if ( dist < closest ) {
 		closest = dist;
@@ -287,8 +293,8 @@ void NewStdHitNtuplizer::analyze(const edm::Event& e, const edm::EventSetup& es)
 	  closest_simhit = closestit;
 	} // end matched emtpy
 	unsigned int subid = detId.subdetId();
-	int layer_num = -99,ladder_num=-99,module_num=-99,disk_num=-99,blade_num=-99,panel_num=-99,side_num=-99;
-	if ( (subid==1)||(subid==2) ) {
+	int layer_num = -99,ladder_num=-99,module_num=-99,disk_num=-99,blade_num=-99,panel_num=-99,side_num=-99;       
+	if ( ( subid == PixelSubdetector::PixelBarrel ) || ( subid == PixelSubdetector::PixelEndcap ) ) {
 	  // 1 = PXB, 2 = PXF
 	  if ( subid ==  PixelSubdetector::PixelBarrel ) {
 	    layer_num   = tTopo->pxbLayer(detId.rawId());
@@ -331,88 +337,102 @@ void NewStdHitNtuplizer::analyze(const edm::Event& e, const edm::EventSetup& es)
   for(View<reco::Track>::size_type i=0; i<trackCollection->size(); ++i){
     ++rT;
     RefToBase<reco::Track> track(trackCollection, i);
-    //      std::cout << " num of hits for track " << rT << " = " << track->recHitsSize() << std::endl;
+    int iT = 0;
+    //std::cout << " num of hits for track " << rT << " = " << track->recHitsSize() << std::endl;
     for(trackingRecHit_iterator ih=track->recHitsBegin(); ih != track->recHitsEnd(); ++ih) {
+      ++iT;
+      //std::cout<<" analyzing hit n. "<<iT<<std::endl;
       TrackingRecHit * hit = (*ih)->clone();
       const DetId& detId =  hit->geographicalId();
       const GeomDet* geomDet( theGeometry->idToDet(detId) );
- 
-      /////comment out begin
-      /*
-	unsigned int subdetId = detId.subdetId();
-	int layerNumber=0;
-	int ringNumber = 0;
-	int stereo = 0;
-	std::string detname;
-	if ( subdetId == StripSubdetector::TIB) {
-	detname = "TIB";
-           
-	layerNumber = tTopo->tibLayer(detId.rawId);
-	stereo = tTopo->tibStereo(detId.rawId);
-	} else if ( subdetId ==  StripSubdetector::TOB ) {
-	detname = "TOB";
-           
-	layerNumber = tTopo->tobLayer(detId.rawId);
-	stereo = tTopo->tobStereo(detId.rawId);
-	} else if ( subdetId ==  StripSubdetector::TID) {
-	detname = "TID";
-           
-	layerNumber = tTopo->tidWheel(detId.rawId);
-	ringNumber = tTopo->tidRing(detId.rawId);
-	stereo = tTopo->tidStereo(detId.rawId);
-	} else if ( subdetId ==  StripSubdetector::TEC ) {
-	detname = "TEC";
-           
-	layerNumber = tTopo->tecWheel(detId.rawId);
-	ringNumber = tTopo->tecRing(detId.rawId);
-	stereo = tTopo->tecStereo(detId.rawId);
-	} else if ( subdetId ==  PixelSubdetector::PixelBarrel ) {
-	detname = "PXB";
-           
-	layerNumber = tTopo->pxbLayer(detId.rawId);
-	stereo = 1;
-	} else if ( subdetId ==  PixelSubdetector::PixelEndcap ) {
-	detname = "PXF";
-           
-	layerNumber = tTopo->pxfDisk(detId.rawId);
-	stereo = 1;
-	}
-      */
-      //        std::cout << "RecHit in " << detname << " from detid " << detId.rawId()
-      //                  << " subdet = " << subdetId
-      //                  << " layer = " << layerNumber
-      //                  << " Stereo = " << stereo
-      //                  << std::endl;
-      if(hit->isValid()) {
-	unsigned int subid = detId.subdetId();
-	if ( (subid==1)||(subid==2) ) {
-	  // 1 = PXB, 2 = PXF
-	  fillPRecHit(subid, ih, geomDet);
-	  fillEvt(e);
-	  pixeltree2_->Fill();
-	  init();
-	  /*
-	    TrackingRecHit * hit = (*ih)->clone();
-	    LocalPoint lp = hit->localPosition();
-	    LocalError le = hit->localPositionError();
-	    //            std::cout << "   lp x,y = " << lp.x() << " " << lp.y() << " lpe xx,xy,yy = "
-	    //                  << le.xx() << " " << le.xy() << " " << le.yy() << std::endl;
-	    std::cout << "Found RecHit in " << detname << " from detid " << detId.rawId()
-	    << " subdet = " << subdetId
-	    << " layer = " << layerNumber
-	    << "global x/y/z/r = "
-	    << geomDet->surface().toGlobal(lp).x() << " " 
-	    << geomDet->surface().toGlobal(lp).y() << " " 
-	    << geomDet->surface().toGlobal(lp).z() << " " 
-	    << geomDet->surface().toGlobal(lp).perp() 
-	    << " err x/y = " << sqrt(le.xx()) << " " << sqrt(le.yy()) << std::endl;
-	  */
-	}
-      }
-      delete hit;
+
+      const SiPixelRecHit *pixhit = dynamic_cast<const SiPixelRecHit*>(hit);
+         
+      if(pixhit){
+	if(pixhit->isValid() ) {
+	
+	  // get matched simhit
+	  matched.clear();
+	  matched = associate.associateHit(*pixhit);
+	  	  
+	  if ( !matched.empty() ) {
+	    float closest = 9999.9;
+	    std::vector<PSimHit>::const_iterator closestit = matched.begin();
+	    LocalPoint lp = pixhit->localPosition();
+	    float rechit_x = lp.x();
+	    float rechit_y = lp.y();
+
+	    //loop over simhits and find closest	   	    
+	    for (std::vector<PSimHit>::const_iterator m = matched.begin(); m<matched.end(); m++) 
+	      {
+		float sim_x1 = (*m).entryPoint().x();
+		float sim_x2 = (*m).exitPoint().x();
+		float sim_xpos = 0.5*(sim_x1+sim_x2);
+		float sim_y1 = (*m).entryPoint().y();
+		float sim_y2 = (*m).exitPoint().y();
+		float sim_ypos = 0.5*(sim_y1+sim_y2);
+		
+		float x_res = sim_xpos - rechit_x;
+		float y_res = sim_ypos - rechit_y;
+		float dist = sqrt(x_res*x_res + y_res*y_res);
+		if ( dist < closest ) {
+		  closest = dist;
+		  closestit = m;
+		}
+	      } // end of simhit loop
+	    closest_simhit = closestit;
+	  } // end matched emtpy
+	  
+	  int num_simhit = matched.size();
+	  
+	  int layer_num = -99,ladder_num=-99,module_num=-99,disk_num=-99,blade_num=-99,panel_num=-99,side_num=-99;
+	  
+	  unsigned int subid = detId.subdetId();
+	  if ( ( subid == PixelSubdetector::PixelBarrel ) || ( subid == PixelSubdetector::PixelEndcap ) ) {
+	    // 1 = PXB, 2 = PXF
+	    if ( subid ==  PixelSubdetector::PixelBarrel ) {
+	      layer_num   = tTopo->pxbLayer(detId.rawId());
+	      ladder_num  = tTopo->pxbLadder(detId.rawId());
+	      module_num  = tTopo->pxbModule(detId.rawId());
+	      //std::cout <<"\ndetId = "<<subid<<" : "<<tTopo->pxbLayer(detId.rawId())<<" , "<<tTopo->pxbLadder(detId.rawId())<<" , "<< tTopo->pxbModule(detId.rawId()) <<std::endl;
+	    } else if ( subid ==  PixelSubdetector::PixelEndcap ) {
+	      module_num  = tTopo->pxfModule(detId());
+	      disk_num    = tTopo->pxfDisk(detId());
+	      blade_num   = tTopo->pxfBlade(detId());
+	      panel_num   = tTopo->pxfPanel(detId());
+	      side_num    = tTopo->pxfSide(detId());
+	    }
+	    
+	    fillPRecHit(subid, layer_num,ladder_num,module_num,disk_num,blade_num,panel_num,side_num, 
+			ih, num_simhit, closest_simhit, geomDet );
+	    	    
+	    fillEvt(e);	    
+	    pixeltree2_->Fill();
+	    init();
+	    
+	    /*
+	      TrackingRecHit * hit = (*ih)->clone();
+	      LocalPoint lp = hit->localPosition();
+	      LocalError le = hit->localPositionError();
+	      //            std::cout << "   lp x,y = " << lp.x() << " " << lp.y() << " lpe xx,xy,yy = "
+	      //                  << le.xx() << " " << le.xy() << " " << le.yy() << std::endl;
+	      std::cout << "Found RecHit in " << detname << " from detid " << detId.rawId()
+	      << " subdet = " << subdetId
+	      << " layer = " << layerNumber
+	      << "global x/y/z/r = "
+	      << geomDet->surface().toGlobal(lp).x() << " " 
+	      << geomDet->surface().toGlobal(lp).y() << " " 
+	      << geomDet->surface().toGlobal(lp).z() << " " 
+	      << geomDet->surface().toGlobal(lp).perp() 
+	      << " err x/y = " << sqrt(le.xx()) << " " << sqrt(le.yy()) << std::endl;
+	    */
+	  } // if ( (subid==1)||(subid==2) ) 
+	} // if SiPixelHit is valid
+      } // if cast is possible to SiPixelHit
+      delete pixhit;
     } //end of loop on tracking rechits
   } // end of loop on recotracks
- 
+
   // now for strip rechits
   edm::Handle<SiStripRecHit2DCollection> rechitsrphi;
   edm::Handle<SiStripRecHit2DCollection> rechitsstereo;
@@ -715,6 +735,7 @@ void NewStdHitNtuplizer::fillSRecHit(const int subid,
   striprecHit_.subid = subid;
   GlobalPoint GP0 = theGeom->surface().toGlobal(LocalPoint(0,0,0));
   striprecHit_.theta = GP0.theta();
+  striprecHit_.phi = GP0.phi();
 }
 void NewStdHitNtuplizer::fillSRecHit(const int subid, 
 				  SiStripMatchedRecHit2DCollection::DetSet::const_iterator pixeliter,
@@ -735,6 +756,7 @@ void NewStdHitNtuplizer::fillSRecHit(const int subid,
   striprecHit_.subid = subid;
   GlobalPoint GP0 = theGeom->surface().toGlobal(LocalPoint(0,0,0));
   striprecHit_.theta = GP0.theta();
+  striprecHit_.phi = GP0.phi();
 }
 void NewStdHitNtuplizer::fillSRecHit(const int subid, 
 				  SiTrackerGSRecHit2DCollection::const_iterator pixeliter,
@@ -758,7 +780,11 @@ void NewStdHitNtuplizer::fillSRecHit(const int subid,
   striprecHit_.subid = subid;
   GlobalPoint GP0 = theGeom->surface().toGlobal(LocalPoint(0,0,0));
   striprecHit_.theta = GP0.theta();
+  striprecHit_.phi = GP0.phi();
 }
+
+
+// Function for filling in all the rechits
 // I know it is lazy to pass everything, but I'm doing it anyway. -EB
 void NewStdHitNtuplizer::fillPRecHit(const int subid, 
 				  const int layer_num,const int ladder_num,const int module_num,
@@ -771,8 +797,6 @@ void NewStdHitNtuplizer::fillPRecHit(const int subid,
   LocalPoint lp = pixeliter->localPosition();
   LocalError le = pixeliter->localPositionError();
  
-  recHit_.pdgid = (*closest_simhit).particleType();
-  recHit_.process= (*closest_simhit).processType();
   recHit_.x = lp.x();
   recHit_.y = lp.y();
   recHit_.xx = le.xx();
@@ -787,6 +811,7 @@ void NewStdHitNtuplizer::fillPRecHit(const int subid,
   recHit_.gz = GP.z();
   GlobalPoint GP0 = PixGeom->surface().toGlobal(LocalPoint(0,0,0));
   recHit_.theta = GP0.theta(); 
+  recHit_.phi = GP0.phi(); 
 
   SiPixelRecHit::ClusterRef const& Cluster =  pixeliter->cluster();
   recHit_.q = Cluster->charge();
@@ -807,6 +832,10 @@ void NewStdHitNtuplizer::fillPRecHit(const int subid,
  
   //std::cout << "num_simhit = " << num_simhit << std::endl;
   if(num_simhit > 0) {
+
+    recHit_.pdgid = (*closest_simhit).particleType();
+    recHit_.process= (*closest_simhit).processType();
+
     float sim_x1 = (*closest_simhit).entryPoint().x();
     float sim_x2 = (*closest_simhit).exitPoint().x();
     recHit_.hx = 0.5*(sim_x1+sim_x2);
@@ -832,9 +861,15 @@ void NewStdHitNtuplizer::fillPRecHit(const int subid,
     << PixGeom->surface().toGlobal(pixeliter->localPosition()).z() << std::endl;
   */
 }
+
+// Function for filling in on track rechits
 void NewStdHitNtuplizer::fillPRecHit(const int subid, 
-				  trackingRecHit_iterator ih,
-				  const GeomDet* PixGeom)
+				     const int layer_num,const int ladder_num,const int module_num,
+				     const int disk_num,const int blade_num,const int panel_num,const int side_num,
+				     trackingRecHit_iterator ih,
+				     const int num_simhit,
+				     std::vector<PSimHit>::const_iterator closest_simhit,
+				     const GeomDet* PixGeom)
 {
   TrackingRecHit * pixeliter = (*ih)->clone(); 
   LocalPoint lp = pixeliter->localPosition();
@@ -851,8 +886,53 @@ void NewStdHitNtuplizer::fillPRecHit(const int subid,
   recHit_.gz = GP.z();
   GlobalPoint GP0 = PixGeom->surface().toGlobal(LocalPoint(0,0,0));
   recHit_.theta = GP0.theta(); 
-  delete pixeliter;
+  recHit_.phi = GP0.phi(); 
   recHit_.subid = subid;
+
+  //std::cout<<"before getting the cluster"<<std::endl;
+
+  SiPixelRecHit::ClusterRef const& Cluster =  dynamic_cast<const SiPixelRecHit*>(pixeliter)->cluster();
+  recHit_.q = Cluster->charge();
+  recHit_.spreadx = Cluster->sizeX();
+  recHit_.spready = Cluster->sizeY();
+
+  recHit_.nsimhit = num_simhit;
+
+  recHit_.layer = layer_num;
+  recHit_.ladder= ladder_num;
+  recHit_.module= module_num;
+  recHit_.module= module_num;
+  recHit_.disk  = disk_num;
+  recHit_.blade = blade_num;
+  recHit_.panel = panel_num;
+  recHit_.side  = side_num;
+
+  //std::cout << "num_simhit = " << num_simhit << std::endl;
+  if(num_simhit > 0) {
+
+    recHit_.pdgid = (*closest_simhit).particleType();
+    recHit_.process= (*closest_simhit).processType();
+
+    float sim_x1 = (*closest_simhit).entryPoint().x();
+    float sim_x2 = (*closest_simhit).exitPoint().x();
+    recHit_.hx = 0.5*(sim_x1+sim_x2);
+    float sim_y1 = (*closest_simhit).entryPoint().y();
+    float sim_y2 = (*closest_simhit).exitPoint().y();
+    recHit_.hy = 0.5*(sim_y1+sim_y2);
+
+    recHit_.tx = (*closest_simhit).localDirection().x();
+    recHit_.ty = (*closest_simhit).localDirection().y();
+    recHit_.tz = (*closest_simhit).localDirection().z();
+   // alpha: angle with respect to local x axis in local (x,z) plane
+   // float cotalpha = sim_xdir/sim_zdir;
+   // beta: angle with respect to local y axis in local (y,z) plane
+   // float cotbeta = sim_ydir/sim_zdir;
+
+    //std::cout << "num_simhit x, y = " << 0.5*(sim_x1+sim_x2) << " " << 0.5*(sim_y1+sim_y2) << std::endl;
+  }
+
+  delete pixeliter;
+
 }
  
 void
