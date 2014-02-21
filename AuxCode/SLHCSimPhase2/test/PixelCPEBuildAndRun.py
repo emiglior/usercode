@@ -158,10 +158,10 @@ class Job:
 
         if(self.islocal):
             fout.write("echo \"I AM IN LOCAL MODE\" \n")
-            fout.write("export PKG_DIR="+self.launch_dir+"/src/AuxCode/NewStdHitNtuplizer/test \n")
+            fout.write("export PKG_DIR="+self.launch_dir+"/src/AuxCode/SLHCSimPhase2/test \n")
         else:
             fout.write("echo \"I AM NOT IN LOCAL MODE\" \n")
-            fout.write("export PKG_DIR=${CMSSW_BASE}/src/AuxCode/NewStdHitNtuplizer/test \n")
+            fout.write("export PKG_DIR=${CMSSW_BASE}/src/AuxCode/SLHCSimPhase2/test \n")
 
         # implement in the PBS script E.Brownson's recipe for changing the size of the pixels / part #1
         fout.write("# Eric Brownson's recipe to change the size of the pixels \n")
