@@ -198,6 +198,7 @@ class Job:
         fout.write("git clone -b 612_slhc8_phase1 git://github.com/emiglior/usercode.git \n")
         fout.write("mv usercode/AuxCode .\n")
         fout.write("rm -fr usercode \n")
+        fout.write("mv usercode/SimTracker .\n")
         fout.write("git cms-checkdeps -a \n")
 
         fout.write("# compile \n")
