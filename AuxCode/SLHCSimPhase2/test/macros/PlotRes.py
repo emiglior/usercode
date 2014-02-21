@@ -2,6 +2,7 @@
 import sys
 import ROOT
 import math
+from optparse import OptionParser
 
 ###############
 def setStyle():
@@ -102,12 +103,12 @@ def getTH1cdf(h1_in):
     return cdf
 
 #########################
-def getTH1GausFit(h1_in, pad, chopt):
+def getTH1GausFit(h1_in, pad, gaussfit):
 #######################
     pad.cd()
     pad.SetLogy()
 
-    if chopt == "G":
+    if gaussfit ==  True:
         # fit with gaussian (two-steps) and return mu and sigma
         xmin = h1_in.GetXaxis().GetXmin()
         xmax = h1_in.GetXaxis().GetXmax()
@@ -136,14 +137,10 @@ def getTH1GausFit(h1_in, pad, chopt):
 
         mu = g1.GetParameter("Mean") 
         sigma = g1.GetParameter("Sigma")
-    elif chopt == "R":
+    else:
         h1_in.Draw() 
         mu = h1_in.GetMean() 
         sigma = h1_in.GetRMS()
-    else:
-        print "Unknown chopt in getTH1GausFit", chopt
-        mu = 0
-        sigma = 0
 
     return mu, sigma
 
@@ -192,26 +189,47 @@ def declare_struct():
 
 
 ###############
-def main(argv):
+def main():
 ###############
+    parser = OptionParser()
+    parser.add_option("-f", "--file",  
+                      action="store", type="string", dest="input_root_filename",
+                      help="input root file")
+    parser.add_option("-o", "--on-track",
+                      action="store_true", dest="ontrack", default=False,
+                      help="use on track clusters")
+    parser.add_option("-g", "--gauss",
+                      action="store_true", dest="gaussfit", default=False,
+                      help="gaussian fit of residuals")
+    
+    (options, args) = parser.parse_args()
+
     # toggle investigation of cluster breakage
     # WARNING: VERY TIME CONSUMING!
     investigate_cluster_breakage = False
 
     # input root file
     try:
-        input_root_file = ROOT.TFile.Open(argv[0])
+        input_root_file = ROOT.TFile.Open(options.input_root_filename)
     except:
         print "No input file specified"
         sys.exit()
         
-    # option for the fit of the residuals
-    if len(argv)>1:
-        chopt = argv[1]
+    output_root_filename = "PlotResHistos"
+    if options.ontrack == False: 
+        input_tree = input_root_file.Get("PixelNtuple")
+        output_root_filename += "_All"
     else:
-        chopt = "R"
+        input_tree = input_root_file.Get("Pixel2Ntuple")            
+        output_root_filename += "_OnTrack"
 
-    input_tree = input_root_file.Get("PixelNtuple")
+    if options.gaussfit == False: 
+        output_root_filename += "_RMS"
+    else:
+        output_root_filename += "_Sigma"
+
+    output_root_filename += ".root"
+
     input_tree.Print()
 
     if investigate_cluster_breakage:
@@ -242,7 +260,7 @@ def main(argv):
     eta_min = 0.
     eta_max = 2.5
     eta_span = (eta_max-eta_min)/n_eta_bins
-    output_root_file = ROOT.TFile("PlotResHistos.root","RECREATE")
+    output_root_file = ROOT.TFile(output_root_filename,"RECREATE")
 
     ### hit maps
     output_root_file.mkdir("hitmaps") 
@@ -251,7 +269,13 @@ def main(argv):
     h2_rzhitmapSubId1 = ROOT.TH2F("h2_rzhitmapSubId1","rzhitmap_subid1; recHit z [cm]; recHit r [cm]",200,-300.,300.,150,0.,150.)
     h2_rzhitmapSubId2 = ROOT.TH2F("h2_rzhitmapSubId2","rzhitmap_subid2; recHit z [cm]; recHit r [cm]",200,-300.,300.,150,0.,150.)    
     h2_rzhitmap = ROOT.TH2F("h2_rzhitmap","rzhitmap; recHit z [cm]; recHit r [cm]",100,-50.,50.,100,2.5,5.)
-    
+
+    ### simhit and rechit local positions
+    h1_localX_witdh1_simHit = ROOT.TH1F("h1_localX_witdh1_simHit","h1_localX_witdh1_simHit",2000,-10000,+10000)
+    h1_localY_witdh1_simHit = ROOT.TH1F("h1_localY_witdh1_simHit","h1_localY_witdh1_simHit",7000,-35000,+35000)
+    h1_localX_witdh1_recHit = ROOT.TH1F("h1_localX_witdh1_recHit","h1_localX_witdh1_recHit",2000,-10000,+10000)
+    h1_localY_witdh1_recHit = ROOT.TH1F("h1_localY_witdh1_recHit","h1_localY_witdh1_recHit",7000,-35000,+35000)
+
     ### ionization
     output_root_file.cd() 
     output_root_file.mkdir("dEdx") 
@@ -328,7 +352,7 @@ def main(argv):
         resX_qprim_inEtaBinTH1.append( ROOT.TH1F(hname,htitle,100,-100.,100.))
         
     # final histograms
-    if chopt == "G":
+    if options.gaussfit == True:
         extra_ytitle_res  = "gaussian stdDev #sigma [#mum]" 
         extra_ytitle_bias = "gaussian #mu [#mum]"
     else:
@@ -390,6 +414,7 @@ def main(argv):
         all_entries = skim_input_tree.GetEntries()
     else:
         all_entries = input_tree.GetEntries()
+
     print "all_entries ", all_entries
     
     for this_entry in xrange(all_entries):
@@ -416,8 +441,15 @@ def main(argv):
             h2_rzhitmap.Fill(tv3.z(),tv3.Perp())
             hp_qvseta.Fill(math.fabs(tv3.Eta()),pixel_recHit.q*0.001)
 
+            if pixel_recHit.spreadx == 1:
+                h1_localX_witdh1_simHit.Fill(pixel_recHit.hx*10000) 
+                h1_localX_witdh1_recHit.Fill(pixel_recHit.x*10000) 
+            if pixel_recHit.spready == 1:
+                h1_localY_witdh1_simHit.Fill(pixel_recHit.hy*10000)                 
+                h1_localY_witdh1_recHit.Fill(pixel_recHit.y*10000) 
+ 
             # ionization corrected for incident angle (only central eta) 
-            if(math.fabs(tv3.Eta())<0.25):
+            if(math.fabs(tv3.Eta())<0.20):
                 h1_qcorr.Fill(pixel_recHit.q*0.001*tv3.Perp()/tv3.Mag())
 
             if(math.fabs(tv3.Eta())<eta_max):
@@ -477,12 +509,12 @@ def main(argv):
         # BPIX only (layer 1)
         if (pixel_recHit.subid==1 and pixel_recHit.layer==1):
 
+            tv3 = ROOT.TVector3(pixel_recHit.gx, pixel_recHit.gy, pixel_recHit.gz)
+
             # residuals from primaries only
-            if  pixel_recHit.process == 2:
+            if  (pixel_recHit.process == 2) and (pixel_recHit.q*0.001 < 1.5*Qave*tv3.Mag()/tv3.Perp()) and (pixel_recHit.spready == 1) :
                 resX_qprim_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hx-pixel_recHit.x))
                 resY_qprim_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hy-pixel_recHit.y))
-
-            tv3 = ROOT.TVector3(pixel_recHit.gx, pixel_recHit.gy, pixel_recHit.gz)
 
             # NB: at given eta   Qave -> Qave(eta=0)/sin(theta)
             if  pixel_recHit.q*0.001 < Qave*tv3.Mag()/tv3.Perp():
@@ -504,6 +536,26 @@ def main(argv):
                     resY_qhigh_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hy-pixel_recHit.y))
                     resX_qall_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hx-pixel_recHit.x))
                     resY_qall_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hy-pixel_recHit.y))
+
+
+
+
+    # local position 
+    c1_localXY = ROOT.TCanvas("c1_localXY","c1_localXY",600,900)
+    c1_localXY.SetFillColor(ROOT.kWhite)
+    c1_localXY.Divide(1,2)
+
+    c1_localXY.cd(1)
+    h1_localX_witdh1_recHit.SetLineColor(ROOT.kRed) 
+    h1_localX_witdh1_recHit.Draw() 
+    h1_localX_witdh1_simHit.Draw("same") 
+
+    c1_localXY.cd(2)
+    h1_localY_witdh1_recHit.SetLineColor(ROOT.kRed) 
+    h1_localY_witdh1_recHit.Draw() 
+    h1_localY_witdh1_simHit.Draw("same") 
+
+    c1_localXY.SaveAs("c1_localXY.root")
 
     ### fill the final histograms
     # ceil(x): the smallest integer value greater than or equal to x (NB return a float)
@@ -613,42 +665,42 @@ def main(argv):
 
         ### residuals
         c1_rPhi_qall.cd(i+1)
-        mu, sigma = getTH1GausFit(resX_qall_inEtaBinTH1[i], c1_rPhi_qall.GetPad(i+1), chopt)
+        mu, sigma = getTH1GausFit(resX_qall_inEtaBinTH1[i], c1_rPhi_qall.GetPad(i+1), options.gaussfit)
         h_resRPhivseta_qall.SetBinContent(i+1,sigma)
         h_biasRPhivseta_qall.SetBinContent(i+1,mu)
 
         c1_rPhi_qlow.cd(i+1)        
-        mu, sigma = getTH1GausFit(resX_qlow_inEtaBinTH1[i], c1_rPhi_qlow.GetPad(i+1), chopt)
+        mu, sigma = getTH1GausFit(resX_qlow_inEtaBinTH1[i], c1_rPhi_qlow.GetPad(i+1), options.gaussfit)
         h_resRPhivseta_qlow.SetBinContent(i+1,sigma)
         h_biasRPhivseta_qlow.SetBinContent(i+1,mu)
 
         c1_rPhi_qhigh.cd(i+1)        
-        mu, sigma = getTH1GausFit(resX_qhigh_inEtaBinTH1[i], c1_rPhi_qhigh.GetPad(i+1), chopt)
+        mu, sigma = getTH1GausFit(resX_qhigh_inEtaBinTH1[i], c1_rPhi_qhigh.GetPad(i+1), options.gaussfit)
         h_resRPhivseta_qhigh.SetBinContent(i+1,sigma)
         h_biasRPhivseta_qhigh.SetBinContent(i+1,mu)
 
         c1_rPhi_qprim.cd(i+1)        
-        mu, sigma = getTH1GausFit(resX_qprim_inEtaBinTH1[i], c1_rPhi_qprim.GetPad(i+1), chopt)
+        mu, sigma = getTH1GausFit(resX_qprim_inEtaBinTH1[i], c1_rPhi_qprim.GetPad(i+1), options.gaussfit)
         h_resRPhivseta_qprim.SetBinContent(i+1,sigma)
         h_biasRPhivseta_qprim.SetBinContent(i+1,mu)
 
         c1_z_qall.cd(i+1)
-        mu, sigma = getTH1GausFit(resY_qall_inEtaBinTH1[i], c1_z_qall.GetPad(i+1), chopt)
+        mu, sigma = getTH1GausFit(resY_qall_inEtaBinTH1[i], c1_z_qall.GetPad(i+1), options.gaussfit)
         h_resZvseta_qall.SetBinContent(i+1,sigma)
         h_biasZvseta_qall.SetBinContent(i+1,mu)
 
         c1_z_qlow.cd(i+1)        
-        mu, sigma = getTH1GausFit(resY_qlow_inEtaBinTH1[i], c1_z_qlow.GetPad(i+1), chopt)
+        mu, sigma = getTH1GausFit(resY_qlow_inEtaBinTH1[i], c1_z_qlow.GetPad(i+1), options.gaussfit)
         h_resZvseta_qlow.SetBinContent(i+1,sigma)
         h_biasZvseta_qlow.SetBinContent(i+1,mu)
 
         c1_z_qhigh.cd(i+1)        
-        mu, sigma = getTH1GausFit(resY_qhigh_inEtaBinTH1[i], c1_z_qhigh.GetPad(i+1), chopt)
+        mu, sigma = getTH1GausFit(resY_qhigh_inEtaBinTH1[i], c1_z_qhigh.GetPad(i+1), options.gaussfit)
         h_resZvseta_qhigh.SetBinContent(i+1,sigma)
         h_biasZvseta_qhigh.SetBinContent(i+1,mu)
 
         c1_z_qprim.cd(i+1)        
-        mu, sigma = getTH1GausFit(resY_qprim_inEtaBinTH1[i], c1_z_qprim.GetPad(i+1), chopt)
+        mu, sigma = getTH1GausFit(resY_qprim_inEtaBinTH1[i], c1_z_qprim.GetPad(i+1), options.gaussfit)
         h_resZvseta_qprim.SetBinContent(i+1,sigma)
         h_biasZvseta_qprim.SetBinContent(i+1,mu)
 
@@ -735,4 +787,4 @@ def main(argv):
 
 ##################################
 if __name__ == "__main__":        
-    main(sys.argv[1:])
+    main()
