@@ -124,13 +124,15 @@ TightMuonProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
      
      bool ISGLOB = (recomuon_it->isGlobalMuon());
      bool ID = (muon::isGoodMuon(*recomuon_it,muon::GlobalMuonPromptTight) && (recomuon_it->numberOfMatchedStations()>1) );
-     bool HITS = (recomuon_it->innerTrack()->hitPattern().trackerLayersWithMeasurement() > 5 && recomuon_it->innerTrack()->hitPattern().numberOfValidPixelHits() > 0);
-     bool IP = (fabs(recomuon_it->muonBestTrack()->dxy(pv.position())) < 0.2 && fabs(recomuon_it->muonBestTrack()->dz(pv.position())) < 0.5);
 
      if ( isPF_ ) {
         if ( muon::isTightMuon(*recomuon_it,pv)  ) tightMuons.push_back(*recomuon_it);
      } else {
-       if (ISGLOB && ID && HITS && IP) tightMuons.push_back(*recomuon_it);
+       if (ISGLOB && ID ){
+	 bool HITS = (recomuon_it->innerTrack()->hitPattern().trackerLayersWithMeasurement() > 5 && recomuon_it->innerTrack()->hitPattern().numberOfValidPixelHits() > 0);
+	 bool IP = (fabs(recomuon_it->muonBestTrack()->dxy(pv.position())) < 0.2 && fabs(recomuon_it->muonBestTrack()->dz(pv.position())) < 0.5);
+	 if ( HITS && IP ) tightMuons.push_back(*recomuon_it);
+       }
      }
    }      
    // the output
