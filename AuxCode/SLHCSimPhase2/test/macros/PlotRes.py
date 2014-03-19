@@ -262,6 +262,8 @@ def main():
     eta_span = (eta_max-eta_min)/n_eta_bins
     output_root_file = ROOT.TFile(output_root_filename,"RECREATE")
 
+    n_spreadXY_bins = 10
+
     ### hit maps
     output_root_file.mkdir("hitmaps") 
     output_root_file.cd("hitmaps") 
@@ -275,6 +277,9 @@ def main():
     h1_localY_witdh1_simHit = ROOT.TH1F("h1_localY_witdh1_simHit","h1_localY_witdh1_simHit",7000,-35000,+35000)
     h1_localX_witdh1_recHit = ROOT.TH1F("h1_localX_witdh1_recHit","h1_localX_witdh1_recHit",2000,-10000,+10000)
     h1_localY_witdh1_recHit = ROOT.TH1F("h1_localY_witdh1_recHit","h1_localY_witdh1_recHit",7000,-35000,+35000)
+
+    h1_localX_witdh1_delta = ROOT.TH1F("h1_localX_witdh1_delta","h1_localX_witdh1_delta",80,-400,+400)
+    h1_localY_witdh1_delta = ROOT.TH1F("h1_localY_witdh1_delta","h1_localY_witdh1_delta",80,-400,+400)
 
     ### ionization
     output_root_file.cd() 
@@ -291,7 +296,7 @@ def main():
     dz_closesthit_inEtaBinTH1 = []
     spreadX_inEtaBinTH1 = []
     spreadY_inEtaBinTH1 = []
-    for i in range(n_eta_bins):
+    for i in xrange(n_eta_bins):
         eta_low = 0.+i*eta_span
         eta_high = eta_low+eta_span
         
@@ -334,7 +339,7 @@ def main():
     resX_qlow_inEtaBinTH1 = []
     resX_qhigh_inEtaBinTH1 = []
     resX_qprim_inEtaBinTH1 = []
-    for i in range(n_eta_bins):
+    for i in xrange(n_eta_bins):
         eta_low = 0.+i*eta_span
         eta_high = eta_low+eta_span
         
@@ -358,7 +363,6 @@ def main():
     else:
         extra_ytitle_res  = "RMS [#mum]" 
         extra_ytitle_bias = "mean [#mum]"
-
             
     h_resRPhivseta_qall  = ROOT.TH1F("h_resRPhivseta_qall", "Barrel #varphi-Hit Resolution;|#eta|;"+extra_ytitle_res,n_eta_bins,eta_min,eta_max)
     h_resRPhivseta_qlow  = ROOT.TH1F("h_resRPhivseta_qlow", "Barrel #varphi-Hit Resolution;|#eta|;"+extra_ytitle_res,n_eta_bins,eta_min,eta_max)
@@ -369,6 +373,15 @@ def main():
     h_biasRPhivseta_qlow  = ROOT.TH1F("h_biasRPhivseta_qlow", "Barrel #varphi-Hit Bias;|#eta|;"+extra_ytitle_bias,n_eta_bins,eta_min,eta_max)
     h_biasRPhivseta_qhigh = ROOT.TH1F("h_biasRPhivseta_qhigh","Barrel #varphi-Hit Bias;|#eta|;"+extra_ytitle_bias,n_eta_bins,eta_min,eta_max)
     h_biasRPhivseta_qprim = ROOT.TH1F("h_biasRPhivseta_qprim","Barrel #varphi-Hit Bias;|#eta|;"+extra_ytitle_bias,n_eta_bins,eta_min,eta_max)
+
+    # resolution vs. cluster spread (=width of the projection)
+    resX_inNxBinTH1 = []
+    for i in xrange(0,n_spreadXY_bins):        
+        hname = "h1_resX_NxBin%d" % (i+1)
+        htitle = "h1_resX Nx = %d bin;[#mum];recHits" % (i+1)
+        resX_inNxBinTH1.append( ROOT.TH1F(hname,htitle,100,-100.,100.))
+    # final histograms    
+    h_resXvsNx = ROOT.TH1F("h_resXvsNx", "Barrel #varphi-Hit Resolution;spreadX;"+extra_ytitle_res,n_spreadXY_bins,0.5,n_spreadXY_bins+0.5) 
 
     ### z residuals 
     output_root_file.cd() 
@@ -381,7 +394,7 @@ def main():
     resY_qlow_inEtaBinTH1 = []
     resY_qhigh_inEtaBinTH1 = []
     resY_qprim_inEtaBinTH1 = []
-    for i in range(n_eta_bins):
+    for i in xrange(n_eta_bins):
         eta_low = 0.+i*eta_span
         eta_high = eta_low+eta_span
         
@@ -408,6 +421,16 @@ def main():
     h_biasZvseta_qlow = ROOT.TH1F("h_biasZvseta_qlow", "Barrel z-Hit Bias;|#eta|;"+extra_ytitle_bias,n_eta_bins,eta_min,eta_max) 
     h_biasZvseta_qhigh= ROOT.TH1F("h_biasZvseta_qhigh","Barrel z-Hit Bias;|#eta|;"+extra_ytitle_bias,n_eta_bins,eta_min,eta_max)
     h_biasZvseta_qprim= ROOT.TH1F("h_biasZvseta_qprim","Barrel z-Hit Bias;|#eta|;"+extra_ytitle_bias,n_eta_bins,eta_min,eta_max)
+
+    # resolution vs. cluster spread (=width of the projection)
+    resY_inNyBinTH1 = []
+    for i in xrange(0,n_spreadXY_bins):        
+        hname = "h1_resY_NyBin%d" % (i+1)
+        htitle = "h1_resY Ny = %d bin;[#mum];recHits" % (i+1)
+        resY_inNyBinTH1.append( ROOT.TH1F(hname,htitle,100,-100.,100.))
+    # final histograms    
+    h_resYvsNy = ROOT.TH1F("h_resYvsNy", "Barrel z-Hit Resolution;spreadY;"+extra_ytitle_res      ,n_spreadXY_bins,0.5,n_spreadXY_bins+0.5) 
+
 
     ######## 1st loop on the tree
     if investigate_cluster_breakage:
@@ -444,10 +467,13 @@ def main():
             if pixel_recHit.spreadx == 1:
                 h1_localX_witdh1_simHit.Fill(pixel_recHit.hx*10000) 
                 h1_localX_witdh1_recHit.Fill(pixel_recHit.x*10000) 
+                h1_localX_witdh1_delta.Fill((pixel_recHit.hx-pixel_recHit.x)*10000)
             if pixel_recHit.spready == 1:
                 h1_localY_witdh1_simHit.Fill(pixel_recHit.hy*10000)                 
                 h1_localY_witdh1_recHit.Fill(pixel_recHit.y*10000) 
- 
+                h1_localY_witdh1_delta.Fill((pixel_recHit.hy-pixel_recHit.y)*10000)
+#                print "SimHitY: ", pixel_recHit.hy*10000, " RecHitY: ", pixel_recHit.y*10000, " DeltaY: ", 
+
             # ionization corrected for incident angle (only central eta) 
             if(math.fabs(tv3.Eta())<0.20):
                 h1_qcorr.Fill(pixel_recHit.q*0.001*tv3.Perp()/tv3.Mag())
@@ -510,18 +536,25 @@ def main():
         if (pixel_recHit.subid==1 and pixel_recHit.layer==1):
 
             tv3 = ROOT.TVector3(pixel_recHit.gx, pixel_recHit.gy, pixel_recHit.gz)
+            index = hp_qvseta_xAxis.FindBin(math.fabs(tv3.Eta()))
 
             # residuals from primaries only
-            if  (pixel_recHit.process == 2) and (pixel_recHit.q*0.001 < 1.5*Qave*tv3.Mag()/tv3.Perp()) and (pixel_recHit.spready == 1) :
-                resX_qprim_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hx-pixel_recHit.x))
-                resY_qprim_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hy-pixel_recHit.y))
+            if  (pixel_recHit.process == 2) and (pixel_recHit.q*0.001 < 1.5*Qave*tv3.Mag()/tv3.Perp()):
+                
+                if(math.fabs(tv3.Eta())<eta_max):
+                    ix = min(pixel_recHit.spreadx,n_spreadXY_bins)
+                    resX_inNxBinTH1[ix-1].Fill((pixel_recHit.hx-pixel_recHit.x)*10000)
+                    iy = min(pixel_recHit.spready,n_spreadXY_bins)
+                    resY_inNyBinTH1[iy-1].Fill((pixel_recHit.hy-pixel_recHit.y)*10000)                    
+
+                    resX_qprim_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hx-pixel_recHit.x))
+                    resY_qprim_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hy-pixel_recHit.y))
 
             # NB: at given eta   Qave -> Qave(eta=0)/sin(theta)
             if  pixel_recHit.q*0.001 < Qave*tv3.Mag()/tv3.Perp():
                 hp_resRPhivseta_qlow.Fill(math.fabs(tv3.Eta()),pixel_recHit.hx-pixel_recHit.x)
                 hp_resZvseta_qlow.Fill(math.fabs(tv3.Eta()),pixel_recHit.hy-pixel_recHit.y)
                 if(math.fabs(tv3.Eta())<eta_max):
-                    index = hp_qvseta_xAxis.FindBin(math.fabs(tv3.Eta()))
                     resX_qlow_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hx-pixel_recHit.x))
                     resY_qlow_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hy-pixel_recHit.y))
                     resX_qall_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hx-pixel_recHit.x))
@@ -531,7 +564,6 @@ def main():
                 hp_resRPhivseta_qhigh.Fill(math.fabs(tv3.Eta()),pixel_recHit.hx-pixel_recHit.x)
                 hp_resZvseta_qhigh.Fill(math.fabs(tv3.Eta()),pixel_recHit.hy-pixel_recHit.y)
                 if(math.fabs(tv3.Eta())<eta_max):
-                    index = hp_qvseta_xAxis.FindBin(math.fabs(tv3.Eta()))
                     resX_qhigh_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hx-pixel_recHit.x))
                     resY_qhigh_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hy-pixel_recHit.y))
                     resX_qall_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hx-pixel_recHit.x))
@@ -543,6 +575,7 @@ def main():
     # local position 
     c1_localXY = ROOT.TCanvas("c1_localXY","c1_localXY",600,900)
     c1_localXY.SetFillColor(ROOT.kWhite)
+#    c1_localXY.Divide(2,2)
     c1_localXY.Divide(1,2)
 
     c1_localXY.cd(1)
@@ -554,6 +587,12 @@ def main():
     h1_localY_witdh1_recHit.SetLineColor(ROOT.kRed) 
     h1_localY_witdh1_recHit.Draw() 
     h1_localY_witdh1_simHit.Draw("same") 
+
+#    c1_localXY.cd(3)
+#    h1_localX_witdh1_delta.Draw() 
+#
+#    c1_localXY.cd(4)
+#    h1_localY_witdh1_delta.Draw() 
 
     c1_localXY.SaveAs("c1_localXY.root")
 
@@ -718,6 +757,32 @@ def main():
     c1_z_qhigh.SaveAs("c1_z_qhigh.pdf")
     c1_z_qprim.SaveAs("c1_z_qprimaries.pdf")
 
+
+
+# residuals vs. spread of the cluster
+    w = math.ceil(math.sqrt(n_spreadXY_bins))
+    h = math.ceil(n_spreadXY_bins/w)
+    c1_rPhi_nX = ROOT.TCanvas("c1_rPhi_nX","c1_rPhi_nX",900,900)
+    c1_rPhi_nX.SetFillColor(ROOT.kWhite)
+    c1_rPhi_nX.Divide(int(w),int(h))
+    c1_z_nY = ROOT.TCanvas("c1_z_nY","c1_z_nY",900,900)
+    c1_z_nY.SetFillColor(ROOT.kWhite)
+    c1_z_nY.Divide(int(w),int(h))
+
+    for i in xrange(0,n_spreadXY_bins):        
+
+        c1_rPhi_nX.cd(i+1)        
+        mu, sigma = getTH1GausFit(resX_inNxBinTH1[i], c1_rPhi_nX.GetPad(i+1), options.gaussfit)
+        h_resXvsNx.SetBinContent(i+1,sigma)
+
+        c1_z_qprim.cd(i+1)        
+        mu, sigma = getTH1GausFit(resY_inNyBinTH1[i], c1_z_nY.GetPad(i+1), options.gaussfit)
+        h_resYvsNy.SetBinContent(i+1,sigma)
+
+    c1_rPhi_nX.SaveAs("c1_rPhi_nX.pdf")
+    c1_z_nY.SaveAs("c1_z_nY.pdf")
+
+
 # draw nice trend plots
     setStyle()
 
@@ -780,7 +845,7 @@ def main():
 
 #    cResVsEta.SaveAs("rmsVsEta.png")
 #    cResVsEta.SaveAs("rmsVsEta.pdf")
-    
+
     #    
     output_root_file.Write()
     output_root_file.Close()

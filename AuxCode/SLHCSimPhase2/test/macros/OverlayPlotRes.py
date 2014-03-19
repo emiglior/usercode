@@ -15,8 +15,8 @@ def getModifiedTH1Fs(file, color, canvas):
 # 
     for ca in cIn.GetListOfPrimitives():
 # Get TGraph from MultiGraph        
-#        if ca.InheritsFrom('TH1F') and ca.GetLineStyle() == ROOT.kDotted: # ad-hoc to select only the primaries
-        if ca.InheritsFrom('TH1F'):
+        if ca.InheritsFrom('TH1F') and ca.GetLineStyle() == ROOT.kDotted: # ad-hoc to select only the primaries
+#        if ca.InheritsFrom('TH1F'):
             ca.SetMarkerColor(color)
             ca.SetLineColor(color)
             ca.SetLineWidth(3)
@@ -37,9 +37,13 @@ def main():
 
 ### overlay residuals in rphi
     # dictionary 
-    dict_rphi = {'phase1/rmsVsEta_rphi_phase1':ROOT.kBlack,\
-                 'phase1_v0/rmsVsEta_rphi_phase1_v0':ROOT.kRed,\
-                 'phase1_v2/rmsVsEta_rphi_phase1_v2':ROOT.kBlue}
+    dict_rphi = {\
+                  'phase1/All/rmsVsEta_rphi_phase1':ROOT.kBlack\
+                 ,'phase1_v0/All/rmsVsEta_rphi_phase1_v0':ROOT.kRed\
+#                 ,'phase1_v1/All/rmsVsEta_rphi_phase1_v1':ROOT.kMagenta\
+                 ,'phase1_v2/All/rmsVsEta_rphi_phase1_v2':ROOT.kBlue\
+#                 ,'phase1_v3/All/rmsVsEta_rphi_phase1_v3':ROOT.kGreen\
+    }
     
     legRMS_rphi = ROOT.TLegend(0.18,0.60,0.48,0.86)
     legRMS_rphi.SetFillColor(0)
@@ -66,7 +70,7 @@ def main():
                 h1.GetXaxis().SetTitle('|#eta|')
                 h1.GetXaxis().CenterTitle(ROOT.kFALSE)
                 h1.GetXaxis().SetTitleOffset(1.)
-                h1.GetYaxis().SetRangeUser(0.,30.)
+                h1.GetYaxis().SetRangeUser(0.,40.)
                 h1.GetYaxis().SetTitleOffset(1.)
                 h1.GetYaxis().SetTitle('RMS [#mum]')
                 h1.GetYaxis().CenterTitle(ROOT.kFALSE)
@@ -82,6 +86,10 @@ def main():
                 extraLabel += 'PhaseI_v0'         
             elif h1.GetLineColor() == ROOT.kBlue:
                 extraLabel += 'PhaseI_v2 (*)'         
+            elif h1.GetLineColor() == ROOT.kMagenta:
+                extraLabel += 'PhaseI_v1'         
+            elif h1.GetLineColor() == ROOT.kGreen:
+                extraLabel += 'PhaseI_v3'         
 
             if h1.GetLineStyle() == ROOT.kSolid:
                 legRMS_rphi.AddEntry(h1,'Q/Q_{av}<1'+extraLabel,'L') 
@@ -109,9 +117,13 @@ def main():
 
 ### overlay residuals in rz
     # dictionary 
-    dict_rz = {'phase1/rmsVsEta_rz_phase1':ROOT.kBlack,\
-               'phase1_v0/rmsVsEta_rz_phase1_v0':ROOT.kRed,\
-               'phase1_v2/rmsVsEta_rz_phase1_v2':ROOT.kBlue}
+    dict_rz = {\
+         'phase1/All/rmsVsEta_rz_phase1':ROOT.kBlack\
+        ,'phase1_v0/All/rmsVsEta_rz_phase1_v0':ROOT.kRed\
+#        ,'phase1_v1/All/rmsVsEta_rz_phase1_v1':ROOT.kMagenta\
+        ,'phase1_v2/All/rmsVsEta_rz_phase1_v2':ROOT.kBlue\
+#        ,'phase1_v3/All/rmsVsEta_rz_phase1_v3':ROOT.kGreen\
+    }
     
     legRMS_rz = ROOT.TLegend(0.18,0.60,0.48,0.86)
     legRMS_rz.SetFillColor(0)
@@ -138,7 +150,7 @@ def main():
                 h1.GetXaxis().SetTitle('|#eta|')
                 h1.GetXaxis().CenterTitle(ROOT.kFALSE)
                 h1.GetXaxis().SetTitleOffset(1.)
-                h1.GetYaxis().SetRangeUser(10.,40.)
+                h1.GetYaxis().SetRangeUser(0.,40.)
                 h1.GetYaxis().SetTitleOffset(1.)
                 h1.GetYaxis().SetTitle('RMS [#mum]')
                 h1.GetYaxis().CenterTitle(ROOT.kFALSE)
@@ -154,6 +166,11 @@ def main():
                 extraLabel += 'PhaseI_v0'         
             elif h1.GetLineColor() == ROOT.kBlue:
                 extraLabel += 'PhaseI_v2 (*)'         
+            elif h1.GetLineColor() == ROOT.kMagenta:
+                extraLabel += 'PhaseI_v1'         
+            elif h1.GetLineColor() == ROOT.kGreen:
+                extraLabel += 'PhaseI_v3'         
+
 
             if h1.GetLineStyle() == ROOT.kSolid:
                 legRMS_rz.AddEntry(h1,'Q/Q_{av}<1'+extraLabel,'L') 
