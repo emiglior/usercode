@@ -191,6 +191,9 @@ def declare_struct():
 ###############
 def main():
 ###############
+    CmToUm = 10000.
+    ToKe = 0.001
+
     parser = OptionParser()
     parser.add_option("-f", "--file",  
                       action="store", type="string", dest="input_root_filename",
@@ -267,7 +270,13 @@ def main():
     ### hit maps
     output_root_file.mkdir("hitmaps") 
     output_root_file.cd("hitmaps") 
-    h1_eta = ROOT.TH1F("h1_eta","h1eta_rechit",n_eta_bins,eta_min,eta_max)
+    h1_tgb = ROOT.TH1F("h1_tgb","h1_tgb_rechit",628,-3.14,3.14)
+    h1_eta = ROOT.TH1F("h1_eta","h1_eta_rechit",n_eta_bins,eta_min,eta_max)
+    h1_theta_beta = ROOT.TH1F("h1_theta_beta","h1_theta_beta_rechit",100,-20,20)
+
+    g_theta_beta = ROOT.TGraph(100000)
+    g_theta_beta.SetNameTitle("gr_theta_beta","gr_theta_beta_rechit")
+
     h2_rzhitmapSubId1 = ROOT.TH2F("h2_rzhitmapSubId1","rzhitmap_subid1; recHit z [cm]; recHit r [cm]",200,-300.,300.,150,0.,150.)
     h2_rzhitmapSubId2 = ROOT.TH2F("h2_rzhitmapSubId2","rzhitmap_subid2; recHit z [cm]; recHit r [cm]",200,-300.,300.,150,0.,150.)    
     h2_rzhitmap = ROOT.TH2F("h2_rzhitmap","rzhitmap; recHit z [cm]; recHit r [cm]",100,-50.,50.,100,2.5,5.)
@@ -438,8 +447,11 @@ def main():
     else:
         all_entries = input_tree.GetEntries()
 
+#    all_entries = 500000
     print "all_entries ", all_entries
     
+    ipt = 0 
+
     for this_entry in xrange(all_entries):
         if investigate_cluster_breakage:
             skim_input_tree.GetEntry(this_entry)
@@ -460,36 +472,57 @@ def main():
 
         # BPIX only (layer 1)
         if  (pixel_recHit.subid==1 and pixel_recHit.layer==1):
-            h1_eta.Fill(math.fabs(tv3.Eta()))
+            
+            if ( ipt < 100000 ): 
+                ipt = ipt+1
+                if pixel_recHit.tz >= 0:
+                    g_theta_beta.SetPoint(ipt,math.tan(tv3.Theta()),-pixel_recHit.tz/pixel_recHit.ty)
+                else:
+                    g_theta_beta.SetPoint(ipt,math.tan(tv3.Theta()),pixel_recHit.tz/pixel_recHit.ty)
+                    
+
+            if pixel_recHit.tz >= 0:
+                tgb = math.atan(-pixel_recHit.tz/pixel_recHit.ty)
+            else:
+                tgb = math.atan(pixel_recHit.tz/pixel_recHit.ty)
+            if tgb<0: 
+                tgb = math.pi+tgb                                
+
+            h1_tgb.Fill(tgb)
+#            the_eta = tv3.Eta()
+            the_eta = -math.log(math.tan(0.5*tgb))
+            h1_eta.Fill(math.fabs(the_eta))
+            h1_theta_beta.Fill(math.tan(tv3.Theta())-math.tan(tgb))
+
             h2_rzhitmap.Fill(tv3.z(),tv3.Perp())
-            hp_qvseta.Fill(math.fabs(tv3.Eta()),pixel_recHit.q*0.001)
+            hp_qvseta.Fill(math.fabs(the_eta),pixel_recHit.q*ToKe)
 
             if pixel_recHit.spreadx == 1:
-                h1_localX_witdh1_simHit.Fill(pixel_recHit.hx*10000) 
-                h1_localX_witdh1_recHit.Fill(pixel_recHit.x*10000) 
-                h1_localX_witdh1_delta.Fill((pixel_recHit.hx-pixel_recHit.x)*10000)
+                h1_localX_witdh1_simHit.Fill(pixel_recHit.hx*CmToUm) 
+                h1_localX_witdh1_recHit.Fill(pixel_recHit.x*CmToUm) 
+                h1_localX_witdh1_delta.Fill((pixel_recHit.hx-pixel_recHit.x)*CmToUm)
             if pixel_recHit.spready == 1:
-                h1_localY_witdh1_simHit.Fill(pixel_recHit.hy*10000)                 
-                h1_localY_witdh1_recHit.Fill(pixel_recHit.y*10000) 
-                h1_localY_witdh1_delta.Fill((pixel_recHit.hy-pixel_recHit.y)*10000)
-#                print "SimHitY: ", pixel_recHit.hy*10000, " RecHitY: ", pixel_recHit.y*10000, " DeltaY: ", 
+                h1_localY_witdh1_simHit.Fill(pixel_recHit.hy*CmToUm)                 
+                h1_localY_witdh1_recHit.Fill(pixel_recHit.y*CmToUm) 
+                h1_localY_witdh1_delta.Fill((pixel_recHit.hy-pixel_recHit.y)*CmToUm)
+#                print "SimHitY: ", pixel_recHit.hy*CmToUm, " RecHitY: ", pixel_recHit.y*CmToUm, " DeltaY: ", 
 
             # ionization corrected for incident angle (only central eta) 
-            if(math.fabs(tv3.Eta())<0.20):
-                h1_qcorr.Fill(pixel_recHit.q*0.001*tv3.Perp()/tv3.Mag())
+            if(math.fabs(the_eta)<0.20):
+                h1_qcorr.Fill(pixel_recHit.q*ToKe*tv3.Perp()/tv3.Mag())
 
-            if(math.fabs(tv3.Eta())<eta_max):
-                index = hp_qvseta_xAxis.FindBin(math.fabs(tv3.Eta()))
-                q_inEtaBinTH1[index-1].Fill(pixel_recHit.q*0.001)
+            if(math.fabs(the_eta)<eta_max):
+                index = hp_qvseta_xAxis.FindBin(math.fabs(the_eta))
+                q_inEtaBinTH1[index-1].Fill(pixel_recHit.q*ToKe)
 
                 # Q cluster (only secondaries)
                 if pixel_recHit.process != 2:
-                    qsec_inEtaBinTH1[index-1].Fill(pixel_recHit.q*0.001)
+                    qsec_inEtaBinTH1[index-1].Fill(pixel_recHit.q*ToKe)
 
                 spreadX_inEtaBinTH1[index-1].Fill(min(pixel_recHit.spreadx, 15))
                 spreadY_inEtaBinTH1[index-1].Fill(min(pixel_recHit.spready, 15))
                 
-                nyVSq_inEtaBinTH2[index-1].Fill(pixel_recHit.q*0.001, min(pixel_recHit.spready,10.))
+                nyVSq_inEtaBinTH2[index-1].Fill(pixel_recHit.q*ToKe, min(pixel_recHit.spready,10.))
 
             # investigation of cluster breakage
             # http://root.cern.ch/phpBB3/viewtopic.php?t=7804
@@ -516,10 +549,12 @@ def main():
                                 delta_gz = tv3.z() - pixel_recHit.gz
                         
 
-                dz_closesthit_inEtaBinTH1[index-1].Fill(min(15000,math.fabs(delta_gz)*10000)) # 15000 should not be hardcoded....
+                dz_closesthit_inEtaBinTH1[index-1].Fill(min(15000,math.fabs(delta_gz)*CmToUm)) # 15000 should not be hardcoded....
 
-
-
+    output_root_file.cd() 
+    output_root_file.cd("hitmaps") 
+    g_theta_beta.Draw("AP")
+    g_theta_beta.Write()
     # check where is the 70%/30% boundary in the distribution of the ionization corrected for incident angle
     output_root_file.cd() 
     output_root_file.cd("dEdx") 
@@ -534,40 +569,49 @@ def main():
             input_tree.GetEntry(this_entry)
         # BPIX only (layer 1)
         if (pixel_recHit.subid==1 and pixel_recHit.layer==1):
-
             tv3 = ROOT.TVector3(pixel_recHit.gx, pixel_recHit.gy, pixel_recHit.gz)
-            index = hp_qvseta_xAxis.FindBin(math.fabs(tv3.Eta()))
+
+            if pixel_recHit.tz > 0:
+                tgb = math.atan(-pixel_recHit.tz/pixel_recHit.ty)
+            else:
+                tgb = math.atan(pixel_recHit.tz/pixel_recHit.ty)
+            if tgb<0: 
+                tgb = math.pi+tgb
+
+#            the_eta = tv3.Eta()
+            the_eta = -math.log(math.tan(0.5*tgb))
+            index = hp_qvseta_xAxis.FindBin(math.fabs(the_eta))
 
             # residuals from primaries only
-            if  (pixel_recHit.process == 2) and (pixel_recHit.q*0.001 < 1.5*Qave*tv3.Mag()/tv3.Perp()):
+            if  (pixel_recHit.process == 2) and (pixel_recHit.q*ToKe < 1.5*Qave*tv3.Mag()/tv3.Perp()):
                 
-                if(math.fabs(tv3.Eta())<eta_max):
+                if(math.fabs(the_eta)<eta_max):
                     ix = min(pixel_recHit.spreadx,n_spreadXY_bins)
-                    resX_inNxBinTH1[ix-1].Fill((pixel_recHit.hx-pixel_recHit.x)*10000)
+                    resX_inNxBinTH1[ix-1].Fill((pixel_recHit.hx-pixel_recHit.x)*CmToUm)
                     iy = min(pixel_recHit.spready,n_spreadXY_bins)
-                    resY_inNyBinTH1[iy-1].Fill((pixel_recHit.hy-pixel_recHit.y)*10000)                    
+                    resY_inNyBinTH1[iy-1].Fill((pixel_recHit.hy-pixel_recHit.y)*CmToUm)                    
 
-                    resX_qprim_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hx-pixel_recHit.x))
-                    resY_qprim_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hy-pixel_recHit.y))
+                    resX_qprim_inEtaBinTH1[index-1].Fill(CmToUm*(pixel_recHit.hx-pixel_recHit.x))
+                    resY_qprim_inEtaBinTH1[index-1].Fill(CmToUm*(pixel_recHit.hy-pixel_recHit.y))
 
             # NB: at given eta   Qave -> Qave(eta=0)/sin(theta)
-            if  pixel_recHit.q*0.001 < Qave*tv3.Mag()/tv3.Perp():
-                hp_resRPhivseta_qlow.Fill(math.fabs(tv3.Eta()),pixel_recHit.hx-pixel_recHit.x)
-                hp_resZvseta_qlow.Fill(math.fabs(tv3.Eta()),pixel_recHit.hy-pixel_recHit.y)
-                if(math.fabs(tv3.Eta())<eta_max):
-                    resX_qlow_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hx-pixel_recHit.x))
-                    resY_qlow_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hy-pixel_recHit.y))
-                    resX_qall_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hx-pixel_recHit.x))
-                    resY_qall_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hy-pixel_recHit.y))
+            if  pixel_recHit.q*ToKe < Qave*tv3.Mag()/tv3.Perp():
+                hp_resRPhivseta_qlow.Fill(math.fabs(the_eta),pixel_recHit.hx-pixel_recHit.x)
+                hp_resZvseta_qlow.Fill(math.fabs(the_eta),pixel_recHit.hy-pixel_recHit.y)
+                if(math.fabs(the_eta)<eta_max):
+                    resX_qlow_inEtaBinTH1[index-1].Fill(CmToUm*(pixel_recHit.hx-pixel_recHit.x))
+                    resY_qlow_inEtaBinTH1[index-1].Fill(CmToUm*(pixel_recHit.hy-pixel_recHit.y))
+                    resX_qall_inEtaBinTH1[index-1].Fill(CmToUm*(pixel_recHit.hx-pixel_recHit.x))
+                    resY_qall_inEtaBinTH1[index-1].Fill(CmToUm*(pixel_recHit.hy-pixel_recHit.y))
 
-            elif  pixel_recHit.q*0.001 < 1.5*Qave*tv3.Mag()/tv3.Perp():
-                hp_resRPhivseta_qhigh.Fill(math.fabs(tv3.Eta()),pixel_recHit.hx-pixel_recHit.x)
-                hp_resZvseta_qhigh.Fill(math.fabs(tv3.Eta()),pixel_recHit.hy-pixel_recHit.y)
-                if(math.fabs(tv3.Eta())<eta_max):
-                    resX_qhigh_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hx-pixel_recHit.x))
-                    resY_qhigh_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hy-pixel_recHit.y))
-                    resX_qall_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hx-pixel_recHit.x))
-                    resY_qall_inEtaBinTH1[index-1].Fill(10000.*(pixel_recHit.hy-pixel_recHit.y))
+            elif  pixel_recHit.q*ToKe < 1.5*Qave*tv3.Mag()/tv3.Perp():
+                hp_resRPhivseta_qhigh.Fill(math.fabs(the_eta),pixel_recHit.hx-pixel_recHit.x)
+                hp_resZvseta_qhigh.Fill(math.fabs(the_eta),pixel_recHit.hy-pixel_recHit.y)
+                if(math.fabs(the_eta)<eta_max):
+                    resX_qhigh_inEtaBinTH1[index-1].Fill(CmToUm*(pixel_recHit.hx-pixel_recHit.x))
+                    resY_qhigh_inEtaBinTH1[index-1].Fill(CmToUm*(pixel_recHit.hy-pixel_recHit.y))
+                    resX_qall_inEtaBinTH1[index-1].Fill(CmToUm*(pixel_recHit.hx-pixel_recHit.x))
+                    resY_qall_inEtaBinTH1[index-1].Fill(CmToUm*(pixel_recHit.hy-pixel_recHit.y))
 
 
 
