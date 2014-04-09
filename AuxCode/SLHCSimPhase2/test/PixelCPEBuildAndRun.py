@@ -129,7 +129,7 @@ class Job:
         fout.write("#BSUB -oo "+os.path.join(LOG_DIR,self.job_basename)+".log \n") # LXBATCH
         fout.write("#BSUB -q cmscaf1nd \n")                                        # LXBATCH
      
-        fout.write("### Auto-Generated Script by LoopCMSSWBuildAndRun.py ### \n")
+        fout.write("### Auto-Generated Script by PixelCPEBuildAndRun.py ### \n")
         fout.write("JobName="+self.job_basename+" \n")
         fout.write("OUT_DIR="+self.out_dir+" \n")
         fout.write("islocal="+str(self.islocal)+" \n")
