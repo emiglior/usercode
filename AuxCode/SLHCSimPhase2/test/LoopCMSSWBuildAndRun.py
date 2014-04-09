@@ -200,7 +200,7 @@ class Job:
         fout.write("echo \"After git cms-addpkg\" \n")
         fout.write("pwd \n")
         fout.write("ls -l . \n")
-        fout.write("git pull https://github.com/emiglior/cmssw ChangePitch_on62X \n")
+        fout.write("git pull https://github.com/mmusich/cmssw ChangePitch_on62X \n")
         fout.write("### 1 ended  \n")
         
         fout.write("git clone -b 620_slhc10_phase1 git://github.com/emiglior/usercode.git \n")

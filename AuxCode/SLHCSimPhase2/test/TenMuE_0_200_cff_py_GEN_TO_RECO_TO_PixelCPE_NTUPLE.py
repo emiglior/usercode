@@ -125,11 +125,11 @@ process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:upgrade2017', '')
 
 process.generator = cms.EDProducer("FlatRandomEGunProducer",
     PGunParameters = cms.PSet(
-        #PartID = cms.vint32(-13, -13, -13, -13, -13),
-	PartID = cms.vint32(-13),
-        MaxEta = cms.double(2.5),
+        PartID = cms.vint32(-13, -13, -13, -13, -13),
+	#PartID = cms.vint32(-13),
+        MaxEta = cms.double(2.7),
         MaxPhi = cms.double(3.14159265359),
-        MinEta = cms.double(-2.5),
+        MinEta = cms.double(-2.7),
         MinE = cms.double(0.0),
         MinPhi = cms.double(-3.14159265359),
         MaxE = cms.double(200.0),
@@ -232,6 +232,9 @@ if options.AgeingScenario!="NoAgeing":
 
 from AuxCode.SLHCSimPhase2.PixelCPE_tables_cff import *
 process.PixelCPEGenericESProducer.PixelCPEList = PixelCPE_dict['pixelCPE_100x150_upgrade']
+
+from AuxCode.SLHCSimPhase2.crossingFrameCustoms import *
+customiseCrossingFrame(process)
 
 # Uncomment next two lines to change pixel DIGI threshold
 process.mix.digitizers.pixel.ThresholdInElectrons_BPix = cms.double(options.BPixThr)
