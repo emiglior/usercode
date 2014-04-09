@@ -1,6 +1,6 @@
 import FWCore.ParameterSet.Config as cms
 
-# taken from https://github.com/cms-sw/cmssw/blob/CMSSW_6_1_2_SLHC8_patch3/RecoLocalTracker/SiPixelRecHits/src/PixelCPEGeneric.cc
+# taken from https://github.com/cms-sw/cmssw/blob/CMSSW_6_2_X_SLHC/RecoLocalTracker/SiPixelRecHits/src/PixelCPEGeneric.cc
 
 #Pixel CPE for default pixel cell (100um x 150um)
 pixelCPE_100x150_default = cms.PSet(

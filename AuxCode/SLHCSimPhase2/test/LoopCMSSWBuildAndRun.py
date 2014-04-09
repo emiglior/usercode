@@ -41,7 +41,7 @@ def set_global_var(sample):
     PBS_DIR = os.path.join(os.getcwd(),"PBS") 
     LOG_DIR = os.path.join(os.getcwd(),"log")
     SCRAM_ARCH = "slc5_amd64_gcc472"
-    CMSSW_VER="CMSSW_6_1_2_SLHC8_patch3"
+    CMSSW_VER="CMSSW_6_2_0_SLHC10"
     
     if (sample=="TTbar") | (sample=="ttbar") | (sample=="TTBar") :
         GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/Extended2017/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
@@ -137,19 +137,11 @@ class Job:
             os.makedirs(LOG_DIR)
 
         fout.write("#!/bin/sh \n") 
-# >>>>>>>>> BA
-#        fout.write("#PBS -S /bin/sh\n")       
-#        fout.write("#PBS -N "+self.job_basename+"\n")
-#        fout.write("#PBS -j oe \n")
-#        fout.write("#PBS -o "+os.path.join(LOG_DIR,self.job_basename)+".log"+"\n")
-#        fout.write("#PBS -q local \n")
-#        fout.write("#PBS -l mem=5gb \n")
         fout.write("#BSUB -L /bin/sh \n")       
         fout.write("#BSUB -J "+self.job_basename+"\n")
         fout.write("#BSUB -oo "+os.path.join(LOG_DIR,self.job_basename)+".log \n") # LXBATCH
         fout.write("#BSUB -q cmscaf1nd \n")                                        # LXBATCH
         fout.write("#BSUB -R \"rusage[mem=5000]\"\n")
-# <<<<<<<<< LXBATCH        
         fout.write("### Auto-Generated Script by LoopCMSSWBuildAndRun.py ### \n")
         fout.write("JobName="+self.job_basename+" \n")
         fout.write("outfilename="+self.job_basename+".root"+" \n")
@@ -164,30 +156,15 @@ class Job:
         fout.write("bpixthr="+self.bpixthr+" \n")
         fout.write("inputgensimfilename="+GENSIM_FILE+" \n")
 
-# >>>>>>>>> BA
-# specific for cmssusy.ba.infn.it https://www.ba.infn.it/pagine-utenti.html?task=viewpage&user_id=111&pageid=96
-#       fout.write("if [ \"$PBS_ENVIRONMENT\" == \"PBS_BATCH\" ]; then \n")
-#       fout.write("echo \"I AM IN BATCH\" \n")
-#       fout.write("mkdir -p /home/tmp/$USER/$PBS_JOBID \n")
-#       fout.write("export HOME=/home/tmp/$USER/$PBS_JOBID \n")
-#       fout.write("cd \n")
-#       fout.write("export PBS_O_WORKDIR=$HOME \n")
-#       fout.write("fi \n")
-#       fout.write("echo '$PBS_ENVIRONMENT is ' $PBS_ENVIRONMENT \n")
         fout.write("if [ ! \"$LSB_JOBID\" = \"\" ]; then \n")
         fout.write("echo \"I AM IN BATCH\" \n")
         fout.write("export HOME=$WORKDIR \n") # LXBATCH
         fout.write("cd \n")
         fout.write("fi \n")
-# <<<<<<<<< LXBATCH
+
         
         fout.write("export SCRAM_ARCH=slc5_amd64_gcc472 \n")
         fout.write("# Setup variables   \n")
-# >>>>>>>>> BA
-#        fout.write("VO_CMS_SW_DIR=/cvmfs/cms.cern.ch \n")
-#        fout.write("VO_CMS_SW_DIR=/swcms_slc5/CMSSW \n")
-# <<<<<<<<< LXBATCH
-#        fout.write("source $VO_CMS_SW_DIR/cmsset_default.sh \n")  # LXBATCH
 
         fout.write("cmssw_ver="+CMSSW_VER+" \n")
         fout.write("# Install and Compile CMSSW on batch node  \n")
@@ -198,10 +175,8 @@ class Job:
         # implement in the PBS script E.Brownson's recipe for changing the size of the pixels / part #1
         fout.write("# Eric Brownson's recipe to change the size of the pixels \n")
         fout.write("### 1: checkout CMSSW patches \n")
-# >>>>>>>>> BA
-#       fout.write("if [ \"$PBS_ENVIRONMENT\" == \"PBS_BATCH\" ]; then \n")
+
         fout.write("if [ ! \"$LSB_JOBID\" = \"\" ]; then \n")
-# <<<<<<<<< LXBATCH
         fout.write("cd \n")
         fout.write("# git config needed to avoid \n")
         fout.write("# error: SSL certificate problem: unable to get local issuer certificate while accessing \n")
@@ -225,10 +200,10 @@ class Job:
         fout.write("echo \"After git cms-addpkg\" \n")
         fout.write("pwd \n")
         fout.write("ls -l . \n")
-        fout.write("git pull https://github.com/brownsonian/cmssw SmallPitch_on612 \n")
+        fout.write("git pull https://github.com/emiglior/cmssw ChangePitch_on62X \n")
         fout.write("### 1 ended  \n")
         
-        fout.write("git clone -b 612_slhc8_phase1 git://github.com/emiglior/usercode.git \n")
+        fout.write("git clone -b 620_slhc10_phase1 git://github.com/emiglior/usercode.git \n")
         fout.write("mv usercode/AuxCode .\n")
         fout.write("mv usercode/RecoLocalTracker .\n")
         fout.write("rm -fr usercode \n")
@@ -275,10 +250,7 @@ class Job:
     def submit(self):
 ############################################
         os.system("chmod u+x " + os.path.join(self.pbs_dir,'jobs',self.output_PBS_name))
-# >>>>>>>>> BA
-#        os.system("qsub < "+os.path.join(self.pbs_dir,'jobs',self.output_PBS_name))
         os.system("bsub < "+os.path.join(self.pbs_dir,'jobs',self.output_PBS_name)) #LXBATCH
-# <<<<<<<<< LXBATCH
 
 #################
 def main():            

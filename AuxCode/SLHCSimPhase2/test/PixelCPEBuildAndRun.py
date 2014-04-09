@@ -41,7 +41,7 @@ def set_global_var():
     PBS_DIR = os.path.join(os.getcwd(),"PBS")
     LOG_DIR = os.path.join(os.getcwd(),"log")
     SCRAM_ARCH = "slc5_amd64_gcc472"
-    CMSSW_VER="CMSSW_6_1_2_SLHC8_patch3"
+    CMSSW_VER="CMSSW_6_2_0_SLHC10"
     
 ###### method to create recursively directories on EOS  #############
     
@@ -192,10 +192,10 @@ class Job:
         fout.write("echo \"After git cms-addpkg\" \n")
         fout.write("pwd \n")
         fout.write("ls -l . \n")
-        fout.write("git pull https://github.com/brownsonian/cmssw SmallPitch_on612 \n")
+        fout.write("git pull https://github.com/emiglior/cmssw ChangePitch_on62X \n")
         fout.write("### 1 ended  \n")
         
-        fout.write("git clone -b 612_slhc8_phase1 git://github.com/emiglior/usercode.git \n")
+        fout.write("git clone -b 620_slhc10_phase1 git://github.com/emiglior/usercode.git \n")
         fout.write("mv usercode/AuxCode .\n")
         fout.write("mv usercode/SimTracker .\n")
         fout.write("rm -fr usercode \n")
