@@ -230,9 +230,11 @@ if options.AgeingScenario!="NoAgeing":
     else:
         print "Unrecognized Ageing scenario, using default (=NoAgeing)"
 
+# customize the CPE errors
 from AuxCode.SLHCSimPhase2.PixelCPE_tables_cff import *
 process.PixelCPEGenericESProducer.PixelCPEList = PixelCPE_dict['pixelCPE_100x150_upgrade']
 
+# customize to make crossingFrames available (needed for turning on g4SimHits in the ROUList)
 from AuxCode.SLHCSimPhase2.crossingFrameCustoms import *
 customiseCrossingFrame(process)
 
