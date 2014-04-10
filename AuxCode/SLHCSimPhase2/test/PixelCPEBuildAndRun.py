@@ -7,7 +7,6 @@ import subprocess
 import ConfigParser
 from optparse import OptionParser
 
-
 ##### method to parse the input file ################################
 
 def ConfigSectionMap(config, section):
@@ -203,7 +202,9 @@ class Job:
         fout.write("git cms-checkdeps -a \n")
 
         fout.write("# compile \n")
-        fout.write("scram b -j 8 \n")
+        if(self.islocal):
+            fout.write("cp "+self.launch_dir+"/src/AuxCode/SLHCSimPhase2/plugins/NewStdHitNtuplizer.cc ./AuxCode/SLHCSimPhase2/plugins/NewStdHitNtuplizer.cc \n")
+        fout.write("scram b -j 8 \n") 
         fout.write("eval `scram r -sh` \n")
 
         # implement in the PBS script E.Brownson's recipe for changing the size of the pixels / part #2
@@ -237,7 +238,7 @@ class Job:
         #fout.write("ln -fs ../stdgrechitfullph1g_ntuple.root . \n")
         #fout.write("./res \n")        
         fout.write(" # retrieve the outputs \n")
-        fout.write("for RootOutputFile in $(ls *root ); do cmsStage -f  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
+        fout.write("for RootOutputFile in $(ls *root |grep stdg); do cmsStage -f  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
         #fout.write("for EpsOutputFile in $(ls *eps ); do cmsStage -f ${EpsOutputFile}  ${OUT_DIR}/${EpsOutputFile} ; done \n")
         fout.close()
 
@@ -356,7 +357,7 @@ def main():
     # link the output folder
     #############################################
     
-    link_name="PixelROCRows_"+mRocRows+"_PixelROCCols_"+mRocCols+"_L0Thick"+mL0Thick+"_BPixThr_"+mBPixThr
+    link_name=opts.jobname+"_PixelROCRows_"+mRocRows+"_PixelROCCols_"+mRocCols+"_L0Thick"+mL0Thick+"_BPixThr_"+mBPixThr
     linkthedir="ln -fs "+out_dir+" "+os.path.join(LOG_DIR,link_name)     
     os.system(linkthedir)    
 
@@ -372,13 +373,15 @@ def main():
 
     fout.write("#!/bin/tcsh \n")
     fout.write("set COUNT=0 \n")
-    fout.write("OUT_DIR="+out_dir+" \n")
+    fout.write("set OUT_DIR="+out_dir+" \n")
+    fout.write("cd "+os.path.join(LAUNCH_BASE,"src","AuxCode","SLHCSimPhase2","test")+"\n")
+    fout.write("cmsenv \n")
     fout.write("mkdir /tmp/$USER/"+link_name+" \n")
     fout.write("foreach inputfile (`cmsLs "+out_dir+"`) \n")
     fout.write("set namebase=`echo $inputfile |awk '{split($0,b,\"/\"); print b[11]}'` \n")
     fout.write("if (\"$namebase\" =~ *\"stdgrechitfullph1g\"*) then \n")
     fout.write("echo \"copying: $COUNT $OUT_DIR/$namebase\" \n") 
-    fout.write("cmsStage $OUT_DIR/$namebase /tmp/$USER/"+link_name+" \n")
+    fout.write("cmsStage -f $OUT_DIR/$namebase /tmp/$USER/"+link_name+" \n")
     fout.write("@ COUNT+=1 \n")
     fout.write("if ($COUNT == "+mJobsInTask+") then \n")
     fout.write("break \n")
@@ -387,15 +390,16 @@ def main():
     fout.write("end \n")
     fout.write("echo \"copied $COUNT files\" \n")
     fout.write("cd /tmp/$USER/"+link_name+" \n")
-    fout.write("hadd stdgrechitfullph1g_ntuple_"+link_name+"*.root \n")
-    fout.write("cmsStage stdgrechitfullph1g_ntuple_"+link_name+"*.root /store/caf/user/$USER/SLHCSimPhase2/PixelNtuples \n")
+    fout.write("hadd ${TMPDIR}/stdgrechitfullph1g_ntuple_"+link_name+".root ${TMPDIR}/stdgrechitfullph1g_ntuple_*.root \n")
+    fout.write("cmsStage -f stdgrechitfullph1g_ntuple_"+link_name+".root /store/caf/user/$USER/SLHCSimPhase2/PixelNtuples \n")
     fout.write("cd "+os.path.join("${CMSSW_BASE}","src","AuxCode","SLHCSimPhase2","test","Brownson")+"\n") 
     fout.write("make \n")
     fout.write("ln -fs /tmp/$USER/"+link_name+"/stdgrechitfullph1g_ntuple_"+link_name+"*.root ./stdgrechitfullph1g_ntuple.root \n")
     fout.write("./res \n")
     #fout.write("for RootOutputFile in $(ls *pdf ); do cp  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
     fout.write("for EpsOutputFile in $(ls *eps ); do cp  ${EpsOutputFile}    ${OUT_DIR}/${EpsOutputFile} ; done \n")
-      
+    os.system("chmod u+x "+harvestingname)
+    
 if __name__ == "__main__":        
     main()
 
