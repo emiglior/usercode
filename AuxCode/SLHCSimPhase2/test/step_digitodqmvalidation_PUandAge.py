@@ -2,7 +2,7 @@
 # using: 
 # Revision: 1.14 
 # Source: /local/reps/CMSSW/CMSSW/Configuration/Applications/python/ConfigBuilder.py,v 
-# with command line options: step_digitodqm --no_exec -s DIGI,L1,DIGI2RAW,RAW2DIGI,L1Reco,RECO,VALIDATION,DQM --customise SLHCUpgradeSimulations/Configuration/postLS1Customs.customisePostLS1,SLHCUpgradeSimulations/Configuration/phase1TkCustoms.customise,SLHCUpgradeSimulations/Configuration/customise_mixing.customise_NoCrossing --conditions auto:upgrade2017 --datatier GEN-SIM-RECO,DQM -n 100 --geometry Extended2017 --eventcontent FEVTDEBUGHLT,DQM --filein file:/lustre/cms/store/user/traverso/UpgradeSamples/step1_TTtoAnything_1k_evts.root --pileup AVE_140_BX_25ns --pileup_input file:MinBias_TuneZ2star_14TeV_pythia6_cff_py_GEN_SIM.root --fileout file:step_digitodqm.root
+# with command line options: step_digitodqm --no_exec -s DIGI,L1,DIGI2RAW,RAW2DIGI,L1Reco,RECO,VALIDATION,DQM --customise SLHCUpgradeSimulations/Configuration/postLS1Customs.customisePostLS1,SLHCUpgradeSimulations/Configuration/phase1TkCustoms.customise,SLHCUpgradeSimulations/Configuration/customise_mixing.customise_NoCrossing --conditions auto:upgrade2017 --datatier GEN-SIM-RECO,DQM -n 100 --geometry ExtendedPhaseIPixel,ExtendedPhaseIPixelReco --eventcontent FEVTDEBUGHLT,DQM --filein file:/tmp/emiglior/step1_TTbar_merged.root --pileup AVE_140_BX_25ns --pileup_input file:/tmp/emiglior/step1_MinBias_merged.root --fileout file:step_digitodqm.root
 import FWCore.ParameterSet.Config as cms
 import FWCore.ParameterSet.VarParsing as VarParsing
 
@@ -69,7 +69,7 @@ process.load('Configuration.EventContent.EventContent_cff')
 # import of configurations for PU
 if options.PUScenario!="NoPU":
 
-    process.load('SimGeneral.MixingModule.mix_E8TeV_AVE_16_BX_25ns_cfi')
+    process.load('SimGeneral.MixingModule.mix_POISSON_average_cfi')
     process.mix.input.fileNames = cms.untracked.vstring(['root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/Extended2017/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_15k_evts.root'])
     process.mix.bunchspace = cms.int32(25)
     process.mix.minBunch = cms.int32(-12)
@@ -107,7 +107,7 @@ if options.PUScenario!="NoPU":
 else:
     process.load('SimGeneral.MixingModule.mixNoPU_cfi')
 
-process.load('Configuration.Geometry.GeometryExtended2017Reco_cff')
+process.load('Configuration.Geometry.GeometryExtendedPhaseIPixelReco_cff')
 process.load('Configuration.StandardSequences.MagneticField_38T_cff')
 process.load('Configuration.StandardSequences.Digi_cff')
 process.load('Configuration.StandardSequences.SimL1Emulator_cff')
@@ -137,7 +137,7 @@ process.options = cms.untracked.PSet(
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.14 $'),
+    version = cms.untracked.string('$Revision: 1.20 $'),
     annotation = cms.untracked.string('step_digitodqm nevts:100'),
     name = cms.untracked.string('Applications')
 )
