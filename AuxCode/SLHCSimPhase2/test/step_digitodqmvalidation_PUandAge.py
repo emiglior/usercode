@@ -1,15 +1,16 @@
 # Auto generated configuration file
-# using: 
-# Revision: 1.14 
+# using:
+# Revision: 1.20 
 # Source: /local/reps/CMSSW/CMSSW/Configuration/Applications/python/ConfigBuilder.py,v 
-# with command line options: step_digitodqm --no_exec -s DIGI,L1,DIGI2RAW,RAW2DIGI,L1Reco,RECO,VALIDATION,DQM --customise SLHCUpgradeSimulations/Configuration/postLS1Customs.customisePostLS1,SLHCUpgradeSimulations/Configuration/phase1TkCustoms.customise,SLHCUpgradeSimulations/Configuration/customise_mixing.customise_NoCrossing --conditions auto:upgrade2017 --datatier GEN-SIM-RECO,DQM -n 100 --geometry ExtendedPhaseIPixel,ExtendedPhaseIPixelReco --eventcontent FEVTDEBUGHLT,DQM --filein file:/tmp/emiglior/step1_TTbar_merged.root --pileup AVE_140_BX_25ns --pileup_input file:/tmp/emiglior/step1_MinBias_merged.root --fileout file:step_digitodqm.root
+# with command line options: step_digitodqm_new --customise SLHCUpgradeSimulations/Configuration/combinedCustoms.cust_2017 --conditions auto:upgrade2017 --geometry Extended2017 --magField 38T_PostLS1 --eventcontent FEVTDEBUGHLT,DQM -s DIGI:pdigi_valid,L1,DIGI2RAW,RAW2DIGI,L1Reco,RECO,VALIDATION,DQM --datatier GEN-SIM-DIGI-RAW-RECO,DQM -n 10 --filein file:step1.root --fileout file:step2_new.root
+
 import FWCore.ParameterSet.Config as cms
 import FWCore.ParameterSet.VarParsing as VarParsing
 
 options = VarParsing.VarParsing()
 
 options.register('InputFileName',
-                 "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/Extended2017/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root", # default value
+                 "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc11/ExtendedPhaseIPixel/step1_TTtoAnything_14TeV_pythia6_8k_evts.root", #default value
                  VarParsing.VarParsing.multiplicity.singleton, # singleton or list
                  VarParsing.VarParsing.varType.string,         # string, int, or float
                  "name of the input file ")
@@ -33,10 +34,10 @@ options.register('BPixThr',
                  "BPix Clusterizer Threshold (2000 e- is default)")
 
 options.register('PixelCPE',
-                 "pixel_CPE_100x150_upgrade", # default value
+                 "pixelCPE_100x150_upgrade", # default value
                  VarParsing.VarParsing.multiplicity.singleton, # singleton or list
                  VarParsing.VarParsing.varType.string,         # string, int, or float
-                 "Pixel CPE (pixel_CPE_100x150_upgrade is default)")
+                 "Pixel CPE (pixelCPE_100x150_upgrade is default)")
 
 options.register('OutFileName',
                  "step_digitodqm.root", # default value
@@ -64,13 +65,19 @@ process = cms.Process('RECO')
 process.load('Configuration.StandardSequences.Services_cff')
 process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
 process.load('FWCore.MessageService.MessageLogger_cfi')
+
+process.MessageLogger.destinations = ['cout', 'cerr']
+process.MessageLogger.cerr.FwkReport.reportEvery = 1
+
 process.load('Configuration.EventContent.EventContent_cff')
 
 # import of configurations for PU
 if options.PUScenario!="NoPU":
 
+    # Used to be
+    #process.load('SimGeneral.MixingModule.mix_E8TeV_AVE_16_BX_25ns_cfi')
     process.load('SimGeneral.MixingModule.mix_POISSON_average_cfi')
-    process.mix.input.fileNames = cms.untracked.vstring(['root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/Extended2017/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_15k_evts.root'])
+    process.mix.input.fileNames = cms.untracked.vstring(['root:://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc11/ExtendedPhaseIPixelstep1_MinBias_TuneZ2star_14TeV_pythia6_10k_evts.root'])
     process.mix.bunchspace = cms.int32(25)
     process.mix.minBunch = cms.int32(-12)
     process.mix.maxBunch = cms.int32(3)
@@ -107,8 +114,8 @@ if options.PUScenario!="NoPU":
 else:
     process.load('SimGeneral.MixingModule.mixNoPU_cfi')
 
-process.load('Configuration.Geometry.GeometryExtendedPhaseIPixelReco_cff')
-process.load('Configuration.StandardSequences.MagneticField_38T_cff')
+process.load('Configuration.Geometry.GeometryExtended2017Reco_cff')
+process.load('Configuration.StandardSequences.MagneticField_38T_PostLS1_cff')
 process.load('Configuration.StandardSequences.Digi_cff')
 process.load('Configuration.StandardSequences.SimL1Emulator_cff')
 process.load('Configuration.StandardSequences.DigiToRaw_cff')
@@ -138,7 +145,7 @@ process.options = cms.untracked.PSet(
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
     version = cms.untracked.string('$Revision: 1.20 $'),
-    annotation = cms.untracked.string('step_digitodqm nevts:100'),
+    annotation = cms.untracked.string('step_digitodqm_new nevts:10'),
     name = cms.untracked.string('Applications')
 )
 
@@ -153,7 +160,7 @@ process.FEVTDEBUGHLToutput = cms.OutputModule("PoolOutputModule",
     fileName = outputRootFileName,
     dataset = cms.untracked.PSet(
         filterName = cms.untracked.string(''),
-        dataTier = cms.untracked.string('GEN-SIM-RECO')
+        dataTier = cms.untracked.string('GEN-SIM-DIGI-RAW-RECO')
     )
 )
 
@@ -174,11 +181,12 @@ process.DQMoutput = cms.OutputModule("PoolOutputModule",
 # Additional output definition
 
 # Other statements
+process.mix.digitizers = cms.PSet(process.theDigitizersValid)
 from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:upgrade2017', '')
 
 # Path and EndPath definitions
-process.digitisation_step = cms.Path(process.pdigi)
+process.digitisation_step = cms.Path(process.pdigi_valid)
 process.L1simulation_step = cms.Path(process.SimL1Emulator)
 process.digi2raw_step = cms.Path(process.DigiToRaw)
 process.raw2digi_step = cms.Path(process.RawToDigi)
@@ -205,20 +213,26 @@ process.schedule = cms.Schedule(process.digitisation_step,
                                 process.FEVTDEBUGHLToutput_step,
                                 process.DQMoutput_step)
 
-
 # customisation of the process.
 
-# Automatic addition of the customisation function from SLHCUpgradeSimulations.Configuration.postLS1Customs
-from SLHCUpgradeSimulations.Configuration.postLS1Customs import customisePostLS1 
+# Automatic addition of the customisation function from SLHCUpgradeSimulations.Configuration.combinedCustoms
+from SLHCUpgradeSimulations.Configuration.combinedCustoms import cust_2017 
 
-#call to customisation function customisePostLS1 imported from SLHCUpgradeSimulations.Configuration.postLS1Customs
-process = customisePostLS1(process)
+#call to customisation function cust_2017 imported from SLHCUpgradeSimulations.Configuration.combinedCustoms
+process = cust_2017(process)
 
-# Automatic addition of the customisation function from SLHCUpgradeSimulations.Configuration.phase1TkCustoms
-from SLHCUpgradeSimulations.Configuration.phase1TkCustoms import customise 
+###################################################################################################
+# N.B. This lines were add from the step3 (DIGI-RAW)
+# produced by the cmsDriver command from runTheMatrix.py --what upgrade -l 10000
+# taken from https://twiki.cern.ch/twiki/bin/viewauth/CMS/Recipes620SLHC#Recipes_without_pileup
+# If not used the job will crash!
+###################################################################################################
 
-#call to customisation function customise imported from SLHCUpgradeSimulations.Configuration.phase1TkCustoms
-process = customise(process)
+# Automatic addition of the customisation function from SimGeneral.MixingModule.fullMixCustomize_cff
+from SimGeneral.MixingModule.fullMixCustomize_cff import setCrossingFrameOn 
+
+#call to customisation function setCrossingFrameOn imported from SimGeneral.MixingModule.fullMixCustomize_cff
+process = setCrossingFrameOn(process)
 
 # call to customisation function customise imported from SLHCUpgradesSimulations.Configuration.aging
 if options.AgeingScenario!="NoAgeing":
