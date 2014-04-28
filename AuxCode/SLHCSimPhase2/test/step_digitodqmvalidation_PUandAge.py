@@ -66,8 +66,9 @@ process.load('Configuration.StandardSequences.Services_cff')
 process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
 process.load('FWCore.MessageService.MessageLogger_cfi')
 
-process.MessageLogger.destinations = ['cout', 'cerr']
-process.MessageLogger.cerr.FwkReport.reportEvery = 1
+# for debugging
+#process.MessageLogger.destinations = ['cout', 'cerr']
+#process.MessageLogger.cerr.FwkReport.reportEvery = 1
 
 process.load('Configuration.EventContent.EventContent_cff')
 
