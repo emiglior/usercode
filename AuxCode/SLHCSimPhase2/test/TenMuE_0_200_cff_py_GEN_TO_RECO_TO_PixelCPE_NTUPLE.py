@@ -2,7 +2,7 @@
 # using: 
 # Revision: 1.14 
 # Source: /local/reps/CMSSW/CMSSW/Configuration/Applications/python/ConfigBuilder.py,v 
-# with command line options: Configuration/GenProduction/python/FourteenTeV/TenMuE_0_200_cfi.py --no_exec -s GEN,SIM,DIGI,L1,DIGI2RAW,RAW2DIGI,L1Reco,RECO --conditions auto:upgrade2017 --eventcontent FEVTDEBUG --beamspot Gauss --geometry Extended2017 --relval 10000,100 --datatier GEN-SIM-RECO -n 500 --customise SLHCUpgradeSimulations/Configuration/postLS1Customs.customisePostLS1,SLHCUpgradeSimulations/Configuration/phase1TkCustoms.customise --fileout file:TenMuE_0_200_cff_py_GEN_SIM_RECO.root
+# with command line options: Configuration/GenProduction/python/FourteenTeV/TenMuE_0_200_cfi.py --no_exec -s GEN,SIM,DIGI:pdigi_valid,L1,DIGI2RAW,RAW2DIGI,L1Reco,RECO --conditions auto:upgrade2017 --magField 38T_PostLS1 --eventcontent FEVTDEBUG --beamspot NoSmear --geometry Extended2017 --relval 10000,100 --datatier GEN-SIM-RECO -n 500  --customise SLHCUpgradeSimulations/Configuration/combinedCustoms.cust_2017 --fileout file:TenMuE_0_200_cff_py_GEN_SIM_RECO.root
 
 import FWCore.ParameterSet.Config as cms
 import FWCore.ParameterSet.VarParsing as VarParsing
