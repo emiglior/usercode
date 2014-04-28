@@ -47,8 +47,9 @@ process.load('Configuration.EventContent.EventContent_cff')
 process.load('SimGeneral.MixingModule.mixNoPU_cfi')
 process.load('Configuration.Geometry.GeometryExtended2017Reco_cff')
 process.load('Configuration.Geometry.GeometryExtended2017_cff')
-process.load('Configuration.StandardSequences.MagneticField_38T_cff')
+process.load('Configuration.StandardSequences.MagneticField_38T_PostLS1_cff')
 process.load('Configuration.StandardSequences.Generator_cff')
+# for gaussian smeared vertex
 #process.load('IOMC.EventVertexGenerators.VtxSmearedGauss_cfi')
 process.load('Configuration.StandardSequences.VtxSmearedNoSmear_cff')
 process.load('GeneratorInterface.Core.genFilterSummary_cff')
@@ -118,7 +119,8 @@ process.FEVTDEBUGoutput = cms.OutputModule("PoolOutputModule",
 
 # Additional output definition
 
-# Other statements
+# Other statement
+process.mix.digitizers = cms.PSet(process.theDigitizersValid)
 process.genstepfilter.triggerConditions=cms.vstring("generation_step")
 from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:upgrade2017', '')
@@ -145,7 +147,7 @@ process.generator = cms.EDProducer("FlatRandomEGunProducer",
 # Path and EndPath definitions
 process.generation_step = cms.Path(process.pgen)
 process.simulation_step = cms.Path(process.psim)
-process.digitisation_step = cms.Path(process.pdigi)
+process.digitisation_step = cms.Path(process.pdigi_valid)
 process.L1simulation_step = cms.Path(process.SimL1Emulator)
 process.digi2raw_step = cms.Path(process.DigiToRaw)
 process.raw2digi_step = cms.Path(process.RawToDigi)
@@ -188,20 +190,24 @@ for path in process.paths:
 
 # customisation of the process.
 
-# Automatic addition of the customisation function from SLHCUpgradeSimulations.Configuration.postLS1Customs
-from SLHCUpgradeSimulations.Configuration.postLS1Customs import customisePostLS1 
+# Automatic addition of the customisation function from SLHCUpgradeSimulations.Configuration.combinedCustoms
+from SLHCUpgradeSimulations.Configuration.combinedCustoms import cust_2017 
 
-#call to customisation function customisePostLS1 imported from SLHCUpgradeSimulations.Configuration.postLS1Customs
-process = customisePostLS1(process)
+#call to customisation function cust_2017 imported from SLHCUpgradeSimulations.Configuration.combinedCustoms
+process = cust_2017(process)
 
-# Automatic addition of the customisation function from SLHCUpgradeSimulations.Configuration.phase1TkCustoms
-from SLHCUpgradeSimulations.Configuration.phase1TkCustoms import customise 
+###################################################################################################
+# N.B. This lines were add from the step3 (DIGI-RAW)
+# produced by the cmsDriver command from runTheMatrix.py --what upgrade -l 10000
+# taken from https://twiki.cern.ch/twiki/bin/viewauth/CMS/Recipes620SLHC#Recipes_without_pileup
+# If not used the job will crash!
+###################################################################################################
 
-#call to customisation function customise imported from SLHCUpgradeSimulations.Configuration.phase1TkCustoms
-process = customise(process)
+# Automatic addition of the customisation function from SimGeneral.MixingModule.fullMixCustomize_cff
+from SimGeneral.MixingModule.fullMixCustomize_cff import setCrossingFrameOn 
 
-#call to customisation function customisePostLS1 imported from SLHCUpgradeSimulations.Configuration.postLS1Customs
-process = customisePostLS1(process)
+#call to customisation function setCrossingFrameOn imported from SimGeneral.MixingModule.fullMixCustomize_cff
+process = setCrossingFrameOn(process)
 
 if options.AgeingScenario!="NoAgeing":
     # Automatic addition of the customisation function from SLHCUpgradeSimulations.Configuration.aging
@@ -234,9 +240,10 @@ if options.AgeingScenario!="NoAgeing":
 from AuxCode.SLHCSimPhase2.PixelCPE_tables_cff import *
 process.PixelCPEGenericESProducer.PixelCPEList = PixelCPE_dict['pixelCPE_100x150_upgrade']
 
+## Superseeded by process = setCrossingFrameOn(process)
 # customize to make crossingFrames available (needed for turning on g4SimHits in the ROUList)
-from AuxCode.SLHCSimPhase2.crossingFrameCustoms import *
-customiseCrossingFrame(process)
+#from AuxCode.SLHCSimPhase2.crossingFrameCustoms import *
+#customiseCrossingFrame(process)
 
 # Uncomment next two lines to change pixel DIGI threshold
 process.mix.digitizers.pixel.ThresholdInElectrons_BPix = cms.double(options.BPixThr)
