@@ -387,6 +387,23 @@ class HistoStruct():
         self.h_biasZvsV_qhigh = ROOT.TH1F("h_biasZvs%s_qhigh" % V_name,str("Barrel z-Hit Bias; %s ;" % V_label)+extra_ytitle_bias,V_nbins,V_min,V_max)
         
 
+        ### rphi vs z residuals 
+        current_subdir = current_dir.mkdir("residualsXY")         
+        current_subdir.cd()         
+        self.resYvsresX_qlow_inVBinTH2 = []
+        self.resYvsresX_qhigh_inVBinTH2 = []
+        for i in xrange(V_nbins):
+            V_low  = V_min+i*V_span
+            V_high = V_low+V_span
+
+            hname = "h2_resYvsresX_qlow_%sBin%d" % (V_name ,i)
+            htitle = "h2_resYvsresX_qlow_%s bin %d (%.2f < %s < %.2f);resX [#mum];resY [#mum]" % (V_name, i, V_low, V_label, V_high)
+            self.resYvsresX_qlow_inVBinTH2.append( ROOT.TH2F(hname,htitle,50,-100.,100.,50,-100.,100.))
+            hname = "h2_resYvsresX_qhigh_%sBin%d" % (V_name ,i)
+            htitle = "h2_resYvsresX_qhigh_%s bin %d (%.2f < %s < %.2f);resX [#mum];resY [#mum]" % (V_name, i, V_low, V_label, V_high)
+            self.resYvsresX_qhigh_inVBinTH2.append( ROOT.TH2F(hname,htitle,50,-100.,100.,50,-100.,100.))
+
+
     def FillFirstLoop(self, the_V, pixel_recHit):
     #############################################
 
@@ -439,6 +456,9 @@ class HistoStruct():
 
                 self.resX_qall_inVBinTH1[index-1].Fill((pixel_recHit.hx-pixel_recHit.x)*CmToUm)
                 self.resY_qall_inVBinTH1[index-1].Fill((pixel_recHit.hy-pixel_recHit.y)*CmToUm)
+
+                self.resYvsresX_qlow_inVBinTH2[index-1].Fill((pixel_recHit.hx-pixel_recHit.x)*CmToUm,(pixel_recHit.hy-pixel_recHit.y)*CmToUm)
+
                 
             elif  pixel_recHit.q*math.fabs(pixel_recHit.tz)*ToKe < 1.5*QaveCorr:
                 self.resX_qhigh_inVBinTH1[index-1].Fill((pixel_recHit.hx-pixel_recHit.x)*CmToUm)
@@ -449,6 +469,7 @@ class HistoStruct():
                 self.resX_qall_inVBinTH1[index-1].Fill((pixel_recHit.hx-pixel_recHit.x)*CmToUm)
                 self.resY_qall_inVBinTH1[index-1].Fill((pixel_recHit.hy-pixel_recHit.y)*CmToUm)
                 
+                self.resYvsresX_qhigh_inVBinTH2[index-1].Fill((pixel_recHit.hx-pixel_recHit.x)*CmToUm,(pixel_recHit.hy-pixel_recHit.y)*CmToUm)
         
     def DrawAllCanvas(self, Qave):
     ##############################
@@ -602,6 +623,13 @@ class HistoStruct():
         c1_zVsNy_qhigh.SetFillColor(ROOT.kWhite)
         c1_zVsNy_qhigh.Divide(int(w),int(h))
 
+        c1_zVsrPhi_qlow = ROOT.TCanvas("c1_zVsrPhi_qlow","c1_zVsrPhi_qlow",900,900)
+        c1_zVsrPhi_qlow.SetFillColor(ROOT.kWhite)
+        c1_zVsrPhi_qlow.Divide(int(w),int(h))
+        c1_zVsrPhi_qhigh = ROOT.TCanvas("c1_zVsrPhi_qhigh","c1_zVsrPhi_qhigh",900,900)
+        c1_zVsrPhi_qhigh.SetFillColor(ROOT.kWhite)
+        c1_zVsrPhi_qhigh.Divide(int(w),int(h))
+
 
         # initialize the counter (there is only one instance of the function getTH1GausFit)
         getTH1GausFit.icnt = 0 
@@ -656,6 +684,17 @@ class HistoStruct():
             c1_zVsNy_qhigh.GetPad(i+1).SetLogz()        
             self.resYvsNy_qhigh_inVBinTH2[i].SetStats(0)
             self.resYvsNy_qhigh_inVBinTH2[i].Draw("colz")
+
+
+            c1_zVsrPhi_qlow.cd(i+1)        
+            c1_zVsrPhi_qlow.GetPad(i+1).SetLogz()        
+            self.resYvsresX_qlow_inVBinTH2[i].SetStats(0)
+            self.resYvsresX_qlow_inVBinTH2[i].Draw("colz")
+
+            c1_zVsrPhi_qhigh.cd(i+1)        
+            c1_zVsrPhi_qhigh.GetPad(i+1).SetLogz()        
+            self.resYvsresX_qhigh_inVBinTH2[i].SetStats(0)
+            self.resYvsresX_qhigh_inVBinTH2[i].Draw("colz")
             
         c1_rPhi_qall.SaveAs ("c1_rPhi_qall_in%sBin.pdf" % self.the_name)
         c1_rPhi_qlow.SaveAs ("c1_rPhi_qlow_in%sBin.pdf" % self.the_name)
@@ -669,6 +708,8 @@ class HistoStruct():
         c1_zVsNy_qlow.SaveAs("c1_zVsNy_qlow_in%sBin.pdf" % self.the_name)
         c1_zVsNy_qhigh.SaveAs("c1_zVsNy_qhigh_in%sBin.pdf" % self.the_name)
 
+        c1_zVsrPhi_qlow.SaveAs("c1_zVsrPhi_qlow_in%sBin.pdf" % self.the_name)
+        c1_zVsrPhi_qhigh.SaveAs("c1_zVsrPhi_qhigh_in%sBin.pdf" % self.the_name)
 
         # draw nice trend plots
         setStyle()
