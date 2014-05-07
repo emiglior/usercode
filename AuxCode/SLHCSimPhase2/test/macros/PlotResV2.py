@@ -3,6 +3,7 @@ import sys
 import ROOT
 import math
 import array
+#import numpy
 from optparse import OptionParser
 
 ###############
@@ -35,6 +36,74 @@ def setStyle():
     ROOT.gStyle.SetOptFit(1)
     ROOT.gStyle.SetNdivisions(510)
 
+################################
+def getTH1LanGausFit(h1_in, pad):
+################################
+    pad.cd()
+
+    # icnt is used to have a unique name for the TF1 
+    getTH1LanGausFit.icnt += 1
+
+    # S e t u p   c o m p o n e n t   p d f s 
+    # ---------------------------------------
+
+    # Construct observable
+
+
+    # parameters setting
+    fr = [0.3*h1_in.GetMean(),10.0*h1_in.GetMean()]
+    iArea = [h1_in.GetXaxis().FindBin(fr[0]), h1_in.GetXaxis().FindBin(fr[1])]
+    AreaFWHM = (h1_in.Integral(iArea[0],iArea[1],"width"))
+    imax = h1_in.GetMaximumBin()
+    xmax = h1_in.GetBinCenter(imax)
+    ymax = h1_in.GetBinContent(imax)
+
+    pllo = [ 0.1                , 0.0     , 0.1]
+    plhi = [ AreaFWHM/(ymax)    , 2.0*xmax, AreaFWHM/(ymax)]
+    sv   = [ AreaFWHM/(4.0*ymax), xmax    , 2*AreaFWHM/(4.0*ymax)] 
+    
+    t =  ROOT.RooRealVar("t", "t", fr[0], fr[1])
+    
+    # Construct landau(t,ml,sl) 
+    ml = ROOT.RooRealVar("ml","mean landau",  sv[1], pllo[1], plhi[1]) 
+    sl = ROOT.RooRealVar ("sl","sigma landau",sv[0], pllo[0], plhi[0]) 
+    landau = ROOT.RooLandau("lx","lx",t,ml,sl) 
+
+    # Construct gauss(t,mg,sg)
+    mg = ROOT.RooRealVar("mg","mg",0,-10.,10.) 
+    mg.setConstant(ROOT.kTRUE)
+    sg = ROOT.RooRealVar("sg","sg",sv[2],pllo[2],plhi[2]) 
+    gauss = ROOT.RooGaussian("gauss","gauss",t,mg,sg) 
+
+    # C o n s t r u c t   c o n v o l u t i o n   p d f 
+    # ---------------------------------------
+    
+    # Set #bins to be used for FFT sampling to 10000
+    t.setBins(10000,"cache")  
+    
+    # Construct landau (x) gauss
+    lxg = ROOT.RooFFTConvPdf("lxg","landau (X) gauss",t,landau,gauss) 
+    
+    # S a m p l e ,   f i t   a n d   p l o t   c o n v o l u t e d   p d f 
+    # ----------------------------------------------------------------------
+ 
+    # Fit gxlx to data
+    ral = ROOT.RooArgList(t)
+    dh  = ROOT.RooDataHist("dh","dh",ral,ROOT.RooFit.Import(h1_in)) 
+
+    lxg.fitTo(dh) 
+    
+    # Plot data, landau pdf, landau (X) gauss pdf
+    frame = t.frame(ROOT.RooFit.Title("landau (x) gauss convolution")) 
+    dh.plotOn(frame) 
+    lxg.plotOn(frame) 
+    
+    # Draw frame on canvas
+    pad.SetLeftMargin(0.15)  
+    frame.GetYaxis().SetTitleOffset(1.4)  
+    frame.Draw() 
+
+    return  ml.getVal(), ml.getError()
 ############################
 def getExtrema(h1array):
 ############################
@@ -99,9 +168,9 @@ def getTH1cdf(h1_in):
     cdf.Scale(1./integral)
     return cdf
 
-#########################
+#########################################
 def getTH1GausFit(h1_in, pad, gaussfit):
-#######################
+########################################
     pad.cd()
     pad.SetLogy()
 
@@ -127,8 +196,8 @@ def getTH1GausFit(h1_in, pad, gaussfit):
         h1_in.Fit(g1,"RQ")
 
         # One more iteration
-        minfit = max(g1.GetParameter("Mean") - 2*g1.GetParameter("Sigma"),xmin)
-        maxfit = min(g1.GetParameter("Mean") + 2*g1.GetParameter("Sigma"),xmax)
+        minfit = max(g1.GetParameter("Mean") - 3*g1.GetParameter("Sigma"),xmin)
+        maxfit = min(g1.GetParameter("Mean") + 3*g1.GetParameter("Sigma"),xmax)
         g1.SetRange(minfit,maxfit)
         h1_in.Fit(g1,"RQ")
 
@@ -167,12 +236,15 @@ class HistoStruct():
         # list of TH1s
         self.q_inVBinTH1 = []
         self.q_secondaries_inVBinTH1 = []
+        self.q_primaries_corr_inVBinTH1 = []
         self.spreadX_inVBinTH1 = []
         self.spreadX_primaries_inVBinTH1 = []
         self.spreadY_inVBinTH1 = []
         self.spreadY_primaries_inVBinTH1 = []
         self.alpha_inVBinTH1 = []
         self.beta_inVBinTH1 = []
+
+        self.h_qMPVprimaries_corr_vsV = ROOT.TH1F("h_qMPVprimariescorrvs%s" % V_name, str("Barrel Q_{MPV}; %s ;" % V_label),V_nbins,V_min,V_max)
 
         V_span = (V_max-V_min)/V_nbins
         for i in xrange(V_nbins):
@@ -183,6 +255,11 @@ class HistoStruct():
             hname = "h1_q_%sBin%d" % (V_name ,i)
             htitle = "h1_q_%s bin %d (%.2f < %s < %.2f);Q_{uncorr} [ke];recHits" % (V_name, i, V_low, V_label, V_high)
             self.q_inVBinTH1.append( ROOT.TH1F(hname,htitle,80,0.,400.))
+
+            # Q cluster corrected for effective depth crossed by particles (only primaries)
+            hname = "h1_q_primaries_corr_%sBin%d" % (V_name ,i)
+            htitle = "h1_q_primaries_corr_%s bin %d (%.2f < %s < %.2f);Q_{corr} [ke];recHits" % (V_name, i, V_low, V_label, V_high)
+            self.q_primaries_corr_inVBinTH1.append( ROOT.TH1F(hname,htitle,100,0.,100.))
 
             # Q cluster (only secondaries)
             hname = "h1_q_secondaries_%sBin%d" % (V_name ,i)
@@ -220,7 +297,9 @@ class HistoStruct():
         self.resX_qall_inVBinTH1 = []
         self.resX_qlow_inVBinTH1 = []
         self.resX_qhigh_inVBinTH1 = []
-        self.resX_qprimaries_inVBinTH1 = []
+
+        self.resXvsNx_qlow_inVBinTH2 = []
+        self.resXvsNx_qhigh_inVBinTH2 = []
 
         for i in xrange(V_nbins):
             V_low  = V_min+i*V_span
@@ -235,9 +314,13 @@ class HistoStruct():
             hname = "h1_resX_qhigh_%sBin%d" % (V_name ,i)
             htitle = "h1_resX_qhigh_%s bin %d (%.2f < %s < %.2f);[#mum];recHits" % (V_name, i, V_low, V_label, V_high)
             self.resX_qhigh_inVBinTH1.append( ROOT.TH1F(hname,htitle,100,-100.,100.))
-            hname = "h1_resX_qprimaries_%sBin%d" % (V_name ,i)
-            htitle = "h1_resX_qprimaries_%s bin %d (%.2f < %s < %.2f);[#mum];recHits" % (V_name, i, V_low, V_label, V_high)
-            self.resX_qprimaries_inVBinTH1.append( ROOT.TH1F(hname,htitle,100,-100.,100.))        
+
+            hname = "h2_resXvsNx_qlow_%sBin%d" % (V_name ,i)
+            htitle = "h2_resXvsNx_qlow_%s bin %d (%.2f < %s < %.2f);[#mum];recHits" % (V_name, i, V_low, V_label, V_high)
+            self.resXvsNx_qlow_inVBinTH2.append( ROOT.TH2F(hname,htitle,50,-100.,100.,4,0.5,4.5))
+            hname = "h2_resXvsNx_qhigh_%sBin%d" % (V_name ,i)
+            htitle = "h2_resXvsNx_qhigh_%s bin %d (%.2f < %s < %.2f);[#mum];recHits" % (V_name, i, V_low, V_label, V_high)
+            self.resXvsNx_qhigh_inVBinTH2.append( ROOT.TH2F(hname,htitle,50,-100.,100.,4,0.5,4.5))
 
         # final histograms
         if self.the_gaussfit == True:
@@ -250,12 +333,10 @@ class HistoStruct():
         self.h_resRPhivsV_qall  = ROOT.TH1F("h_resRPhivs%s_qall" % V_name, str("Barrel #varphi-Hit Resolution; %s ;" % V_label)+extra_ytitle_res,V_nbins,V_min,V_max)
         self.h_resRPhivsV_qlow  = ROOT.TH1F("h_resRPhivs%s_qlow" % V_name, str("Barrel #varphi-Hit Resolution; %s ;" % V_label)+extra_ytitle_res,V_nbins,V_min,V_max)
         self.h_resRPhivsV_qhigh = ROOT.TH1F("h_resRPhivs%s_qhigh" % V_name,str("Barrel #varphi-Hit Resolution; %s ;" % V_label)+extra_ytitle_res,V_nbins,V_min,V_max)
-        self.h_resRPhivsV_qprimaries = ROOT.TH1F("h_resRPhivs%s_qprimaries" % V_name,str("Barrel #varphi-Hit Resolution; %s ;" % V_label)+extra_ytitle_res,V_nbins,V_min,V_max)
     
         self.h_biasRPhivsV_qall  = ROOT.TH1F("h_biasRPhivs%s_qall" % V_name, str("Barrel #varphi-Hit Bias; %s ;" % V_label)+extra_ytitle_bias,V_nbins,V_min,V_max)
         self.h_biasRPhivsV_qlow  = ROOT.TH1F("h_biasRPhivs%s_qlow" % V_name, str("Barrel #varphi-Hit Bias; %s ;" % V_label)+extra_ytitle_bias,V_nbins,V_min,V_max)
         self.h_biasRPhivsV_qhigh = ROOT.TH1F("h_biasRPhivs%s_qhigh" % V_name,str("Barrel #varphi-Hit Bias; %s ;" % V_label)+extra_ytitle_bias,V_nbins,V_min,V_max)
-        self.h_biasRPhivsV_qprimaries = ROOT.TH1F("h_biasRPhivs%s_qprimaries" % V_name,str("Barrel #varphi-Hit Bias; %s ;" % V_label)+extra_ytitle_bias,V_nbins,V_min,V_max)
 
         ### z residuals 
         current_subdir = current_dir.mkdir("residualsY")         
@@ -264,7 +345,9 @@ class HistoStruct():
         self.resY_qall_inVBinTH1 = []
         self.resY_qlow_inVBinTH1 = []
         self.resY_qhigh_inVBinTH1 = []
-        self.resY_qprimaries_inVBinTH1 = []
+
+        self.resYvsNy_qlow_inVBinTH2 = []
+        self.resYvsNy_qhigh_inVBinTH2 = []
 
         for i in xrange(V_nbins):
             V_low  = V_min+i*V_span
@@ -279,9 +362,13 @@ class HistoStruct():
             hname = "h1_resY_qhigh_%sBin%d" % (V_name ,i)
             htitle = "h1_resY_qhigh_%s bin %d (%.2f < %s < %.2f);[#mum];recHits" % (V_name, i, V_low, V_label, V_high)
             self.resY_qhigh_inVBinTH1.append( ROOT.TH1F(hname,htitle,100,-100.,100.))
-            hname = "h1_resY_qprimaries_%sBin%d" % (V_name ,i)
-            htitle = "h1_resY_qprimaries_%s bin %d (%.2f < %s < %.2f);[#mum];recHits" % (V_name, i, V_low, V_label, V_high)
-            self.resY_qprimaries_inVBinTH1.append( ROOT.TH1F(hname,htitle,100,-100.,100.))        
+
+            hname = "h2_resYvsNy_qlow_%sBin%d" % (V_name ,i)
+            htitle = "h2_resYvsNy_qlow_%s bin %d (%.2f < %s < %.2f);[#mum];recHits" % (V_name, i, V_low, V_label, V_high)
+            self.resYvsNy_qlow_inVBinTH2.append( ROOT.TH2F(hname,htitle,50,-100.,100.,5,0.5,5.5))
+            hname = "h2_resYvsNy_qhigh_%sBin%d" % (V_name ,i)
+            htitle = "h2_resYvsNy_qhigh_%s bin %d (%.2f < %s < %.2f);[#mum];recHits" % (V_name, i, V_low, V_label, V_high)
+            self.resYvsNy_qhigh_inVBinTH2.append( ROOT.TH2F(hname,htitle,50,-100.,100.,5,0.5,5.5))
 
         # final histograms
         if V_gaussfit == True:
@@ -294,12 +381,10 @@ class HistoStruct():
         self.h_resZvsV_qall  = ROOT.TH1F("h_resZvs%s_qall" % V_name, str("Barrel z-Hit Resolution; %s ;" % V_label)+extra_ytitle_res,V_nbins,V_min,V_max)
         self.h_resZvsV_qlow  = ROOT.TH1F("h_resZvs%s_qlow" % V_name, str("Barrel z-Hit Resolution; %s ;" % V_label)+extra_ytitle_res,V_nbins,V_min,V_max)
         self.h_resZvsV_qhigh = ROOT.TH1F("h_resZvs%s_qhigh" % V_name,str("Barrel z-Hit Resolution; %s ;" % V_label)+extra_ytitle_res,V_nbins,V_min,V_max)
-        self.h_resZvsV_qprimaries = ROOT.TH1F("h_resZvs%s_qprimaries" % V_name,str("Barrel z-Hit Resolution; %s ;" % V_label)+extra_ytitle_res,V_nbins,V_min,V_max)
     
         self.h_biasZvsV_qall  = ROOT.TH1F("h_biasZvs%s_qall" % V_name, str("Barrel z-Hit Bias; %s ;" % V_label)+extra_ytitle_bias,V_nbins,V_min,V_max)
         self.h_biasZvsV_qlow  = ROOT.TH1F("h_biasZvs%s_qlow" % V_name, str("Barrel z-Hit Bias; %s ;" % V_label)+extra_ytitle_bias,V_nbins,V_min,V_max)
         self.h_biasZvsV_qhigh = ROOT.TH1F("h_biasZvs%s_qhigh" % V_name,str("Barrel z-Hit Bias; %s ;" % V_label)+extra_ytitle_bias,V_nbins,V_min,V_max)
-        self.h_biasZvsV_qprimaries = ROOT.TH1F("h_biasZvs%s_qprimaries" % V_name,str("Barrel z-Hit Bias; %s ;" % V_label)+extra_ytitle_bias,V_nbins,V_min,V_max)
         
 
     def FillFirstLoop(self, the_V, pixel_recHit):
@@ -320,8 +405,11 @@ class HistoStruct():
 
             self.spreadX_inVBinTH1[index-1].Fill(min(pixel_recHit.spreadx, 15))
             self.spreadY_inVBinTH1[index-1].Fill(min(pixel_recHit.spready, 15))
-
+            
+            # only primaries
             if pixel_recHit.process == 2:
+                self.q_primaries_corr_inVBinTH1[index-1].Fill(pixel_recHit.q*math.fabs(pixel_recHit.tz)*ToKe)
+
                 self.spreadX_primaries_inVBinTH1[index-1].Fill(min(pixel_recHit.spreadx, 15))
                 self.spreadY_primaries_inVBinTH1[index-1].Fill(min(pixel_recHit.spready, 15))
 
@@ -341,20 +429,23 @@ class HistoStruct():
         self.h_V.Fill(the_V)
 
         if self.the_min<=the_V and the_V<=self.the_max:
-            index = self.the_xAxis.FindBin(the_V)
-        
-            self.resX_qprimaries_inVBinTH1[index-1].Fill((pixel_recHit.hx-pixel_recHit.x)*CmToUm)
-            self.resY_qprimaries_inVBinTH1[index-1].Fill((pixel_recHit.hy-pixel_recHit.y)*CmToUm)
+            index = self.the_xAxis.FindBin(the_V)            
 
             if  pixel_recHit.q*math.fabs(pixel_recHit.tz)*ToKe < QaveCorr:
                 self.resX_qlow_inVBinTH1[index-1].Fill((pixel_recHit.hx-pixel_recHit.x)*CmToUm)
                 self.resY_qlow_inVBinTH1[index-1].Fill((pixel_recHit.hy-pixel_recHit.y)*CmToUm)
+                self.resXvsNx_qlow_inVBinTH2[index-1].Fill((pixel_recHit.hx-pixel_recHit.x)*CmToUm,min(pixel_recHit.spreadx,4))
+                self.resYvsNy_qlow_inVBinTH2[index-1].Fill((pixel_recHit.hy-pixel_recHit.y)*CmToUm,min(pixel_recHit.spready,5))
+
                 self.resX_qall_inVBinTH1[index-1].Fill((pixel_recHit.hx-pixel_recHit.x)*CmToUm)
                 self.resY_qall_inVBinTH1[index-1].Fill((pixel_recHit.hy-pixel_recHit.y)*CmToUm)
                 
             elif  pixel_recHit.q*math.fabs(pixel_recHit.tz)*ToKe < 1.5*QaveCorr:
                 self.resX_qhigh_inVBinTH1[index-1].Fill((pixel_recHit.hx-pixel_recHit.x)*CmToUm)
                 self.resY_qhigh_inVBinTH1[index-1].Fill((pixel_recHit.hy-pixel_recHit.y)*CmToUm)
+                self.resXvsNx_qhigh_inVBinTH2[index-1].Fill((pixel_recHit.hx-pixel_recHit.x)*CmToUm,min(pixel_recHit.spreadx,4))
+                self.resYvsNy_qhigh_inVBinTH2[index-1].Fill((pixel_recHit.hy-pixel_recHit.y)*CmToUm,min(pixel_recHit.spready,5))
+
                 self.resX_qall_inVBinTH1[index-1].Fill((pixel_recHit.hx-pixel_recHit.x)*CmToUm)
                 self.resY_qall_inVBinTH1[index-1].Fill((pixel_recHit.hy-pixel_recHit.y)*CmToUm)
                 
@@ -371,6 +462,10 @@ class HistoStruct():
         c1_qclus = ROOT.TCanvas("c1_qclus","c1_qclus",900,900)
         c1_qclus.SetFillColor(ROOT.kWhite)
         c1_qclus.Divide(int(w),int(h))
+
+        c1_qclus_primaries_corr = ROOT.TCanvas("c1_qclus_primaries_corr","c1_qclus_primaries_corr",900,900)
+        c1_qclus_primaries_corr.SetFillColor(ROOT.kWhite)
+        c1_qclus_primaries_corr.Divide(int(w),int(h))
         
         c1_spreadXY = ROOT.TCanvas("c1_spreadXY","c1_spreadXY",900,900)
         c1_spreadXY.SetFillColor(ROOT.kWhite)
@@ -391,6 +486,8 @@ class HistoStruct():
         line1s = []
         line2s = []
 
+        # initialize the counter (there is only one instance of the function getTH1LanGausFit)
+        getTH1LanGausFit.icnt = 0 
         for i in xrange(self.the_nbins):
 
             ### charge distribution (not normalized)
@@ -418,10 +515,17 @@ class HistoStruct():
             line3[i].SetLineColor(ROOT.kRed)
             line3[i].Draw("same")
             
-            # draw Q_cluster for particle from secondry interactions
+            # draw Q_cluster for particle from secondary interactions
             self.q_secondaries_inVBinTH1[i].SetLineColor(ROOT.kGreen)
             self.q_secondaries_inVBinTH1[i].Draw("same")
 
+            # draw Q_cluster normalized for incidence angle for particle from primary interactions only
+            c1_qclus_primaries_corr.cd(i+1)
+            self.q_primaries_corr_inVBinTH1[i].Draw()
+            mpv, mpv_error = getTH1LanGausFit(self.q_primaries_corr_inVBinTH1[i], c1_qclus_primaries_corr.GetPad(i+1))
+            self.h_qMPVprimaries_corr_vsV.SetBinContent(i+1,mpv)
+            self.h_qMPVprimaries_corr_vsV.SetBinError(i+1,mpv_error)
+            
             ###
             c1_spreadXY.cd(i+1)
             self.spreadY_inVBinTH1[i].SetLineColor(ROOT.kBlue)
@@ -457,6 +561,7 @@ class HistoStruct():
 
         # save the canvas
         c1_qclus.SaveAs("c1_qclus_in%sBin.pdf" % self.the_name)
+        c1_qclus_primaries_corr.SaveAs("c1_qclus_primaries_corr_in%sBin.pdf" % self.the_name)
         c1_spreadXY.SaveAs("c1_spreadXY_in%sBin.pdf" % self.the_name)
         c1_primaries_spreadXY.SaveAs("c1_primaries_spreadXY_in%sBin.pdf" % self.the_name)
         c1_alphabeta.SaveAs("c1_alphabeta_in%sBin.pdf" % self.the_name)
@@ -472,9 +577,13 @@ class HistoStruct():
         c1_rPhi_qhigh = ROOT.TCanvas("c1_rPhi_qhigh","c1_rPhi_qhigh",900,900)
         c1_rPhi_qhigh.SetFillColor(ROOT.kWhite)
         c1_rPhi_qhigh.Divide(int(w),int(h))
-        c1_rPhi_qprimaries = ROOT.TCanvas("c1_rPhi_qprimaries","c1_rPhi_qprimaries",900,900)
-        c1_rPhi_qprimaries.SetFillColor(ROOT.kWhite)
-        c1_rPhi_qprimaries.Divide(int(w),int(h))
+
+        c1_rPhiVsNx_qlow = ROOT.TCanvas("c1_rPhiVsNx_qlow","c1_rPhiVsNx_qlow",900,900)
+        c1_rPhiVsNx_qlow.SetFillColor(ROOT.kWhite)
+        c1_rPhiVsNx_qlow.Divide(int(w),int(h))
+        c1_rPhiVsNx_qhigh = ROOT.TCanvas("c1_rPhiVsNx_qhigh","c1_rPhiVsNx_qhigh",900,900)
+        c1_rPhiVsNx_qhigh.SetFillColor(ROOT.kWhite)
+        c1_rPhiVsNx_qhigh.Divide(int(w),int(h))
         
         c1_z_qall = ROOT.TCanvas("c1_z_qall","c1_z_qall",900,900)
         c1_z_qall.SetFillColor(ROOT.kWhite)
@@ -485,9 +594,14 @@ class HistoStruct():
         c1_z_qhigh = ROOT.TCanvas("c1_z_qhigh","c1_z_qhigh",900,900)
         c1_z_qhigh.SetFillColor(ROOT.kWhite)
         c1_z_qhigh.Divide(int(w),int(h))
-        c1_z_qprimaries = ROOT.TCanvas("c1_z_qprimaries","c1_z_qprimaries",900,900)
-        c1_z_qprimaries.SetFillColor(ROOT.kWhite)
-        c1_z_qprimaries.Divide(int(w),int(h))
+
+        c1_zVsNy_qlow = ROOT.TCanvas("c1_zVsNy_qlow","c1_zVsNy_qlow",900,900)
+        c1_zVsNy_qlow.SetFillColor(ROOT.kWhite)
+        c1_zVsNy_qlow.Divide(int(w),int(h))
+        c1_zVsNy_qhigh = ROOT.TCanvas("c1_zVsNy_qhigh","c1_zVsNy_qhigh",900,900)
+        c1_zVsNy_qhigh.SetFillColor(ROOT.kWhite)
+        c1_zVsNy_qhigh.Divide(int(w),int(h))
+
 
         # initialize the counter (there is only one instance of the function getTH1GausFit)
         getTH1GausFit.icnt = 0 
@@ -507,17 +621,22 @@ class HistoStruct():
             mu, sigma = getTH1GausFit(self.resX_qhigh_inVBinTH1[i], c1_rPhi_qhigh.GetPad(i+1), self.the_gaussfit)
             self.h_resRPhivsV_qhigh.SetBinContent(i+1,sigma)
             self.h_biasRPhivsV_qhigh.SetBinContent(i+1,mu)
-            
-            c1_rPhi_qprimaries.cd(i+1)        
-            mu, sigma = getTH1GausFit(self.resX_qprimaries_inVBinTH1[i], c1_rPhi_qprimaries.GetPad(i+1), self.the_gaussfit)
-            self.h_resRPhivsV_qprimaries.SetBinContent(i+1,sigma)
-            self.h_biasRPhivsV_qprimaries.SetBinContent(i+1,mu)
-            
+
+            c1_rPhiVsNx_qlow.cd(i+1)        
+            c1_rPhiVsNx_qlow.GetPad(i+1).SetLogz()      
+            self.resXvsNx_qlow_inVBinTH2[i].SetStats(0)  
+            self.resXvsNx_qlow_inVBinTH2[i].Draw("colz")
+
+            c1_rPhiVsNx_qhigh.cd(i+1)        
+            c1_rPhiVsNx_qhigh.GetPad(i+1).SetLogz()     
+            self.resXvsNx_qhigh_inVBinTH2[i].SetStats(0)     
+            self.resXvsNx_qhigh_inVBinTH2[i].Draw("colz")
+                        
             c1_z_qall.cd(i+1)
             mu, sigma = getTH1GausFit(self.resY_qall_inVBinTH1[i], c1_z_qall.GetPad(i+1), self.the_gaussfit)
             self.h_resZvsV_qall.SetBinContent(i+1,sigma)
             self.h_biasZvsV_qall.SetBinContent(i+1,mu)
-            
+
             c1_z_qlow.cd(i+1)        
             mu, sigma = getTH1GausFit(self.resY_qlow_inVBinTH1[i], c1_z_qlow.GetPad(i+1), self.the_gaussfit)
             self.h_resZvsV_qlow.SetBinContent(i+1,sigma)
@@ -527,21 +646,28 @@ class HistoStruct():
             mu, sigma = getTH1GausFit(self.resY_qhigh_inVBinTH1[i], c1_z_qhigh.GetPad(i+1), self.the_gaussfit)
             self.h_resZvsV_qhigh.SetBinContent(i+1,sigma)
             self.h_biasZvsV_qhigh.SetBinContent(i+1,mu)
-            
-            c1_z_qprimaries.cd(i+1)        
-            mu, sigma = getTH1GausFit(self.resY_qprimaries_inVBinTH1[i], c1_z_qprimaries.GetPad(i+1), self.the_gaussfit)
-            self.h_resZvsV_qprimaries.SetBinContent(i+1,sigma)
-            self.h_biasZvsV_qprimaries.SetBinContent(i+1,mu)
 
+            c1_zVsNy_qlow.cd(i+1)        
+            c1_zVsNy_qlow.GetPad(i+1).SetLogz()        
+            self.resYvsNy_qlow_inVBinTH2[i].SetStats(0)
+            self.resYvsNy_qlow_inVBinTH2[i].Draw("colz")
+
+            c1_zVsNy_qhigh.cd(i+1)        
+            c1_zVsNy_qhigh.GetPad(i+1).SetLogz()        
+            self.resYvsNy_qhigh_inVBinTH2[i].SetStats(0)
+            self.resYvsNy_qhigh_inVBinTH2[i].Draw("colz")
+            
         c1_rPhi_qall.SaveAs ("c1_rPhi_qall_in%sBin.pdf" % self.the_name)
         c1_rPhi_qlow.SaveAs ("c1_rPhi_qlow_in%sBin.pdf" % self.the_name)
         c1_rPhi_qhigh.SaveAs("c1_rPhi_qhigh_in%sBin.pdf" % self.the_name)
-        c1_rPhi_qprimaries.SaveAs("c1_rPhi_qprimaries_in%sBin.pdf" % self.the_name)
-        
+        c1_rPhiVsNx_qlow.SaveAs ("c1_rPhiVsNx_qlow_in%sBin.pdf" % self.the_name)
+        c1_rPhiVsNx_qhigh.SaveAs("c1_rPhiVsNx_qhigh_in%sBin.pdf" % self.the_name)
+                
         c1_z_qall.SaveAs("c1_z_qall_in%sBin.pdf" % self.the_name)
         c1_z_qlow.SaveAs("c1_z_qlow_in%sBin.pdf" % self.the_name)
         c1_z_qhigh.SaveAs("c1_z_qhigh_in%sBin.pdf" % self.the_name)
-        c1_z_qprimaries.SaveAs("c1_z_qprimaries_in%sBin.pdf" % self.the_name)
+        c1_zVsNy_qlow.SaveAs("c1_zVsNy_qlow_in%sBin.pdf" % self.the_name)
+        c1_zVsNy_qhigh.SaveAs("c1_zVsNy_qhigh_in%sBin.pdf" % self.the_name)
 
 
         # draw nice trend plots
@@ -559,19 +685,19 @@ class HistoStruct():
         rphi_arr = []
         rphi_arr.append(self.h_resRPhivsV_qlow)
         rphi_arr.append(self.h_resRPhivsV_qhigh)
-        rphi_arr.append(self.h_resRPhivsV_qprimaries)
+        rphi_arr.append(self.h_resRPhivsV_qall)
   
         the_extrema = getExtrema(rphi_arr)
         MakeNiceTrendPlotStyle(self.h_resRPhivsV_qlow,0,the_extrema)
         self.h_resRPhivsV_qlow.Draw("C")
         MakeNiceTrendPlotStyle(self.h_resRPhivsV_qhigh,1,the_extrema)
         self.h_resRPhivsV_qhigh.Draw("Csame")
-        MakeNiceTrendPlotStyle(self.h_resRPhivsV_qprimaries,3,the_extrema)
-        self.h_resRPhivsV_qprimaries.Draw("Csame")
+        MakeNiceTrendPlotStyle(self.h_resRPhivsV_qall,3,the_extrema)
+        self.h_resRPhivsV_qall.Draw("Csame")
         
         lego.AddEntry(self.h_resRPhivsV_qlow,"primaries Q/#LTQ#GT<1") 
         lego.AddEntry(self.h_resRPhivsV_qhigh,"primaries 1<Q/#LTQ#GT<1.5")
-        lego.AddEntry(self.h_resRPhivsV_qprimaries,"primaries Q/#LTQ#GT<1.5")
+        lego.AddEntry(self.h_resRPhivsV_qall,"primaries Q/#LTQ#GT<1.5")
         
         lego.Draw("same")
         cResVsV_1.SaveAs("rmsVs%s_rphi.root" % self.the_name)
@@ -580,15 +706,15 @@ class HistoStruct():
         z_arr = []
         z_arr.append(self.h_resZvsV_qlow)
         z_arr.append(self.h_resZvsV_qhigh)
-        z_arr.append(self.h_resZvsV_qprimaries)
+        z_arr.append(self.h_resZvsV_qall)
         
         the_extrema = getExtrema(z_arr)        
         MakeNiceTrendPlotStyle(self.h_resZvsV_qlow,0,the_extrema)
         self.h_resZvsV_qlow.Draw("C")
         MakeNiceTrendPlotStyle(self.h_resZvsV_qhigh,1,the_extrema)
         self.h_resZvsV_qhigh.Draw("Csame")
-        MakeNiceTrendPlotStyle(self.h_resZvsV_qprimaries,3,the_extrema)
-        self.h_resZvsV_qprimaries.Draw("Csame")
+        MakeNiceTrendPlotStyle(self.h_resZvsV_qall,3,the_extrema)
+        self.h_resZvsV_qall.Draw("Csame")
         
         lego.Draw("same")
         cResVsV_2.SaveAs("rmsVs%s_rz.root" % self.the_name)
@@ -640,6 +766,7 @@ def declare_struct():
 ###############
 def main():
 ###############
+    ROOT.gSystem.Load('libRooFit')
 
 # conversion factors
     CmToUm = 10000. # length -> from cm to um
@@ -908,3 +1035,162 @@ def main():
 ##################################
 if __name__ == "__main__":        
     main()
+
+
+
+"""
+#################################################################################################
+def langaufit(hist,fitrange,startvalues,parlimitslo,parlimitshi,fitparams,fiterrors,ChiSqr,NDF,nFitNum):
+#################################################################################################
+ 
+    FunName = "FitFcn_%s_%d" % (hist.GetName(),nFitNum)
+
+    ffitold = ROOT.gROOT.GetListOfFunctions().FindObject(FunName)
+    if (ffitold): 
+        del ffitold
+    
+    ffit = ROOT.TF1(FunName,langaufun,fitrange[0],fitrange[1],4)
+    ffit.SetParameters(startvalues[0],startvalues[1],startvalues[2],startvalues[3])
+    ffit.SetParNames("Width","MP","Area","GSigma")
+    
+    for i in range(0,4):
+        ffit.SetParLimits(i, parlimitslo[i], parlimitshi[i])
+
+    hist.Fit(FunName,"RBWW")   # "B" unset the default initializations of TMath::Landau
+                               # "W" set all errors to 1 for non empty bins 
+                               # "WW" set all errors to 1 also for  empty bins 
+
+    for i in range(0,4):
+        fitparams.append(ffit.GetParameter(i))   # obtain fit parameters
+        fiterrors.append(ffit.GetParError(i))    # obtain errors fit parameters
+        
+    ChiSqr = ffit.GetChisquare()  # obtain chi^2
+    NDF    = ffit.GetNDF()        # obtain ndf
+
+    print FunName, startvalues, fitparams
+    return ffit                   # return fit function    
+
+######################
+def langaufun(x,par):
+###################### 
+
+   #Fit parameters:
+   # par[0]=Width (scale) parameter of Landau density
+   # par[1]=Most Probable (MP, location) parameter of Landau density
+   # par[2]=Total area (integral -inf to inf, normalization constant)
+   # par[3]=Width (sigma) of convoluted Gaussian function
+   #
+   # In the Landau distribution (represented by the CERNLIB approximation), 
+   # the maximum is located at x=-0.22278298 with the location parameter=0.
+   # This shift is corrected within this function, so that the actual
+   # maximum is identical to the MP parameter.
+
+   
+    # Numeric constants
+    _invsq2pi =  0.3989422804014   # (2 pi)^(-1/2)
+    _mpshift  = -0.22278298        # Landau maximum location
+    
+    # Control constants
+    _np =  200.0                  # number of convolution steps
+    _sc =    5.0                  # convolution extends to +-sc Gaussian sigmas
+    
+    _sum = 0.0
+    
+    # MPV shift correction
+    _mpc = par[0] - _mpshift*par[0]
+    
+    # Range of convolution integral
+    _xlow = x - _sc * par[3]
+    _xupp = x + _sc * par[3]
+
+    _step = (_xupp-_xlow) / _np
+
+    # Convolution integral of Landau and Gaussian by sum
+    _x = numpy.linspace(_xlow+0.5*_step, _xupp-0.5*_step, _np, True)
+
+    for _xx in _x:  
+        if _xx > 0: 
+            _fland = ROOT.TMath.Landau(_xx,_mpc,par[0]) / par[0]
+            _sum   += _fland * ROOT.TMath.Gaus(x,_xx,par[3])
+      
+    var = (par[2]*_step*_sum*_invsq2pi/par[3])    
+    return var
+
+#################################
+def langaupro(params, maxx, FWHM):
+#################################
+   # Seaches for the location (x value) at the maximum of the 
+   # Landau-Gaussian convolute and its full width at half-maximum.
+   #
+   # The search is probably not very efficient, but it's a first try.
+   i = 0
+   MAXCALLS = 10000
+
+
+   # Search for maximum
+   p = params[1] - 0.1 * params[0]
+   step = 0.05 * params[0]
+   lold = -2.0
+   l    = -1.0
+
+   while l!=lold and i<MAXCALLS:
+      i+=1
+      lold = l
+      x = p + step
+      l = langaufun(x,params) 
+      if l < lold:
+          step = -step/10           
+      p += step
+   
+   if i == MAXCALLS:
+      return -1
+
+   maxx = x
+   fy = l/2
+
+   # Search for right x location of fy
+   p = maxx + params[0]
+   step = params[0]
+   lold = -2.0
+   l    = -1e300
+   i    = 0
+
+   while l!=lold and i<MAXCALLS:
+      i+=1
+      lold = l
+      x = p + step
+      l = math.fabs(langaufun(x,params) - fy)
+      if l > lold:
+         step = -step/10          
+      p += step
+
+   if i == MAXCALLS:
+      return -2
+
+   fxr = x
+
+   # Search for left x location of fy
+   p = maxx - 0.5 * params[0]
+   step = -params[0]
+   lold = -2.0
+   l    = -1e300
+   i    = 0
+
+   while l!=lold and i<MAXCALLS:
+      i+=1
+      lold = l
+      x = p + step
+      l = math.fabs(langaufun(x,params) - fy)        
+      if l > lold:
+         step = -step/10    
+      p += step
+      
+
+   if i == MAXCALLS:
+      return -3
+
+   fxl = x
+
+   FWHM = fxr - fxl
+   return 
+"""
