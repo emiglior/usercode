@@ -398,10 +398,10 @@ class HistoStruct():
 
             hname = "h2_resYvsresX_qlow_%sBin%d" % (V_name ,i)
             htitle = "h2_resYvsresX_qlow_%s bin %d (%.2f < %s < %.2f);resX [#mum];resY [#mum]" % (V_name, i, V_low, V_label, V_high)
-            self.resYvsresX_qlow_inVBinTH2.append( ROOT.TH2F(hname,htitle,50,-150.,150.,50,-150.,150.))
+            self.resYvsresX_qlow_inVBinTH2.append( ROOT.TH2F(hname,htitle, 50,-150.,150.,67,-201.,201.))
             hname = "h2_resYvsresX_qhigh_%sBin%d" % (V_name ,i)
             htitle = "h2_resYvsresX_qhigh_%s bin %d (%.2f < %s < %.2f);resX [#mum];resY [#mum]" % (V_name, i, V_low, V_label, V_high)
-            self.resYvsresX_qhigh_inVBinTH2.append( ROOT.TH2F(hname,htitle,50,-150.,150.,50,-150.,150.))
+            self.resYvsresX_qhigh_inVBinTH2.append( ROOT.TH2F(hname,htitle,50,-150.,150.,67,-201.,201.))
 
 
     def FillFirstLoop(self, the_V, pixel_recHit):
@@ -448,7 +448,6 @@ class HistoStruct():
         if self.the_min<=the_V and the_V<=self.the_max:
             index = self.the_xAxis.FindBin(the_V)            
 
-            ### very large residuals are set to +-150 um 
             resX = (pixel_recHit.hx-pixel_recHit.x)*CmToUm
             if (pixel_recHit.hx-pixel_recHit.x)*CmToUm < -150.:
                 resX = -149.9
@@ -456,10 +455,10 @@ class HistoStruct():
                 resX = +149.9
 
             resY = (pixel_recHit.hy-pixel_recHit.y)*CmToUm
-            if (pixel_recHit.hy-pixel_recHit.y)*CmToUm < -150.:
-                resY = -149.9
-            if (pixel_recHit.hy-pixel_recHit.y)*CmToUm >  150.:
-                resY = +149.9
+            if (pixel_recHit.hy-pixel_recHit.y)*CmToUm < -200.:
+                resY = -199.9
+            if (pixel_recHit.hy-pixel_recHit.y)*CmToUm >  200.:
+                resY = +199.9
 
             if  pixel_recHit.q*math.fabs(pixel_recHit.tz)*ToKe < QaveCorr:
                 self.resX_qlow_inVBinTH1[index-1].Fill((pixel_recHit.hx-pixel_recHit.x)*CmToUm)
