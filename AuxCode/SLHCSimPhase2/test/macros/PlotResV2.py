@@ -82,18 +82,19 @@ def getTH1LanGausFit(h1_in, pad):
     t.setBins(10000,"cache")  
     
     # Construct landau (x) gauss
-    lxg = ROOT.RooFFTConvPdf("lxg","landau (X) gauss",t,landau,gauss) 
+    FunName = "FitFcn_%s_%d" % (h1_in.GetName(),getTH1LanGausFit.icnt)
+    lxg = ROOT.RooFFTConvPdf(FunName,"landau (X) gauss",t,landau,gauss) 
     
     # S a m p l e ,   f i t   a n d   p l o t   c o n v o l u t e d   p d f 
     # ----------------------------------------------------------------------
  
-    # Fit gxlx to data
+    # Fit lxg to data
     ral = ROOT.RooArgList(t)
     dh  = ROOT.RooDataHist("dh","dh",ral,ROOT.RooFit.Import(h1_in)) 
 
     lxg.fitTo(dh) 
     
-    # Plot data, landau pdf, landau (X) gauss pdf
+    # Plot data, landau pdf, landau (x) gauss pdf
     frame = t.frame(ROOT.RooFit.Title("landau (x) gauss convolution")) 
     dh.plotOn(frame) 
     lxg.plotOn(frame) 
@@ -103,7 +104,7 @@ def getTH1LanGausFit(h1_in, pad):
     frame.GetYaxis().SetTitleOffset(1.4)  
     frame.Draw() 
 
-    return  ml.getVal(), ml.getError()
+    return  ml.getVal(), ml.getError(), sl.getVal(), sl.getError(), sg.getVal(), sg.getError()
 ############################
 def getExtrema(h1array):
 ############################
@@ -245,6 +246,8 @@ class HistoStruct():
         self.beta_inVBinTH1 = []
 
         self.h_qMPVprimaries_corr_vsV = ROOT.TH1F("h_qMPVprimariescorrvs%s" % V_name, str("Barrel Q_{MPV}; %s ;" % V_label),V_nbins,V_min,V_max)
+        self.h_qLWIDTHprimaries_corr_vsV = ROOT.TH1F("h_qLWIDTHprimariescorrvs%s" % V_name, str("Barrel Q_{landau width}; %s ;" % V_label),V_nbins,V_min,V_max)
+        self.h_qNOISEprimaries_corr_vsV = ROOT.TH1F("h_qNOISEprimariescorrvs%s" % V_name, str("Barrel Q_{noise}; %s ;" % V_label),V_nbins,V_min,V_max)
 
         V_span = (V_max-V_min)/V_nbins
         for i in xrange(V_nbins):
@@ -398,11 +401,10 @@ class HistoStruct():
 
             hname = "h2_resYvsresX_qlow_%sBin%d" % (V_name ,i)
             htitle = "h2_resYvsresX_qlow_%s bin %d (%.2f < %s < %.2f);resX [#mum];resY [#mum]" % (V_name, i, V_low, V_label, V_high)
-            self.resYvsresX_qlow_inVBinTH2.append( ROOT.TH2F(hname,htitle, 50,-150.,150.,67,-201.,201.))
+            self.resYvsresX_qlow_inVBinTH2.append( ROOT.TH2F(hname,htitle, 50,-150.,150.,100,-1000.,1000.))
             hname = "h2_resYvsresX_qhigh_%sBin%d" % (V_name ,i)
             htitle = "h2_resYvsresX_qhigh_%s bin %d (%.2f < %s < %.2f);resX [#mum];resY [#mum]" % (V_name, i, V_low, V_label, V_high)
-            self.resYvsresX_qhigh_inVBinTH2.append( ROOT.TH2F(hname,htitle,50,-150.,150.,67,-201.,201.))
-
+            self.resYvsresX_qhigh_inVBinTH2.append( ROOT.TH2F(hname,htitle,50,-150.,150.,100,-1000.,1000.))
 
     def FillFirstLoop(self, the_V, pixel_recHit):
     #############################################
@@ -424,9 +426,9 @@ class HistoStruct():
             self.spreadY_inVBinTH1[index-1].Fill(min(pixel_recHit.spready, 15))
             
             # only primaries
-            if pixel_recHit.process == 2:
+            if pixel_recHit.process == 2 and pixel_recHit.x*CmToUm < 7900:
                 self.q_primaries_corr_inVBinTH1[index-1].Fill(pixel_recHit.q*math.fabs(pixel_recHit.tz)*ToKe)
-
+                    
                 self.spreadX_primaries_inVBinTH1[index-1].Fill(min(pixel_recHit.spreadx, 15))
                 self.spreadY_primaries_inVBinTH1[index-1].Fill(min(pixel_recHit.spready, 15))
 
@@ -434,7 +436,7 @@ class HistoStruct():
                 self.beta_inVBinTH1[index-1].Fill(math.atan(math.fabs(pixel_recHit.tz/pixel_recHit.ty)))
                 
 
-    def FillSecondLoop(self, the_V, pixel_recHit, QaveCorr):
+    def FillSecondLoop(self, the_V, pixel_recHit):
     ####################################################
 
 # conversion factors
@@ -445,9 +447,12 @@ class HistoStruct():
         # monitor input variable
         self.h_V.Fill(the_V)
 
+        #
         if self.the_min<=the_V and the_V<=self.the_max:
             index = self.the_xAxis.FindBin(the_V)            
+            QaveCorr = self.q_primaries_corr_inVBinTH1[index-1].GetMean()  
 
+            # resX and resY are used only to fill the 2D plot (not for computing the resolution)
             resX = (pixel_recHit.hx-pixel_recHit.x)*CmToUm
             if (pixel_recHit.hx-pixel_recHit.x)*CmToUm < -150.:
                 resX = -149.9
@@ -455,10 +460,11 @@ class HistoStruct():
                 resX = +149.9
 
             resY = (pixel_recHit.hy-pixel_recHit.y)*CmToUm
-            if (pixel_recHit.hy-pixel_recHit.y)*CmToUm < -200.:
-                resY = -199.9
-            if (pixel_recHit.hy-pixel_recHit.y)*CmToUm >  200.:
-                resY = +199.9
+            if (pixel_recHit.hy-pixel_recHit.y)*CmToUm < -1000.:
+                resY = -999.9
+            if (pixel_recHit.hy-pixel_recHit.y)*CmToUm >  1000.:
+                resY = +999.9
+            #######################################################################################    
 
             if  pixel_recHit.q*math.fabs(pixel_recHit.tz)*ToKe < QaveCorr:
                 self.resX_qlow_inVBinTH1[index-1].Fill((pixel_recHit.hx-pixel_recHit.x)*CmToUm)
@@ -555,9 +561,15 @@ class HistoStruct():
             # draw Q_cluster normalized for incidence angle for particle from primary interactions only
             c1_qclus_primaries_corr.cd(i+1)
             self.q_primaries_corr_inVBinTH1[i].Draw()
-            mpv, mpv_error = getTH1LanGausFit(self.q_primaries_corr_inVBinTH1[i], c1_qclus_primaries_corr.GetPad(i+1))
+            mpv, mpv_error, lwidth, lwidth_error, sig_noise, sig_noise_error = getTH1LanGausFit(self.q_primaries_corr_inVBinTH1[i], c1_qclus_primaries_corr.GetPad(i+1))
             self.h_qMPVprimaries_corr_vsV.SetBinContent(i+1,mpv)
             self.h_qMPVprimaries_corr_vsV.SetBinError(i+1,mpv_error)
+
+            self.h_qLWIDTHprimaries_corr_vsV.SetBinContent(i+1,lwidth)
+            self.h_qLWIDTHprimaries_corr_vsV.SetBinError(i+1,lwidth_error)
+
+            self.h_qNOISEprimaries_corr_vsV.SetBinContent(i+1,math.fabs(sig_noise))
+            self.h_qNOISEprimaries_corr_vsV.SetBinError(i+1,sig_noise_error)
             
             ###
             c1_spreadXY.cd(i+1)
@@ -903,10 +915,15 @@ def main():
     dX = 100
     dY = 100 
     nX = (8200*2)/dX
-    nY = (33000*2)/dY
+    nY = (32500*2)/dY
     print "Local HitMaps nX, nY: ", nX, nY
-    h2_localXY_simHit = ROOT.TH2F("h2_localXY_simHit","h2_localXY_simHit",nX,-8200,+8200,nY,-33000,33000) 
-    h2_localXY_recHit = ROOT.TH2F("h2_localXY_recHit","h2_localXY_recHit",nX,-8200,+8200,nY,-33000,33000)
+    h2_localXY_mod_simHit = ROOT.TH2F("h2_localXY_mod_simHit","h2_localXY_mod_simHit",nX,-8200,+8200,nY,-32500,32500) 
+    h2_localXY_mod_recHit = ROOT.TH2F("h2_localXY_mod_recHit","h2_localXY_mod_recHit",nX,-8200,+8200,nY,-32500,32500)
+
+    nX = (8200*2)/dX
+    nY = (4100*2)/dY
+    h2_localXY_roc_simHit = ROOT.TH2F("h2_localXY_roc_simHit","h2_localXY_roc_simHit",nX,-8200,+8200,nY,0.,8200) 
+    h2_localXY_roc_recHit = ROOT.TH2F("h2_localXY_roc_recHit","h2_localXY_roc_recHit",nX,-8200,+8200,nY,0.,8200)
 
     ### 
     h1_qcorr  = ROOT.TH1F("h1_qcorr","h1_qcorr primaries;Q_{corr} [ke]; recHits",200,0.,400.)
@@ -943,8 +960,12 @@ def main():
             h2_rzhitmapSelected.Fill(tv3.z(),tv3.Perp())
 
             # map of local positions 
-            h2_localXY_simHit.Fill(pixel_recHit.hx*CmToUm,pixel_recHit.hy*CmToUm) 
-            h2_localXY_recHit.Fill(pixel_recHit.x*CmToUm ,pixel_recHit.y*CmToUm) 
+            if pixel_recHit.process==2:   # and ((pixel_recHit.hx-pixel_recHit.x)*CmToUm>90 or math.fabs(pixel_recHit.hy-pixel_recHit.y)*CmToUm>600): # uncomment this to plot only hits with large residuals
+                h2_localXY_mod_simHit.Fill(pixel_recHit.hx*CmToUm,pixel_recHit.hy*CmToUm) 
+                h2_localXY_mod_recHit.Fill(pixel_recHit.x*CmToUm ,pixel_recHit.y*CmToUm) 
+
+                h2_localXY_roc_simHit.Fill(pixel_recHit.hx*CmToUm,(pixel_recHit.hy*CmToUm)%8100.)  # 8100. hard coded -> size (in localY) of the Si surface read out by one ROC
+                h2_localXY_roc_recHit.Fill(pixel_recHit.x*CmToUm ,(pixel_recHit.y*CmToUm)%8100. ) 
 
             # map of local positions for clusters with projected width=1 ("pettine")
             if pixel_recHit.spreadx == 1:
@@ -986,7 +1007,6 @@ def main():
     Qave = h1_qcorr.GetMean()
     print "Average Corrected Q cluster [ke]: ", Qave
 
-
     ######## 2nd loop on the tree (required when selections based Qave are used)
     for this_entry in xrange(all_entries):
         input_tree.GetEntry(this_entry)
@@ -1009,17 +1029,11 @@ def main():
                 beta = math.pi+beta
 
             # residuals for clusters Q<1.5*Q_ave from primaries only (same selection as Morris Swartz)
-            if pixel_recHit.q*ToKe < 1.5*Qave/math.fabs(pixel_recHit.tz) and pixel_recHit.process == 2:
-               hsEta.FillSecondLoop(math.fabs(tv3.Eta()), pixel_recHit, Qave)
-               hsZeta.FillSecondLoop(math.fabs(tv3.z()), pixel_recHit, Qave)
-               hsCotgBeta.FillSecondLoop(math.fabs(1./math.tan(beta)), pixel_recHit, Qave)
-            # effective thickness estimated from eta of recHit
-            # the_eta = tv3.Eta()
-            # if pixel_recHit.q*ToKe < 1.5*Qave*tv3.Mag()/tv3.Perp():
-            #     hsEta.FillSecondLoop(math.fabs(the_eta), pixel_recHit, Qave*tv3.Mag()/tv3.Perp())
-            #     hsZeta.FillSecondLoop(math.fabs(tv3.z()), pixel_recHit, Qave*tv3.Mag()/tv3.Perp())
-            #     hsCotgBeta.FillSecondLoop(math.fabs(1./math.tan(beta)), pixel_recHit, Qave*tv3.Mag()/tv3.Perp())
-
+            # exclude clusters at the x+ edge of the module (charge drifting outside the silicon)
+            if pixel_recHit.process == 2 and pixel_recHit.x*CmToUm < 7900:
+               hsEta.FillSecondLoop(math.fabs(tv3.Eta()), pixel_recHit)
+               hsZeta.FillSecondLoop(math.fabs(tv3.z()), pixel_recHit)
+               hsCotgBeta.FillSecondLoop(math.fabs(1./math.tan(beta)), pixel_recHit)
 
     ########################
     ### SUMMARY CANVASES ###
@@ -1049,11 +1063,14 @@ def main():
 
     c1_localXY.SaveAs("c1_localXY.root")
 
-    ### local position 
-    c1_localXY_hitmap = ROOT.TCanvas("c1_localXY_hitmap","c1_localXY_hitmap",164*3,330*3) # size of the canvas has the same aspect ratio of the module 
-    c1_localXY_hitmap.SetFillColor(ROOT.kWhite)
-    c1_localXY_hitmap.Divide(2,1)
+    ### local position (module level)
+    c1_localXY_mod_hitmap = ROOT.TCanvas("c1_localXY_mod_hitmap","c1_localXY_mod_hitmap",164*3,325*3) # size of the canvas with the same aspect ratio of the module 
+    c1_localXY_mod_hitmap.SetFillColor(ROOT.kWhite)
+    c1_localXY_mod_hitmap.Divide(2,1)
     
+    # for not understood reasons, the following work only in a ROOT session
+    # TPython::LoadMacro( "rbPalette.py")
+    # rbPalette.py
     # # red-blue
     # stops = [ 0.00, 0.50, 1.00]
     # red   = [ 0.00, 0.50, 1.00]
@@ -1069,14 +1086,26 @@ def main():
     # ncontours = 8
     # ROOT.TColor.CreateGradientColorTable(npoints, s, r, g, b, ncontours)
     # ROOT.gStyle.SetNumberContours(ncontours)
-    # 
+    ######################################################
+     
+    c1_localXY_mod_hitmap.cd(1)
+    h2_localXY_mod_simHit.Draw("colz")     
+    c1_localXY_mod_hitmap.cd(2)
+    h2_localXY_mod_recHit.Draw("colz") 
     
-    c1_localXY_hitmap.cd(1)
-    h2_localXY_simHit.Draw("boxcolz")     
-    c1_localXY_hitmap.cd(2)
-    h2_localXY_recHit.Draw("boxcolz") 
+    c1_localXY_mod_hitmap.SaveAs("c1_localXY_mod_hitmap.root")
+
+    ### local position ( 2*ROC level)
+    c1_localXY_roc_hitmap = ROOT.TCanvas("c1_localXY_roc_hitmap","c1_localXY_roc_hitmap",164*4,164*4) # size of the canvas with the same aspect ratio of the 2*ROC
+    c1_localXY_roc_hitmap.SetFillColor(ROOT.kWhite)
+    c1_localXY_roc_hitmap.Divide(1,2)
     
-    c1_localXY_hitmap.SaveAs("c1_localXY_hitmap.root")
+    c1_localXY_roc_hitmap.cd(1)
+    h2_localXY_roc_simHit.Draw("colz")     
+    c1_localXY_roc_hitmap.cd(2)
+    h2_localXY_roc_recHit.Draw("colz") 
+    
+    c1_localXY_roc_hitmap.SaveAs("c1_localXY_roc_hitmap.root")
     
     hsEta.DrawAllCanvas(Qave)
     hsZeta.DrawAllCanvas(Qave)
