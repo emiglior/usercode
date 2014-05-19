@@ -132,7 +132,7 @@ def main():
             tpv1.SetTextFont(72)
             tpv1.SetTextAlign(11)
             tpv1.SetTextColor(ROOT.kBlue)
-            tpv1.AddText("Barrel Pixel Layer 1 Not Irr. r-[Phi]")
+            tpv1.AddText("Barrel Pixel Layer 1 Not Irr. r-#Phi")
             tpv1.Draw("same")
 
     legRMS_rphi.Draw('same');
