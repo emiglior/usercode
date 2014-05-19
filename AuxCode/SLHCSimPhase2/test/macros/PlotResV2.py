@@ -211,6 +211,30 @@ def getTH1GausFit(h1_in, pad, gaussfit):
 
     return mu, sigma
 
+""" not used anymore 
+#############################
+def NotModuleZEdge(z_global):
+############################
+    # perhaps it could be replaced by math.fabs(pixel_recHit.y)*CmToUm<31150
+    z_abs = math.fabs(z_global)
+    accept = True
+    if z_abs<0.10 or (z_abs>6.55 and z_abs<6.85) or (z_abs>13.2 and z_abs<13.6)  or (z_abs>19.9 and z_abs<20.3):
+        accept = False
+
+    return accept
+"""
+
+#######################################
+def NotModuleEdge(x_local, y_local):
+######################################
+    """ x_local, y_local in um """
+
+    accept = True
+    if math.fabs(x_local)>7900. or math.fabs(y_local)>31150.:
+        accept = False
+
+    return accept
+            
 #########################
 class HistoStruct():
 #########################
@@ -425,8 +449,8 @@ class HistoStruct():
             self.spreadX_inVBinTH1[index-1].Fill(min(pixel_recHit.spreadx, 15))
             self.spreadY_inVBinTH1[index-1].Fill(min(pixel_recHit.spready, 15))
             
-            # only primaries
-            if pixel_recHit.process == 2 and pixel_recHit.x*CmToUm < 7900:
+            # only primaries not at the edges of the module (to minimize the lost charge)
+            if pixel_recHit.process == 2 and NotModuleEdge(pixel_recHit.x*CmToUm, pixel_recHit.y*CmToUm):
                 self.q_primaries_corr_inVBinTH1[index-1].Fill(pixel_recHit.q*math.fabs(pixel_recHit.tz)*ToKe)
                     
                 self.spreadX_primaries_inVBinTH1[index-1].Fill(min(pixel_recHit.spreadx, 15))
@@ -930,8 +954,8 @@ def main():
 
     ### histo containers
     hsEta  = HistoStruct("Eta" ,25, 0.,2.5, "|#eta|", output_root_file, options.gaussfit)
-    hsZeta = HistoStruct("Zeta",50, 0.,25., "|z|"   , output_root_file, options.gaussfit)
-    hsCotgBeta  = HistoStruct("CotgBeta" ,30,0.,6., "|cotg(#beta)|", output_root_file, options.gaussfit)
+#    hsZeta = HistoStruct("Zeta",50, 0.,25., "|z|"   , output_root_file, options.gaussfit)
+#    hsCotgBeta  = HistoStruct("CotgBeta" ,30,0.,6., "|cotg(#beta)|", output_root_file, options.gaussfit)
 
     all_entries = input_tree.GetEntries()
     if options.entries != -1:
@@ -960,7 +984,7 @@ def main():
             h2_rzhitmapSelected.Fill(tv3.z(),tv3.Perp())
 
             # map of local positions 
-            if pixel_recHit.process==2:   # and ((pixel_recHit.hx-pixel_recHit.x)*CmToUm>90 or math.fabs(pixel_recHit.hy-pixel_recHit.y)*CmToUm>600): # uncomment this to plot only hits with large residuals
+            if pixel_recHit.process==2:
                 h2_localXY_mod_simHit.Fill(pixel_recHit.hx*CmToUm,pixel_recHit.hy*CmToUm) 
                 h2_localXY_mod_recHit.Fill(pixel_recHit.x*CmToUm ,pixel_recHit.y*CmToUm) 
 
@@ -998,8 +1022,8 @@ def main():
 #                h1_qcorr.Fill(pixel_recHit.q*ToKe*tv3.Perp()/tv3.Mag())
 
             hsEta.FillFirstLoop(math.fabs(the_eta), pixel_recHit)
-            hsZeta.FillFirstLoop(math.fabs(tv3.z()), pixel_recHit)
-            hsCotgBeta.FillFirstLoop(math.fabs(1./math.tan(beta)), pixel_recHit)
+#            hsZeta.FillFirstLoop(math.fabs(tv3.z()), pixel_recHit)
+#            hsCotgBeta.FillFirstLoop(math.fabs(1./math.tan(beta)), pixel_recHit)
 
     ### Compute the Q averaged in the central eta-bin
     output_root_file.cd("hitmapsAndCharge") 
@@ -1030,10 +1054,18 @@ def main():
 
             # residuals for clusters Q<1.5*Q_ave from primaries only (same selection as Morris Swartz)
             # exclude clusters at the x+ edge of the module (charge drifting outside the silicon)
-            if pixel_recHit.process == 2 and pixel_recHit.x*CmToUm < 7900:
+            if pixel_recHit.process == 2 and NotModuleEdge(pixel_recHit.x*CmToUm, pixel_recHit.y*CmToUm):
                hsEta.FillSecondLoop(math.fabs(tv3.Eta()), pixel_recHit)
-               hsZeta.FillSecondLoop(math.fabs(tv3.z()), pixel_recHit)
-               hsCotgBeta.FillSecondLoop(math.fabs(1./math.tan(beta)), pixel_recHit)
+#               hsZeta.FillSecondLoop(math.fabs(tv3.z()), pixel_recHit)
+#               hsCotgBeta.FillSecondLoop(math.fabs(1./math.tan(beta)), pixel_recHit)
+            # effective thickness estimated from eta of recHit
+            # the_eta = tv3.Eta()
+            # if pixel_recHit.q*ToKe < 1.5*Qave*tv3.Mag()/tv3.Perp():
+            #     hsEta.FillSecondLoop(math.fabs(the_eta), pixel_recHit, Qave*tv3.Mag()/tv3.Perp())
+            #     hsZeta.FillSecondLoop(math.fabs(tv3.z()), pixel_recHit, Qave*tv3.Mag()/tv3.Perp())
+            #     hsCotgBeta.FillSecondLoop(math.fabs(1./math.tan(beta)), pixel_recHit, Qave*tv3.Mag()/tv3.Perp())
+
+
 
     ########################
     ### SUMMARY CANVASES ###
@@ -1108,8 +1140,8 @@ def main():
     c1_localXY_roc_hitmap.SaveAs("c1_localXY_roc_hitmap.root")
     
     hsEta.DrawAllCanvas(Qave)
-    hsZeta.DrawAllCanvas(Qave)
-    hsCotgBeta.DrawAllCanvas(Qave)
+#    hsZeta.DrawAllCanvas(Qave)
+#    hsCotgBeta.DrawAllCanvas(Qave)
 
     output_root_file.Write()
     output_root_file.Close()
