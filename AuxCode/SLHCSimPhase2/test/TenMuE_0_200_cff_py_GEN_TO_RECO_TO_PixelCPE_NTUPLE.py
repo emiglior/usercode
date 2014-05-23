@@ -249,6 +249,15 @@ process.PixelCPEGenericESProducer.PixelCPEList = PixelCPE_dict['pixelCPE_100x150
 process.mix.digitizers.pixel.ThresholdInElectrons_BPix = cms.double(options.BPixThr)
 process.mix.digitizers.pixel.ThresholdInElectrons_BPix_L1 = cms.double(options.BPixThr)
 
+# Added line from A. Tricomi to switch off the pixel inefficiencies from python
+process.mix.digitizers.pixel.AddPixelInefficiencyFromPython = cms.bool(False)
+
+# Customise noise
+process.mix.digitizers.pixel.AddNoise = cms.bool(False)	
+process.mix.digitizers.pixel.AddThresholdSmearing = cms.bool(False)
+process.mix.digitizers.pixel.AddNoisyPixels = cms.bool(False)
+
+
 #print process.dumpPython()
 # End of customisation functions
 
