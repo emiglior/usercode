@@ -41,7 +41,7 @@ def set_global_var(sample):
     PBS_DIR = os.path.join(os.getcwd(),"PBS") 
     LOG_DIR = os.path.join(os.getcwd(),"log")
     SCRAM_ARCH = "slc5_amd64_gcc472"
-    CMSSW_VER="CMSSW_6_2_0_SLHC11"
+    CMSSW_VER="CMSSW_6_2_0_SLHC13"
     
     if (sample=="TTbar") | (sample=="ttbar") | (sample=="TTBar") :
         GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/Extended2017/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
@@ -200,10 +200,10 @@ class Job:
         fout.write("echo \"After git cms-addpkg\" \n")
         fout.write("pwd \n")
         fout.write("ls -l . \n")
-        fout.write("git pull https://github.com/mmusich/cmssw ChangePitch_on620_SLHC11 \n")
+        fout.write("git pull https://github.com/mmusich/cmssw ChangePitch_on620_SLHC13 \n")
         fout.write("### 1 ended  \n")
         
-        fout.write("git clone -b 620_slhc11_phase1 git://github.com/emiglior/usercode.git \n")
+        fout.write("git clone -b 620_slhc13_phase2 git://github.com/emiglior/usercode.git \n")
         fout.write("mv usercode/AuxCode .\n")
         fout.write("mv usercode/RecoLocalTracker .\n")
         fout.write("rm -fr usercode \n")

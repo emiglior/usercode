@@ -62,14 +62,14 @@ PixelCPEGeneric::PixelCPEGeneric(edm::ParameterSet const & conf,
   // getting Pixel CPE from configuration file
   if ( conf.exists("PixelCPEList") ) {
     edm::ParameterSet pset = conf.getParameter<edm::ParameterSet>("PixelCPEList");
-    xerr_barrel_l1_     = pset.getUntrackedParameter<std::vector<double> >("xerr_barrel_l1_");
-    xerr_barrel_l1_def_ = pset.getUntrackedParameter<double>("xerr_barrel_l1_def_");
-    yerr_barrel_l1_     = pset.getUntrackedParameter<std::vector<double> >("yerr_barrel_l1_");
-    yerr_barrel_l1_def_ = pset.getUntrackedParameter<double>("yerr_barrel_l1_def_");
-    xerr_barrel_ln_     = pset.getUntrackedParameter<std::vector<double> >("xerr_barrel_ln_");
-    xerr_barrel_ln_def_ = pset.getUntrackedParameter<double>("xerr_barrel_ln_def_");
-    yerr_barrel_ln_     = pset.getUntrackedParameter<std::vector<double> >("yerr_barrel_ln_");
-    yerr_barrel_ln_def_ = pset.getUntrackedParameter<double>("yerr_barrel_ln_def_");
+    xerr_barrel_l12_     = pset.getUntrackedParameter<std::vector<double> >("xerr_barrel_l12_");
+    xerr_barrel_l12_def_ = pset.getUntrackedParameter<double>("xerr_barrel_l12_def_");
+    yerr_barrel_l12_     = pset.getUntrackedParameter<std::vector<double> >("yerr_barrel_l12_");
+    yerr_barrel_l12_def_ = pset.getUntrackedParameter<double>("yerr_barrel_l12_def_");
+    xerr_barrel_l34_     = pset.getUntrackedParameter<std::vector<double> >("xerr_barrel_l34_");
+    xerr_barrel_l34_def_ = pset.getUntrackedParameter<double>("xerr_barrel_l34_def_");
+    yerr_barrel_l34_     = pset.getUntrackedParameter<std::vector<double> >("yerr_barrel_l34_");
+    yerr_barrel_l34_def_ = pset.getUntrackedParameter<double>("yerr_barrel_l34_def_");
     xerr_endcap_        = pset.getUntrackedParameter<std::vector<double> >("xerr_endcap_");
     xerr_endcap_def_    = pset.getUntrackedParameter<double>("xerr_endcap_def_");
     yerr_endcap_        = pset.getUntrackedParameter<std::vector<double> >("yerr_endcap_");
@@ -599,30 +599,30 @@ PixelCPEGeneric::localError( const SiPixelCluster& cluster,
 	{
 	  DetId id = (det.geographicalId());
 	  int layer=PXBDetId(id).layer();
-	  if ( layer==1 ) {
+	  if ( layer<=2 ){
 	    if ( !edgex )
 	      {
-		if ( sizex<=xerr_barrel_l1_.size() ) xerr=xerr_barrel_l1_[sizex-1];
-		else xerr=xerr_barrel_l1_def_;
+		if ( sizex<=xerr_barrel_l12_.size() ) xerr=xerr_barrel_l12_[sizex-1];
+		else xerr=xerr_barrel_l12_def_;
 	      }
 	    
 	    if ( !edgey )
 	      {
-		if ( sizey<=yerr_barrel_l1_.size() ) yerr=yerr_barrel_l1_[sizey-1];
-		else yerr=yerr_barrel_l1_def_;
+		if ( sizey<=yerr_barrel_l12_.size() ) yerr=yerr_barrel_l12_[sizey-1];
+		else yerr=yerr_barrel_l12_def_;
 	      }
 	  }
 	  else if (layer<Phase2BPixStart_) {
 	    if ( !edgex )
 	      {
-		if ( sizex<=xerr_barrel_ln_.size() ) xerr=xerr_barrel_ln_[sizex-1];
-		else xerr=xerr_barrel_ln_def_;
+		if ( sizex<=xerr_barrel_l34_.size() ) xerr=xerr_barrel_l34_[sizex-1];
+		else xerr=xerr_barrel_l34_def_;
 	      }
 	    
 	    if ( !edgey )
 	      {
-		if ( sizey<=yerr_barrel_ln_.size() ) yerr=yerr_barrel_ln_[sizey-1];
-		else yerr=yerr_barrel_ln_def_;
+		if ( sizey<=yerr_barrel_l34_.size() ) yerr=yerr_barrel_l34_[sizey-1];
+		else yerr=yerr_barrel_l34_def_;
 	      }
 	  }
 	  else {

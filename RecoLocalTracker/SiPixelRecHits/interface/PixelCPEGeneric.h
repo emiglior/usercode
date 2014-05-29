@@ -121,10 +121,10 @@ class PixelCPEGeneric : public PixelCPEBase
   double EdgeClusterErrorX_;
   double EdgeClusterErrorY_;
 
-  std::vector<double> xerr_barrel_l1_,yerr_barrel_l1_,xerr_barrel_ln_;
-  std::vector<double> yerr_barrel_ln_,xerr_endcap_,yerr_endcap_;
-  float xerr_barrel_l1_def_, yerr_barrel_l1_def_,xerr_barrel_ln_def_;
-  float yerr_barrel_ln_def_, xerr_endcap_def_, yerr_endcap_def_;
+  std::vector<double> xerr_barrel_l12_,yerr_barrel_l12_,xerr_barrel_l34_;
+  std::vector<double> yerr_barrel_l34_,xerr_endcap_,yerr_endcap_;
+  float xerr_barrel_l12_def_, yerr_barrel_l12_def_,xerr_barrel_l34_def_;
+  float yerr_barrel_l34_def_, xerr_endcap_def_, yerr_endcap_def_;
 
 
   //--- DB Error Parametrization object
