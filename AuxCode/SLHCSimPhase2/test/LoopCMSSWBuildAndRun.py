@@ -216,23 +216,24 @@ class Job:
         # implement in the PBS script E.Brownson's recipe for changing the size of the pixels / part #2
         fout.write("# Eric Brownson's recipe to change the size of the pixels \n")
         fout.write("### 2: modify the topology \n")
-        fout.write("# trackerStructureTopology_template_L0.xml   -> L0    BPIX is changed \n")
-        fout.write("sed -e \"s%PIXELROCROWS%"+self.pixelrocrows+"%g\" -e \"s%PIXELROCCOLS%"+self.pixelroccols+"%g\" AuxCode/SLHCSimPhase2/test/trackerStructureTopology_template_L0.xml > Geometry/TrackerCommonData/data/PhaseI/trackerStructureTopology.xml \n")
+        fout.write("# trackerStructureTopology_template_L01.xml   -> L01    BPIX is changed \n")
+        fout.write("sed -e \"s%PIXELROCROWS%"+self.pixelrocrows+"%g\" -e \"s%PIXELROCCOLS%"+self.pixelroccols+"%g\" AuxCode/SLHCSimPhase2/test/trackerStructureTopology_template_L01.xml > Geometry/TrackerCommonData/data/PhaseII/BarrelEndcap/trackerStructureTopology.xml \n")
         fout.write("# Run CMSSW to complete the recipe for changing the size of the pixels \n")
 
         # recipe for phase I tracking  
-        fout.write("cmsRun SLHCUpgradeSimulations/Geometry/test/writeFile_phase1_cfg.py \n")
-        fout.write("mv PixelSkimmedGeometry_phase1.txt ${CMSSW_BASE}/src/SLHCUpgradeSimulations/Geometry/data/PhaseI \n")
+        #fout.write("cmsRun SLHCUpgradeSimulations/Geometry/test/writeFile_phase1_cfg.py \n")
+        #fout.write("mv PixelSkimmedGeometry_phase1.txt ${CMSSW_BASE}/src/SLHCUpgradeSimulations/Geometry/data/PhaseI \n")
         
         # recipe for phase II tracking
-        # fout.write("cmsRun SLHCUpgradeSimulations/Geometry/test/writeFile_phase2BE_cfg.py \n")
-        # fout.write("mv PixelSkimmedGeometry_phase2BE.txt ${CMSSW_BASE}/src/SLHCUpgradeSimulations/Geometry/data/PhaseII/BarrelEndcap/PixelSkimmedGeometry.txt \n")
+        fout.write("cmsRun SLHCUpgradeSimulations/Geometry/test/writeFile_phase2BE_cfg.py \n")
+        fout.write("mv PixelSkimmedGeometry_phase2BE.txt ${CMSSW_BASE}/src/SLHCUpgradeSimulations/Geometry/data/PhaseII/BarrelEndcap/PixelSkimmedGeometry.txt \n")
         
         fout.write("### 2 ended  \n")
 
         # implement the recipe for changing the bpix sensor thickness from A. Tricomi
         fout.write("# A Tricomi's recipe to change the sensors thickness \n")
         fout.write("sed -e \"s%BPIXLAYER0THICKNESS%"+self.bpixl0thickness+"%g\" AuxCode/SLHCSimPhase2/test/pixbarladderfull0_template.xml > Geometry/TrackerCommonData/data/PhaseI/pixbarladderfull0.xml \n")
+        fout.write("sed -e \"s%BPIXLAYER0THICKNESS%"+self.bpixl0thickness+"%g\" AuxCode/SLHCSimPhase2/test/pixbarladderfull1_template.xml > Geometry/TrackerCommonData/data/PhaseI/pixbarladderfull1.xml \n")
 
         fout.write("# Run CMSSW for DIGI-to-DQM steps \n")
         fout.write("cd "+os.path.join("AuxCode","SLHCSimPhase2","test")+"\n")  

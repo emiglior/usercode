@@ -40,7 +40,7 @@ def set_global_var():
     PBS_DIR = os.path.join(os.getcwd(),"PBS")
     LOG_DIR = os.path.join(os.getcwd(),"log")
     SCRAM_ARCH = "slc5_amd64_gcc472"
-    CMSSW_VER="CMSSW_6_2_0_SLHC11"
+    CMSSW_VER="CMSSW_6_2_0_SLHC13"
     
 ###### method to create recursively directories on EOS  #############
     
@@ -89,7 +89,7 @@ class Job:
         self.islocal=islocal
         self.launch_dir=LAUNCH_BASE
 
-        self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/out62XSLHC11","PixelROCRows_" +pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness,"BPixThr_"+bpixthr)
+        self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/out62XSLHC13","PixelROCRows_" +pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness,"BPixThr_"+bpixthr)
 
         if(self.job_id==1):
             mkdir_eos(self.out_dir)
@@ -194,10 +194,10 @@ class Job:
         fout.write("echo \"After git cms-addpkg\" \n")
         fout.write("pwd \n")
         fout.write("ls -l . \n")
-        fout.write("git pull https://github.com/mmusich/cmssw ChangePitch_on620_SLHC11 \n")
+        fout.write("git pull https://github.com/mmusich/cmssw ChangePitch_on620_SLHC13 \n")
         fout.write("### 1 ended  \n")
         
-        fout.write("git clone -b 620_slhc11_phase1 git://github.com/emiglior/usercode.git \n")
+        fout.write("git clone -b 620_slhc13_phase2 git://github.com/emiglior/usercode.git \n")
         fout.write("mv usercode/AuxCode .\n")
         # for the moment we ignore this (to be used to change the matching window)
         #fout.write("mv usercode/SimTracker .\n")
@@ -213,23 +213,24 @@ class Job:
         # implement in the PBS script E.Brownson's recipe for changing the size of the pixels / part #2
         fout.write("# Eric Brownson's recipe to change the size of the pixels \n")
         fout.write("### 2: modify the topology \n")
-        fout.write("# trackerStructureTopology_template_L0.xml   -> L0    BPIX is changed \n")
-        fout.write("sed -e \"s%PIXELROCROWS%"+self.pixelrocrows+"%g\" -e \"s%PIXELROCCOLS%"+self.pixelroccols+"%g\" ${PKG_DIR}/trackerStructureTopology_template_L0.xml > Geometry/TrackerCommonData/data/PhaseI/trackerStructureTopology.xml \n")
+        fout.write("# trackerStructureTopology_template_L01.xml   -> L01    BPIX is changed \n")
+        fout.write("sed -e \"s%PIXELROCROWS%"+self.pixelrocrows+"%g\" -e \"s%PIXELROCCOLS%"+self.pixelroccols+"%g\" ${PKG_DIR}/trackerStructureTopology_template_L01.xml > Geometry/TrackerCommonData/data/PhaseII/BarrelEndcap/trackerStructureTopology.xml \n")
         fout.write("# Run CMSSW to complete the recipe for changing the size of the pixels \n")
 
         # recipe for phase I tracking  
-        fout.write("cmsRun SLHCUpgradeSimulations/Geometry/test/writeFile_phase1_cfg.py \n")
-        fout.write("mv PixelSkimmedGeometry_phase1.txt ${CMSSW_BASE}/src/SLHCUpgradeSimulations/Geometry/data/PhaseI \n")
+        #fout.write("cmsRun SLHCUpgradeSimulations/Geometry/test/writeFile_phase1_cfg.py \n")
+        #fout.write("mv PixelSkimmedGeometry_phase1.txt ${CMSSW_BASE}/src/SLHCUpgradeSimulations/Geometry/data/PhaseI \n")
 
         # recipe for phase II tracking
-        #fout.write("cmsRun SLHCUpgradeSimulations/Geometry/test/writeFile_phase2BE_cfg.py \n")
-        #fout.write("mv PixelSkimmedGeometry_phase2BE.txt ${CMSSW_BASE}/src/SLHCUpgradeSimulations/Geometry/data/PhaseII/BarrelEndcap/PixelSkimmedGeometry.txt \n")        
+        fout.write("cmsRun SLHCUpgradeSimulations/Geometry/test/writeFile_phase2BE_cfg.py \n")
+        fout.write("mv PixelSkimmedGeometry_phase2BE.txt ${CMSSW_BASE}/src/SLHCUpgradeSimulations/Geometry/data/PhaseII/BarrelEndcap/PixelSkimmedGeometry.txt \n")        
 
         fout.write("### 2 ended  \n")
 
         # implement the recipe for changing the bpix sensor thickness from A. Tricomi
         fout.write("# A Tricomi's recipe to change the sensors thickness \n")
         fout.write("sed -e \"s%BPIXLAYER0THICKNESS%"+self.bpixl0thickness+"%g\" ${PKG_DIR}/pixbarladderfull0_template.xml > Geometry/TrackerCommonData/data/PhaseI/pixbarladderfull0.xml \n")
+        fout.write("sed -e \"s%BPIXLAYER0THICKNESS%"+self.bpixl0thickness+"%g\" ${PKG_DIR}/pixbarladderfull1_template.xml > Geometry/TrackerCommonData/data/PhaseI/pixbarladderfull1.xml \n")
         
         fout.write("# Run CMSSW for GEN-NTUPLE steps \n")
         fout.write("cd "+os.path.join("AuxCode","SLHCSimPhase2","test")+"\n")  
