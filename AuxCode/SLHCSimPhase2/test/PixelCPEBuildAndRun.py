@@ -66,11 +66,12 @@ class Job:
     """Main class to create and submit PBS jobs"""
 ###########################################################################
 
-    def __init__(self, job_id, maxevents, ageing, pixelrocrows, pixelroccols, bpixthr, bpixl0thickness, myseed, islocal, queue):
+    def __init__(self, job_id, maxevents, ageing, pixelrocrows, pixelroccols, bpixthr, bpixl0thickness, myseed, islocal, queue,task_name):
 ############################################################################################################################
         
         # store the job-ID (since it is created in a for loop)
         self.job_id=job_id
+        self.task_name=task_name
         self.queue=queue
         
         # max event used in this job
@@ -94,9 +95,9 @@ class Job:
         if(self.job_id==1):
             mkdir_eos(self.out_dir)
 
-        self.job_basename= 'pixelCPE_age' + self.ageing + '_PixelROCRows' + self.pixelrocrows + "_PixelROCCols" + self.pixelroccols +"_L0Thick" + self.bpixl0thickness + "_BPixThr" + self.bpixthr +"_seed" +str(self.myseed)
+        self.job_basename  = self.task_name + '_pixelCPE_age' + self.ageing + '_PixelROCRows' + self.pixelrocrows + "_PixelROCCols" + self.pixelroccols +"_L0Thick" + self.bpixl0thickness + "_BPixThr" + self.bpixthr +"_seed" +str(self.myseed)
 
-        self.task_basename = 'pixelCPE_age' + self.ageing + '_PixelROCRows' + self.pixelrocrows + "_PixelROCCols" + self.pixelroccols +"_L0Thick" + self.bpixl0thickness + "_BPixThr" + self.bpixthr
+        self.task_basename = self.task_name + '_pixelCPE_age' + self.ageing + '_PixelROCRows' + self.pixelrocrows + "_PixelROCCols" + self.pixelroccols +"_L0Thick" + self.bpixl0thickness + "_BPixThr" + self.bpixthr
         
         self.cfg_dir=None
         self.outputPSetName=None
@@ -199,6 +200,9 @@ class Job:
         
         fout.write("git clone -b 620_slhc11_phase1 git://github.com/emiglior/usercode.git \n")
         fout.write("mv usercode/AuxCode .\n")
+
+        ###### please make sure to delete this line afterwards!!!!!! #######
+        #fout.write("mv usercode/RecoLocalTracker .\n")        
         # for the moment we ignore this (to be used to change the matching window)
         #fout.write("mv usercode/SimTracker .\n")
         fout.write("rm -fr usercode \n")
@@ -207,6 +211,9 @@ class Job:
         fout.write("# compile \n")
         if(self.islocal):
             fout.write("cp "+self.launch_dir+"/src/AuxCode/SLHCSimPhase2/plugins/NewStdHitNtuplizer.cc ./AuxCode/SLHCSimPhase2/plugins/NewStdHitNtuplizer.cc \n")
+            ###### please make sure to delete this line afterwards!!!!!! #######
+            #fout.write("cp "+self.launch_dir+"/src/RecoLocalTracker/SiPixelRecHits/src/PixelCPEBase.cc ./RecoLocalTracker/SiPixelRecHits/src/PixelCPEBase.cc \n")
+            
         fout.write("scram b -j 8 \n") 
         fout.write("eval `scram r -sh` \n")
 
@@ -232,10 +239,14 @@ class Job:
         fout.write("sed -e \"s%BPIXLAYER0THICKNESS%"+self.bpixl0thickness+"%g\" ${PKG_DIR}/pixbarladderfull0_template.xml > Geometry/TrackerCommonData/data/PhaseI/pixbarladderfull0.xml \n")
         
         fout.write("# Run CMSSW for GEN-NTUPLE steps \n")
-        fout.write("cd "+os.path.join("AuxCode","SLHCSimPhase2","test")+"\n")  
+        fout.write("cd "+os.path.join("AuxCode","SLHCSimPhase2","test")+"\n")
+        fout.write("cp ${PKG_DIR}/TenMuE_0_200_cff_py_GEN_TO_RECO_TO_PixelCPE_NTUPLE_templateReco.py ./dump_test.py \n")
+        fout.write("echo \"print process.dumpPython()\" >> dump_test.py \n")
+        fout.write("python dump_test.py > dumped.py \n")
         fout.write("cmsRun ${PKG_DIR}/TenMuE_0_200_cff_py_GEN_TO_RECO_TO_PixelCPE_NTUPLE.py maxEvents=${maxevents} BPixThr=${bpixthr} AgeingScenario=${ageing} MySeed=${myseed} \n")
         fout.write("ls -lh . \n")
         fout.write("cmsStage -f ${PKG_DIR}/TenMuE_0_200_cff_py_GEN_TO_RECO_TO_PixelCPE_NTUPLE.py ${OUT_DIR}/TenMuE_0_200_cff_py_GEN_TO_RECO_TO_PixelCPE_NTUPLE.py \n")
+        fout.write("cmsStage -f dumped.py ${OUT_DIR}/dumped.py \n")
         #fout.write("cd Brownson \n")
         #fout.write("make \n")
         #fout.write("ln -fs ../stdgrechitfullph1g_ntuple.root . \n")
@@ -261,7 +272,7 @@ def main():
 ### MAIN LOOP ###
 
     desc="""This is a description of %prog."""
-    parser = OptionParser(description=desc,version='%prog version 0.1',epilog="**** Use option -i for overring all parameters from config ****")
+    parser = OptionParser(description=desc,version='%prog version 0.1') #,epilog="**** Use option -i for overring all parameters from config ****")
     
     group = OptionGroup(parser,"Job configuration options",
                        "You can specify several parameters of the task"
@@ -367,7 +378,7 @@ def main():
 
     for theseed in range(1,int(mJobsInTask)+1):
 
-        ajob=Job(theseed, nEvents, mAgeing, mRocRows, mRocCols, mBPixThr, mL0Thick, theseed, opts.localmode,mQueue)
+        ajob=Job(theseed, nEvents, mAgeing, mRocRows, mRocCols, mBPixThr, mL0Thick, theseed, opts.localmode,mQueue,opts.jobname)
         ajob.createThePBSFile()        
 
         out_dir = ajob.out_dir # save for later usage
