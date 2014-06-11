@@ -6,6 +6,9 @@ import array
 #import numpy
 from optparse import OptionParser
 
+the_cols  = [ROOT.kRed,ROOT.kBlue,ROOT.kGreen,ROOT.kMagenta]
+the_styles =  [ROOT.kOpenCircle,ROOT.kFullCircle,ROOT.kOpenSquare,ROOT.kFullSquare]
+
 ###############
 def setStyle():
 ###############
@@ -211,7 +214,7 @@ def getTH1GausFit(h1_in, pad, gaussfit):
 
     return mu, sigma
 
-""" not used anymore 
+""" no more used 
 #############################
 def NotModuleZEdge(z_global):
 ############################
@@ -230,7 +233,7 @@ def NotModuleEdge(x_local, y_local):
     """ x_local, y_local in um """
 
     accept = True
-    if math.fabs(x_local)>7900. or math.fabs(y_local)>31150.:
+    if math.fabs(x_local)>7900. or math.fabs(y_local)>31150.:  # or alternativley if math.fabs(x_local)>7750. or math.fabs(y_local)>31150.:  #
         accept = False
 
     return accept
@@ -269,9 +272,48 @@ class HistoStruct():
         self.alpha_inVBinTH1 = []
         self.beta_inVBinTH1 = []
 
-        self.h_qMPVprimaries_corr_vsV = ROOT.TH1F("h_qMPVprimariescorrvs%s" % V_name, str("Barrel Q_{MPV}; %s ;" % V_label),V_nbins,V_min,V_max)
-        self.h_qLWIDTHprimaries_corr_vsV = ROOT.TH1F("h_qLWIDTHprimariescorrvs%s" % V_name, str("Barrel Q_{landau width}; %s ;" % V_label),V_nbins,V_min,V_max)
-        self.h_qNOISEprimaries_corr_vsV = ROOT.TH1F("h_qNOISEprimariescorrvs%s" % V_name, str("Barrel Q_{noise}; %s ;" % V_label),V_nbins,V_min,V_max)
+        self.spreadX_qall_inVBinTH1 = []
+        self.spreadX_qlow_inVBinTH1 = []
+        self.spreadX_qhigh_inVBinTH1 = []
+
+        self.spreadY_qall_inVBinTH1 = []
+        self.spreadY_qlow_inVBinTH1 = []
+        self.spreadY_qhigh_inVBinTH1 = []
+
+        self.f_spreadX_qall_inMultBin = []
+        self.f_spreadX_qlow_inMultBin = []
+        self.f_spreadX_qhigh_inMultBin = []
+                           
+        self.f_spreadY_qall_inMultBin = []
+        self.f_spreadY_qlow_inMultBin = []
+        self.f_spreadY_qhigh_inMultBin = []
+        
+        for i in xrange(4):
+
+            if (i==3):
+
+                self.f_spreadX_qall_inMultBin.append(ROOT.TH1F("frac_spreadXqall%s_%s" % (i+1,V_name),str("fraction spread_{X} Q<1.5 Q_{avg}  (mult. bin > %s);%s;fraction of hits" % (i+1,V_label)),V_nbins,V_min,V_max))
+                self.f_spreadX_qlow_inMultBin.append(ROOT.TH1F("frac_spreadXqlow%s_%s" % (i+1,V_name),str("fraction spread_{X} Q<Q_{avg} (mult. bin > %s);%s;fraction of hits" % (i+1,V_label)),V_nbins,V_min,V_max))
+                self.f_spreadX_qhigh_inMultBin.append(ROOT.TH1F("frac_spreadXqhigh%s_%s" % (i+1,V_name),str("fraction spread_{X} 1<Q/Q_{avg}<1.5  (mult. bin > %s);%s;fraction of hits" % (i+1,V_label)),V_nbins,V_min,V_max))
+            
+                self.f_spreadY_qall_inMultBin.append(ROOT.TH1F("frac_spreadYqall%s_%s" % (i+1,V_name),str("fraction spread_{Y} Q<1.5 Q_{avg}  (mult. bin > %s);%s;fraction of hits" % (i+1,V_label)),V_nbins,V_min,V_max))
+                self.f_spreadY_qlow_inMultBin.append(ROOT.TH1F("frac_spreadYqlow%s_%s" % (i+1,V_name),str("fraction spread_{Y} Q<Q_{avg} (mult. bin > %s);%s;fraction of hits" % (i+1,V_label)),V_nbins,V_min,V_max))
+                self.f_spreadY_qhigh_inMultBin.append(ROOT.TH1F("frac_spreadYqhigh%s_%s" % (i+1,V_name),str("fraction spread_{Y} 1<Q/Q_{avg}<1.5 (mult. bin > %s);%s;fraction of hits" % (i+1,V_label)),V_nbins,V_min,V_max))
+                
+            else :
+
+                self.f_spreadX_qall_inMultBin.append(ROOT.TH1F("frac_spreadXqall%s_%s" % (i+1,V_name),str("fraction spread_{X} Q<1.5 Q_{avg}  (%s-mult. bin);%s;fraction of hits" % (i+1,V_label)),V_nbins,V_min,V_max))
+                self.f_spreadX_qlow_inMultBin.append(ROOT.TH1F("frac_spreadXqlow%s_%s" % (i+1,V_name),str("fraction spread_{X} Q<Q_{avg} (%s-mult. bin);%s;fraction of hits" % (i+1,V_label)),V_nbins,V_min,V_max))
+                self.f_spreadX_qhigh_inMultBin.append(ROOT.TH1F("frac_spreadXqhigh%s_%s" % (i+1,V_name),str("fraction spread_{X} 1<Q/Q_{avg}<1.5  (%s-mult. bin);%s;fraction of hits" % (i+1,V_label)),V_nbins,V_min,V_max))
+            
+                self.f_spreadY_qall_inMultBin.append(ROOT.TH1F("frac_spreadYqall%s_%s" % (i+1,V_name),str("fraction spread_{Y} Q<1.5 Q_{avg}  (%s-mult. bin);%s;fraction of hits" % (i+1,V_label)),V_nbins,V_min,V_max))
+                self.f_spreadY_qlow_inMultBin.append(ROOT.TH1F("frac_spreadYqlow%s_%s" % (i+1,V_name),str("fraction spread_{Y} Q<Q_{avg} (%s-mult. bin);%s;fraction of hits" % (i+1,V_label)),V_nbins,V_min,V_max))
+                self.f_spreadY_qhigh_inMultBin.append(ROOT.TH1F("frac_spreadYqhigh%s_%s" % (i+1,V_name),str("fraction spread_{Y} 1<Q/Q_{avg}<1.5  (%s-mult. bin);%s;fraction of hits" % (i+1,V_label)),V_nbins,V_min,V_max))
+                 
+        self.h_qMPVprimaries_corr_vsV = ROOT.TH1F("h_qMPVprimariescorrvs%s" % V_name, str("Q_{MPV}; %s ;" % V_label),V_nbins,V_min,V_max)
+        self.h_qMPVprimaries_corr_norm_vsV = ROOT.TH1F("h_qMPVprimariescorrnormvs%s" % V_name, str("Q_{MPV}/Q_{theory}; %s ;" % V_label),V_nbins,V_min,V_max)
+        self.h_qLWIDTHprimaries_corr_vsV = ROOT.TH1F("h_qLWIDTHprimariescorrvs%s" % V_name, str("Q_{landau width}; %s ;" % V_label),V_nbins,V_min,V_max)
+        self.h_qNOISEprimaries_corr_vsV = ROOT.TH1F("h_qNOISEprimariescorrvs%s" % V_name, str("Q_{noise}; %s ;" % V_label),V_nbins,V_min,V_max)
 
         V_span = (V_max-V_min)/V_nbins
         for i in xrange(V_nbins):
@@ -296,6 +338,34 @@ class HistoStruct():
             hname = "h1_spreadX_%sBin%d" % (V_name ,i)
             htitle = "h1_spreadX_%s bin %d (%.2f < %s < %.2f); spread;recHits" % (V_name, i, V_low, V_label, V_high)
             self.spreadX_inVBinTH1.append( ROOT.TH1F(hname,htitle,15,0.5,15.5))
+            
+            #----------
+
+            hname = "h1_spreadX_qall_%sBin%d" % (V_name ,i)
+            htitle = "h1_spreadX_qall_%s bin %d (%.2f < %s < %.2f); spread;recHits" % (V_name, i, V_low, V_label, V_high)
+            self.spreadX_qall_inVBinTH1.append( ROOT.TH1F(hname,htitle,15,0.5,15.5))
+
+            hname = "h1_spreadX_qlow_%sBin%d" % (V_name ,i)
+            htitle = "h1_spreadX_qlow_%s bin %d (%.2f < %s < %.2f); spread;recHits" % (V_name, i, V_low, V_label, V_high)
+            self.spreadX_qlow_inVBinTH1.append( ROOT.TH1F(hname,htitle,15,0.5,15.5))
+
+            hname = "h1_spreadX_qhigh_%sBin%d" % (V_name ,i)
+            htitle = "h1_spreadX_qhigh_%s bin %d (%.2f < %s < %.2f); spread;recHits" % (V_name, i, V_low, V_label, V_high)
+            self.spreadX_qhigh_inVBinTH1.append( ROOT.TH1F(hname,htitle,15,0.5,15.5))
+
+            hname = "h1_spreadY_qall_%sBin%d" % (V_name ,i)
+            htitle = "h1_spreadY_qall_%s bin %d (%.2f < %s < %.2f); spread;recHits" % (V_name, i, V_low, V_label, V_high)
+            self.spreadY_qall_inVBinTH1.append( ROOT.TH1F(hname,htitle,15,0.5,15.5))
+
+            hname = "h1_spreadY_qlow_%sBin%d" % (V_name ,i)
+            htitle = "h1_spreadY_qlow_%s bin %d (%.2f < %s < %.2f); spread;recHits" % (V_name, i, V_low, V_label, V_high)
+            self.spreadY_qlow_inVBinTH1.append( ROOT.TH1F(hname,htitle,15,0.5,15.5))
+
+            hname = "h1_spreadY_qhigh_%sBin%d" % (V_name ,i)
+            htitle = "h1_spreadY_qhigh_%s bin %d (%.2f < %s < %.2f); spread;recHits" % (V_name, i, V_low, V_label, V_high)
+            self.spreadY_qhigh_inVBinTH1.append( ROOT.TH1F(hname,htitle,15,0.5,15.5))
+
+            #------------
 
             hname = "h1_spreadX_primaries_%sBin%d" % (V_name ,i)
             htitle = "h1_spreadX_primaries_%s bin %d (%.2f < %s < %.2f); spread;recHits" % (V_name, i, V_low, V_label, V_high)
@@ -413,7 +483,6 @@ class HistoStruct():
         self.h_biasZvsV_qlow  = ROOT.TH1F("h_biasZvs%s_qlow" % V_name, str("Barrel z-Hit Bias; %s ;" % V_label)+extra_ytitle_bias,V_nbins,V_min,V_max)
         self.h_biasZvsV_qhigh = ROOT.TH1F("h_biasZvs%s_qhigh" % V_name,str("Barrel z-Hit Bias; %s ;" % V_label)+extra_ytitle_bias,V_nbins,V_min,V_max)
         
-
         ### rphi vs z residuals 
         current_subdir = current_dir.mkdir("residualsXY")         
         current_subdir.cd()         
@@ -500,7 +569,12 @@ class HistoStruct():
                 self.resY_qall_inVBinTH1[index-1].Fill((pixel_recHit.hy-pixel_recHit.y)*CmToUm)
 
                 self.resYvsresX_qlow_inVBinTH2[index-1].Fill(resX, resY)
+                
+                self.spreadX_qall_inVBinTH1[index-1].Fill(min(pixel_recHit.spreadx, 15))
+                self.spreadX_qlow_inVBinTH1[index-1].Fill(min(pixel_recHit.spreadx, 15))
 
+                self.spreadY_qall_inVBinTH1[index-1].Fill(min(pixel_recHit.spready, 15))
+                self.spreadY_qlow_inVBinTH1[index-1].Fill(min(pixel_recHit.spready, 15))
                 
             elif  pixel_recHit.q*math.fabs(pixel_recHit.tz)*ToKe < 1.5*QaveCorr:
                 self.resX_qhigh_inVBinTH1[index-1].Fill((pixel_recHit.hx-pixel_recHit.x)*CmToUm)
@@ -512,8 +586,14 @@ class HistoStruct():
                 self.resY_qall_inVBinTH1[index-1].Fill((pixel_recHit.hy-pixel_recHit.y)*CmToUm)
                 
                 self.resYvsresX_qhigh_inVBinTH2[index-1].Fill(resX, resY)
+
+                self.spreadX_qall_inVBinTH1[index-1].Fill(min(pixel_recHit.spreadx, 15))
+                self.spreadX_qhigh_inVBinTH1[index-1].Fill(min(pixel_recHit.spreadx, 15))
+
+                self.spreadY_qall_inVBinTH1[index-1].Fill(min(pixel_recHit.spready, 15))
+                self.spreadY_qhigh_inVBinTH1[index-1].Fill(min(pixel_recHit.spready, 15))
         
-    def DrawAllCanvas(self, Qave):
+    def DrawAllCanvas(self, Qave, mpv_theory):
     ##############################
         
         ### fill the final histograms
@@ -542,6 +622,277 @@ class HistoStruct():
         c1_alphabeta.SetFillColor(ROOT.kWhite)
         c1_alphabeta.Divide(int(w),int(h))
 
+        for i in xrange(self.the_nbins):
+            
+            for j in xrange(4):
+
+                if (j==3):
+
+                    self.f_spreadX_qall_inMultBin[j].SetBinContent(i+1,self.spreadX_qall_inVBinTH1[i].Integral(j+1,self.spreadX_qall_inVBinTH1[i].GetNbinsX())/self.spreadX_qall_inVBinTH1[i].GetEntries()) 
+                    self.f_spreadX_qlow_inMultBin[j].SetBinContent(i+1,self.spreadX_qlow_inVBinTH1[i].Integral(j+1,self.spreadX_qlow_inVBinTH1[i].GetNbinsX())/self.spreadX_qlow_inVBinTH1[i].GetEntries()) 
+                    self.f_spreadX_qhigh_inMultBin[j].SetBinContent(i+1,self.spreadX_qhigh_inVBinTH1[i].Integral(j+1,self.spreadX_qhigh_inVBinTH1[i].GetNbinsX())/self.spreadX_qhigh_inVBinTH1[i].GetEntries())
+                    
+                    self.f_spreadY_qall_inMultBin[j].SetBinContent(i+1,self.spreadY_qall_inVBinTH1[i].Integral(j+1,self.spreadY_qall_inVBinTH1[i].GetNbinsX())/self.spreadY_qall_inVBinTH1[i].GetEntries()) 
+                    self.f_spreadY_qlow_inMultBin[j].SetBinContent(i+1,self.spreadY_qlow_inVBinTH1[i].Integral(j+1,self.spreadY_qlow_inVBinTH1[i].GetNbinsX())/self.spreadY_qlow_inVBinTH1[i].GetEntries())
+                    self.f_spreadY_qhigh_inMultBin[j].SetBinContent(i+1,self.spreadY_qhigh_inVBinTH1[i].Integral(j+1,self.spreadY_qhigh_inVBinTH1[i].GetNbinsX())/self.spreadY_qhigh_inVBinTH1[i].GetEntries())
+                    
+                else:
+                    
+                    self.f_spreadX_qall_inMultBin[j].SetBinContent(i+1,self.spreadX_qall_inVBinTH1[i].GetBinContent(j+1)/self.spreadX_qall_inVBinTH1[i].GetEntries()) 
+                    self.f_spreadX_qlow_inMultBin[j].SetBinContent(i+1,self.spreadX_qlow_inVBinTH1[i].GetBinContent(j+1)/self.spreadX_qlow_inVBinTH1[i].GetEntries()) 
+                    self.f_spreadX_qhigh_inMultBin[j].SetBinContent(i+1,self.spreadX_qhigh_inVBinTH1[i].GetBinContent(j+1)/self.spreadX_qhigh_inVBinTH1[i].GetEntries())
+                    
+                    self.f_spreadY_qall_inMultBin[j].SetBinContent(i+1,self.spreadY_qall_inVBinTH1[i].GetBinContent(j+1)/self.spreadY_qall_inVBinTH1[i].GetEntries()) 
+                    self.f_spreadY_qlow_inMultBin[j].SetBinContent(i+1,self.spreadY_qlow_inVBinTH1[i].GetBinContent(j+1)/self.spreadY_qlow_inVBinTH1[i].GetEntries())
+                    self.f_spreadY_qhigh_inMultBin[j].SetBinContent(i+1,self.spreadY_qhigh_inVBinTH1[i].GetBinContent(j+1)/self.spreadY_qhigh_inVBinTH1[i].GetEntries())
+
+
+        the_label =  self.f_spreadX_qall_inMultBin[0].GetXaxis().GetTitle()        
+
+        #%%%%%%%%%%%%%%%%%%%%%%
+        c1_spreadXall = ROOT.TCanvas("c1_spreadXall","c1_spreadYall",900,900)
+        c1_stack_spreadXall = ROOT.TCanvas("c1_stack_preadXall","c1_stack_spreadYall",900,900)
+        stack_spreadXall = ROOT.THStack("stack_spreadXall","spread_{X} stacked fraction (Q<1.5 Q_{avg});%s;fraction of hits" % the_label)
+        mylegX = ROOT.TLegend(0.15,0.75,0.45,0.88)
+        mylegX.SetFillColor(10)
+        mylegX.SetTextSize(0.04)
+        mylegX.SetTextFont(42)
+        mylegX.SetFillColor(10)
+        mylegX.SetLineColor(10)
+        mylegX.SetShadowColor(10)
+
+        mylegXstack = mylegX.Clone()
+
+        c1_spreadXall.cd()
+        for j in xrange(4):
+            self.f_spreadX_qall_inMultBin[j].SetLineWidth(2)
+            self.f_spreadX_qall_inMultBin[j].SetLineColor(the_cols[j])
+            self.f_spreadX_qall_inMultBin[j].SetMarkerColor(the_cols[j])
+            self.f_spreadX_qall_inMultBin[j].SetMarkerStyle(the_styles[j])
+            self.f_spreadX_qall_inMultBin[j].SetMarkerSize(1.2)
+            c_spreadX_qall_inMultBin = self.f_spreadX_qall_inMultBin[j].Clone("hnew_%s" %str(j+1) )
+            c_spreadX_qall_inMultBin.SetFillColor(the_cols[j])
+            c_spreadX_qall_inMultBin.SetLineColor(ROOT.kBlack)
+            self.f_spreadX_qall_inMultBin[j].SetStats(ROOT.kFALSE)  
+            self.f_spreadX_qall_inMultBin[j].GetYaxis().SetRangeUser(0.,1.3)
+            if(j==3):
+                mylegX.AddEntry(self.f_spreadX_qall_inMultBin[j],"spread_{X} #geq %s" %str(j+1),"L")
+                mylegXstack.AddEntry(c_spreadX_qall_inMultBin,"spread_{X} #geq %s" %str(j+1),"F")
+            else:
+                mylegX.AddEntry(self.f_spreadX_qall_inMultBin[j],"spread_{X} = %s" % str(j+1),"L")
+                mylegXstack.AddEntry(c_spreadX_qall_inMultBin,"spread_{X} = %s" %str(j+1),"F")
+            #stack_spreadXall.Add(self.f_spreadX_qall_inMultBin[j])
+            stack_spreadXall.Add(c_spreadX_qall_inMultBin)
+
+            if j==0: 
+                self.f_spreadX_qall_inMultBin[j].Draw("P")
+                self.f_spreadX_qall_inMultBin[j].Draw("Csame")
+            else :
+                self.f_spreadX_qall_inMultBin[j].Draw("Psame")
+                self.f_spreadX_qall_inMultBin[j].Draw("Csame")
+
+        mylegX.Draw("same")
+        c1_spreadXall.SaveAs("c1_spreadXall.pdf")
+        c1_spreadXall.SaveAs("c1_spreadXall.root")   
+   
+        c1_stack_spreadXall.cd()
+        stack_spreadXall.Draw()
+        stack_spreadXall.SetMaximum(1.2)
+        mylegXstack.Draw("same")
+        c1_stack_spreadXall.SaveAs("c1_spreadXall_stack.pdf")
+
+        #%%%%%%%%%%%%%%%%%%%%%%
+        c1_spreadYall = ROOT.TCanvas("c1_spreadYall","c1_spreadYall",900,900)
+        c1_stack_spreadYall = ROOT.TCanvas("c1_stack_preadYall","c1_stack_spreadYall",900,900)
+        stack_spreadYall = ROOT.THStack("stack_spreadYall","spread_{Y} stacked fraction (Q<1.5 Q_{avg});%s;fraction of hits" % the_label)
+        mylegY = ROOT.TLegend(0.15,0.75,0.45,0.88)
+        mylegY.SetFillColor(10)
+        mylegY.SetTextSize(0.04)
+        mylegY.SetTextFont(42)
+        mylegY.SetFillColor(10)
+        mylegY.SetLineColor(10)
+        mylegY.SetShadowColor(10)
+
+        mylegYstack = mylegY.Clone()
+
+        c1_spreadYall.cd()
+        for j in xrange(4):
+            self.f_spreadY_qall_inMultBin[j].SetLineColor(the_cols[j])
+            self.f_spreadY_qall_inMultBin[j].SetMarkerColor(the_cols[j])
+            self.f_spreadY_qall_inMultBin[j].SetMarkerStyle(the_styles[j])
+            self.f_spreadY_qall_inMultBin[j].SetMarkerSize(1.2)
+            self.f_spreadY_qall_inMultBin[j].SetLineWidth(2)
+            c_spreadY_qall_inMultBin = self.f_spreadY_qall_inMultBin[j].Clone("hnew_%s" %str(j+1) )
+            c_spreadY_qall_inMultBin.SetFillColor(the_cols[j])
+            c_spreadY_qall_inMultBin.SetLineColor(ROOT.kBlack)
+            self.f_spreadY_qall_inMultBin[j].SetStats(ROOT.kFALSE)
+            self.f_spreadY_qall_inMultBin[j].GetYaxis().SetRangeUser(0.,1.3)
+            if(j==3):
+                mylegY.AddEntry(self.f_spreadY_qall_inMultBin[j],"spread_{Y} #geq %s" %str(j+1),"L")
+                mylegYstack.AddEntry(c_spreadY_qall_inMultBin,"spread_{Y} #geq %s" %str(j+1),"F")
+            else:
+                mylegY.AddEntry(self.f_spreadX_qall_inMultBin[j],"spread_{Y} = %s" % str(j+1),"L")
+                mylegYstack.AddEntry(c_spreadY_qall_inMultBin,"spread_{Y} = %s" %str(j+1),"F")
+            stack_spreadYall.Add(c_spreadY_qall_inMultBin)
+            if j==0: 
+                self.f_spreadY_qall_inMultBin[j].Draw("P")
+                self.f_spreadY_qall_inMultBin[j].Draw("Csame")
+            else :
+                self.f_spreadY_qall_inMultBin[j].Draw("Psame")
+                self.f_spreadY_qall_inMultBin[j].Draw("Csame")
+        
+        mylegY.Draw("same")
+        c1_spreadYall.SaveAs("c1_spreadYall.pdf")
+        c1_spreadYall.SaveAs("c1_spreadYall.root")
+        
+        c1_stack_spreadYall.cd()
+        stack_spreadYall.Draw()
+        stack_spreadYall.SetMaximum(1.2)
+        mylegYstack.Draw("same")
+        c1_stack_spreadYall.SaveAs("c1_spreadYall_stack.pdf")
+        
+        #%%%%%%%%%%%%%%%%%%%%%%
+        c1_spreadXhigh = ROOT.TCanvas("c1_spreadXhigh","c1_spreadYhigh",900,900)
+        c1_stack_spreadXhigh = ROOT.TCanvas("c1_stack_preadXhigh","c1_stack_spreadXhigh",900,900)
+        stack_spreadXhigh = ROOT.THStack("stack_spreadXhigh","spread_{X} stacked fraction (1<Q/Q_{avg}<1.5);%s;fraction of hits" % the_label)
+        #stack_spreadXhigh.SetStats(ROOT.kFALSE) 
+        c1_spreadXhigh.cd()
+        for j in xrange(4):
+            self.f_spreadX_qhigh_inMultBin[j].SetLineColor(the_cols[j])
+            self.f_spreadX_qhigh_inMultBin[j].SetMarkerColor(the_cols[j])
+            self.f_spreadX_qhigh_inMultBin[j].SetMarkerStyle(the_styles[j])
+            self.f_spreadX_qhigh_inMultBin[j].SetMarkerSize(1.2)
+            self.f_spreadX_qhigh_inMultBin[j].SetLineWidth(2)
+            c_spreadX_qhigh_inMultBin = self.f_spreadX_qhigh_inMultBin[j].Clone("hnew_%s" %str(j+1) )
+            c_spreadX_qhigh_inMultBin.SetFillColor(the_cols[j])
+            c_spreadX_qhigh_inMultBin.SetLineColor(ROOT.kBlack)
+            self.f_spreadX_qhigh_inMultBin[j].SetStats(ROOT.kFALSE)
+            self.f_spreadX_qhigh_inMultBin[j].GetYaxis().SetRangeUser(0.,1.3)
+            stack_spreadXhigh.Add(c_spreadX_qhigh_inMultBin)
+            if j==0: 
+                self.f_spreadX_qhigh_inMultBin[j].Draw("P")
+                self.f_spreadX_qhigh_inMultBin[j].Draw("Csame")
+            else :
+                self.f_spreadX_qhigh_inMultBin[j].Draw("Psame")
+                self.f_spreadX_qhigh_inMultBin[j].Draw("Csame")
+
+        mylegX.Draw("same")
+        c1_spreadXhigh.SaveAs("c1_spreadXhigh.pdf")
+        c1_spreadXhigh.SaveAs("c1_spreadXhigh.root")
+
+        c1_stack_spreadXhigh.cd()
+        stack_spreadXhigh.Draw()
+        stack_spreadXhigh.SetMaximum(1.2)
+        mylegXstack.Draw("same")
+        c1_stack_spreadXhigh.SaveAs("c1_spreadXhigh_stack.pdf")
+
+        #%%%%%%%%%%%%%%%%%%%%%%
+        c1_spreadYhigh = ROOT.TCanvas("c1_spreadYhigh","c1_spreadYhigh",900,900)
+        c1_stack_spreadYhigh = ROOT.TCanvas("c1_stack_preadYhigh","c1_stack_spreadYhigh",900,900)
+        stack_spreadYhigh = ROOT.THStack("stack_spreadYhigh","spread_{Y} stacked fraction (1<Q/Q_{avg}<1.5);%s;fraction of hits" % the_label)
+        #stack_spreadYhigh.SetStats(ROOT.kFALSE)
+        c1_spreadYhigh.cd()
+        for j in xrange(4):
+            self.f_spreadY_qhigh_inMultBin[j].SetLineColor(the_cols[j])
+            self.f_spreadY_qhigh_inMultBin[j].SetMarkerColor(the_cols[j])
+            self.f_spreadY_qhigh_inMultBin[j].SetMarkerStyle(the_styles[j])
+            self.f_spreadY_qhigh_inMultBin[j].SetMarkerSize(1.2)
+            self.f_spreadY_qhigh_inMultBin[j].SetLineWidth(2)
+            c_spreadY_qhigh_inMultBin = self.f_spreadY_qhigh_inMultBin[j].Clone("hnew_%s" %str(j+1) )
+            c_spreadY_qhigh_inMultBin.SetFillColor(the_cols[j])
+            c_spreadY_qhigh_inMultBin.SetLineColor(ROOT.kBlack)
+            self.f_spreadY_qhigh_inMultBin[j].SetStats(ROOT.kFALSE)
+            self.f_spreadY_qhigh_inMultBin[j].GetYaxis().SetRangeUser(0.,1.3)
+
+            stack_spreadYhigh.Add(c_spreadY_qhigh_inMultBin)
+            if j==0: 
+                self.f_spreadY_qhigh_inMultBin[j].Draw("P")
+                self.f_spreadY_qhigh_inMultBin[j].Draw("Csame")
+            else :
+                self.f_spreadY_qhigh_inMultBin[j].Draw("Psame")
+                self.f_spreadY_qhigh_inMultBin[j].Draw("Csame")
+
+        mylegY.Draw("same")
+        c1_spreadYhigh.SaveAs("c1_spreadYhigh.pdf")
+        c1_spreadYhigh.SaveAs("c1_spreadYhigh.root")
+
+        c1_stack_spreadYhigh.cd()
+        stack_spreadYhigh.Draw()
+        stack_spreadYhigh.SetMaximum(1.2)
+        mylegYstack.Draw("same")
+        c1_stack_spreadYhigh.SaveAs("c1_spreadYhigh_stack.pdf")
+
+        #%%%%%%%%%%%%%%%%%%%%%%
+        c1_spreadXlow = ROOT.TCanvas("c1_spreadXlow","c1_spreadYlow",900,900)
+        c1_stack_spreadXlow = ROOT.TCanvas("c1_stack_preadXlow","c1_stack_spreadXlow",900,900)
+        stack_spreadXlow = ROOT.THStack("stack_spreadXlow","spread_{X} stacked fraction (Q<Q_{avg});%s;fraction of hits" % the_label)
+        #stack_spreadXlow.SetStats(ROOT.kFALSE)
+        c1_spreadXlow.cd()
+        for j in xrange(4):
+            self.f_spreadX_qlow_inMultBin[j].SetLineColor(the_cols[j])
+            self.f_spreadX_qlow_inMultBin[j].SetMarkerColor(the_cols[j])
+            self.f_spreadX_qlow_inMultBin[j].SetMarkerStyle(the_styles[j])
+            self.f_spreadX_qlow_inMultBin[j].SetMarkerSize(1.2)
+            self.f_spreadX_qlow_inMultBin[j].SetLineWidth(2)
+            c_spreadX_qlow_inMultBin = self.f_spreadX_qlow_inMultBin[j].Clone("hnew_%s" %str(j+1) )
+            c_spreadX_qlow_inMultBin.SetFillColor(the_cols[j])
+            c_spreadX_qlow_inMultBin.SetLineColor(ROOT.kBlack)
+            self.f_spreadX_qlow_inMultBin[j].GetYaxis().SetRangeUser(0.,1.3)
+            self.f_spreadX_qlow_inMultBin[j].SetStats(ROOT.kFALSE)
+            stack_spreadXlow.Add(c_spreadX_qlow_inMultBin)
+            if j==0: 
+                self.f_spreadX_qlow_inMultBin[j].Draw("P")
+                self.f_spreadX_qlow_inMultBin[j].Draw("Csame")
+            else :
+                self.f_spreadX_qlow_inMultBin[j].Draw("Psame")
+                self.f_spreadX_qlow_inMultBin[j].Draw("Csame")
+
+        mylegX.Draw("same")
+        c1_spreadXlow.SaveAs("c1_spreadXlow.pdf")
+        c1_spreadXlow.SaveAs("c1_spreadXlow.root")
+
+        c1_stack_spreadXlow.cd()
+        stack_spreadXlow.Draw()
+        stack_spreadXlow.SetMaximum(1.2)
+        mylegXstack.Draw("same")
+        c1_stack_spreadXlow.SaveAs("c1_spreadXlow_stack.pdf")
+    
+        #%%%%%%%%%%%%%%%%%%%%%%
+        c1_spreadYlow = ROOT.TCanvas("c1_spreadYlow","c1_spreadYlow",900,900)
+        c1_stack_spreadYlow = ROOT.TCanvas("c1_stack_preadYlow","c1_stack_spreadYlow",900,900)
+        stack_spreadYlow = ROOT.THStack("stack_spreadYlow","spread_{Y} stacked fraction (Q<Q_{avg});%s;fraction of hits" % the_label)
+        #stack_spreadYlow.SetStats(ROOT.kFALSE)
+        c1_spreadYlow.cd()
+        for j in xrange(4):
+            self.f_spreadY_qlow_inMultBin[j].SetLineColor(the_cols[j])
+            self.f_spreadY_qlow_inMultBin[j].SetMarkerColor(the_cols[j])
+            self.f_spreadY_qlow_inMultBin[j].SetMarkerStyle(the_styles[j])
+            self.f_spreadY_qlow_inMultBin[j].SetMarkerSize(1.2)
+            self.f_spreadY_qlow_inMultBin[j].SetLineWidth(2)
+            c_spreadY_qlow_inMultBin = self.f_spreadY_qlow_inMultBin[j].Clone("hnew_%s" %str(j+1) )
+            c_spreadY_qlow_inMultBin.SetFillColor(the_cols[j])
+            c_spreadY_qlow_inMultBin.SetLineColor(ROOT.kBlack)
+            self.f_spreadY_qlow_inMultBin[j].GetYaxis().SetRangeUser(0.,1.3)
+            self.f_spreadY_qlow_inMultBin[j].SetStats(ROOT.kFALSE)
+            stack_spreadYlow.Add(c_spreadY_qlow_inMultBin)
+            if j==0: 
+                self.f_spreadY_qlow_inMultBin[j].Draw("P")
+                self.f_spreadY_qlow_inMultBin[j].Draw("Csame")
+
+            else :
+                self.f_spreadY_qlow_inMultBin[j].Draw("Psame")
+                self.f_spreadY_qlow_inMultBin[j].Draw("Csame")
+
+        mylegY.Draw("same")
+        c1_spreadYlow.SaveAs("c1_spreadYlow.pdf")
+        c1_spreadYlow.SaveAs("c1_spreadYlow.root")
+
+        c1_stack_spreadYlow.cd()
+        stack_spreadYlow.Draw()
+        stack_spreadYlow.SetMaximum(1.2)
+        mylegYstack.Draw("same")
+        c1_stack_spreadYlow.SaveAs("c1_spreadYlow_stack.pdf")
+     
         # need to store TLines in a list otherwise only the lines for the last pad are kept on the canvas
         line1 = []
         line2 = []
@@ -560,23 +911,23 @@ class HistoStruct():
             self.q_inVBinTH1[i].SetMaximum(self.q_inVBinTH1[i].GetMaximum()*1.1)
             ymax = self.q_inVBinTH1[i].GetMaximum()
 
-            xlow = self.the_xAxis.GetBinLowEdge(i+1)
-            tmp1 = math.exp(-xlow)               # t=tg(theta/2) = exp(-eta)  
-            tmp2 = (1.0+tmp1*tmp1)/(2.0*tmp1)    # 1/sin(theta)=(1+t^2)/(2*t)
-            line1.append(ROOT.TLine(Qave*tmp2,0.6*ymax,Qave*tmp2,ymax))
-            line1[i].SetLineColor(ROOT.kMagenta)
-            line1[i].Draw("same")
+            # xlow = self.the_xAxis.GetBinLowEdge(i+1)
+            # tmp1 = math.exp(-xlow)               # t=tg(theta/2) = exp(-eta)  
+            # tmp2 = (1.0+tmp1*tmp1)/(2.0*tmp1)    # 1/sin(theta)=(1+t^2)/(2*t)
+            # line1.append(ROOT.TLine(Qave*tmp2,0.6*ymax,Qave*tmp2,ymax))
+            # line1[i].SetLineColor(ROOT.kMagenta)
+            # line1[i].Draw("same")
 
-            xup = self.the_xAxis.GetBinUpEdge(i+1)
-            tmp1 = math.exp(-xup)               # t=tg(theta/2) = exp(-eta)  
-            tmp2 = (1.0+tmp1*tmp1)/(2.0*tmp1)   # 1/sin(theta)=(1+t^2)/(2*t)
-            line2.append(ROOT.TLine(Qave*tmp2,0.6*ymax,Qave*tmp2,ymax))
-            line2[i].SetLineColor(ROOT.kMagenta)
-            line2[i].Draw("same")
+            # xup = self.the_xAxis.GetBinUpEdge(i+1)
+            # tmp1 = math.exp(-xup)               # t=tg(theta/2) = exp(-eta)  
+            # tmp2 = (1.0+tmp1*tmp1)/(2.0*tmp1)   # 1/sin(theta)=(1+t^2)/(2*t)
+            # line2.append(ROOT.TLine(Qave*tmp2,0.6*ymax,Qave*tmp2,ymax))
+            # line2[i].SetLineColor(ROOT.kMagenta)
+            # line2[i].Draw("same")
             
-            line3.append(ROOT.TLine(self.q_inVBinTH1[i].GetMean(),0,self.q_inVBinTH1[i].GetMean(),0.4*ymax))
-            line3[i].SetLineColor(ROOT.kRed)
-            line3[i].Draw("same")
+            # line3.append(ROOT.TLine(self.q_inVBinTH1[i].GetMean(),0,self.q_inVBinTH1[i].GetMean(),0.4*ymax))
+            # line3[i].SetLineColor(ROOT.kRed)
+            # line3[i].Draw("same")
             
             # draw Q_cluster for particle from secondary interactions
             self.q_secondaries_inVBinTH1[i].SetLineColor(ROOT.kGreen)
@@ -588,6 +939,9 @@ class HistoStruct():
             mpv, mpv_error, lwidth, lwidth_error, sig_noise, sig_noise_error = getTH1LanGausFit(self.q_primaries_corr_inVBinTH1[i], c1_qclus_primaries_corr.GetPad(i+1))
             self.h_qMPVprimaries_corr_vsV.SetBinContent(i+1,mpv)
             self.h_qMPVprimaries_corr_vsV.SetBinError(i+1,mpv_error)
+
+            self.h_qMPVprimaries_corr_norm_vsV.SetBinContent(i+1,mpv/mpv_theory)
+            self.h_qMPVprimaries_corr_norm_vsV.SetBinError(i+1,mpv_error/mpv_theory)
 
             self.h_qLWIDTHprimaries_corr_vsV.SetBinContent(i+1,lwidth)
             self.h_qLWIDTHprimaries_corr_vsV.SetBinError(i+1,lwidth_error)
@@ -804,9 +1158,20 @@ class HistoStruct():
         self.h_resZvsV_qhigh.Draw("Csame")
         MakeNiceTrendPlotStyle(self.h_resZvsV_qall,3,the_extrema)
         self.h_resZvsV_qall.Draw("Csame")
-        
+
         lego.Draw("same")
         cResVsV_2.SaveAs("rmsVs%s_rz.root" % self.the_name)
+
+
+        cMPVnormVsV = ROOT.TCanvas("cMPVnormVs%s" % self.the_name,"cMPVnormVs%s" % self.the_name,500,700)
+        qmpvnorm_arr = []
+        qmpvnorm_arr.append(self.h_qMPVprimaries_corr_norm_vsV)
+
+        the_extrema = getExtrema(qmpvnorm_arr)
+        MakeNiceTrendPlotStyle(self.h_qMPVprimaries_corr_norm_vsV,3,the_extrema)
+        self.h_qMPVprimaries_corr_norm_vsV.Draw("C")
+
+        cMPVnormVsV.SaveAs("mpv_norm_Vs%s.root" % self.the_name)        
 
 #####################
 def declare_struct():
@@ -858,8 +1223,9 @@ def main():
     ROOT.gSystem.Load('libRooFit')
 
 # conversion factors
-    CmToUm = 10000. # length -> from cm to um
-    ToKe = 0.001    # charge -> from e to ke
+    CmToUm = 10000.    # length -> from cm to um
+    ToKe = 0.001       # charge -> from e to ke
+    ELossSilicon = 78. # 78 e-h pairs/um in Silicon
 ##################################################
 
     parser = OptionParser()
@@ -875,6 +1241,9 @@ def main():
     parser.add_option("-e", "--entries",
                       action="store", type="int", dest="entries", default=-1,
                       help="number of entries")
+    parser.add_option("-t", "--thickness",
+                      action="store", type="float", dest="thickness", default=285,
+                      help="thickness in um")
     
     (options, args) = parser.parse_args()
 
@@ -953,7 +1322,9 @@ def main():
     h1_qcorr  = ROOT.TH1F("h1_qcorr","h1_qcorr primaries;Q_{corr} [ke]; recHits",200,0.,400.)
 
     ### histo containers
-    hsEta  = HistoStruct("Eta" ,25, 0.,2.5, "|#eta|", output_root_file, options.gaussfit)
+    hsEta = HistoStruct("Eta" ,25, 0.,2.5, "|#eta|", output_root_file, options.gaussfit)
+#    hsPhi = HistoStruct("Phi"    ,48, -3.15 ,+3.15, "#phi", output_root_file, options.gaussfit)
+#    hsX   = HistoStruct("LocalX" ,18, -8100.,+8100., "x", output_root_file, options.gaussfit)
 #    hsZeta = HistoStruct("Zeta",50, 0.,25., "|z|"   , output_root_file, options.gaussfit)
 #    hsCotgBeta  = HistoStruct("CotgBeta" ,30,0.,6., "|cotg(#beta)|", output_root_file, options.gaussfit)
 
@@ -966,7 +1337,7 @@ def main():
     for this_entry in xrange(all_entries):
         input_tree.GetEntry(this_entry)
 
-        if this_entry % 100000 == 0:
+        if this_entry % 200000 == 0:
             print "Loop #1 Procesing Event: ", this_entry
 
         # global position of the rechit
@@ -1004,24 +1375,30 @@ def main():
 
 #            print "cos^2(a)+cos^2(b)+cos^2(g)=", pixel_recHit.tx*pixel_recHit.tx+pixel_recHit.ty*pixel_recHit.ty+pixel_recHit.tz*pixel_recHit.tz # debug
 
-            if pixel_recHit.tz >= 0:
-                beta = math.atan(-pixel_recHit.tz/pixel_recHit.ty)
+
+            if (pixel_recHit.ty!=0):
+                if pixel_recHit.tz >= 0:
+                    beta = math.atan(-pixel_recHit.tz/pixel_recHit.ty)
+                else:
+                    beta = math.atan(pixel_recHit.tz/pixel_recHit.ty)
+                if beta<0: 
+                    beta = math.pi+beta                                
             else:
-                beta = math.atan(pixel_recHit.tz/pixel_recHit.ty)
-            if beta<0: 
-                beta = math.pi+beta                                
+                beta = 0.
 
             # your preferred definition of eta
-            the_eta = tv3.Eta()
+#            the_eta = tv3.Eta()
 #            the_eta = -math.log(math.tan(0.5*beta))
 
             # ionization corrected for incident angle (only primaries at central eta) 
-            if math.fabs(the_eta)<0.20 and pixel_recHit.process == 2:
+            if math.fabs(tv3.Eta())<0.20 and pixel_recHit.process == 2:
                 h1_qcorr.Fill(pixel_recHit.q*ToKe*math.fabs(pixel_recHit.tz))
                 # effective thickness estimated from eta of recHit
 #                h1_qcorr.Fill(pixel_recHit.q*ToKe*tv3.Perp()/tv3.Mag())
 
-            hsEta.FillFirstLoop(math.fabs(the_eta), pixel_recHit)
+            hsEta.FillFirstLoop(math.fabs(tv3.Eta()), pixel_recHit)
+#            hsPhi.FillFirstLoop(tv3.Phi(), pixel_recHit)
+#            hsX.FillFirstLoop(pixel_recHit.x*CmToUm, pixel_recHit)
 #            hsZeta.FillFirstLoop(math.fabs(tv3.z()), pixel_recHit)
 #            hsCotgBeta.FillFirstLoop(math.fabs(1./math.tan(beta)), pixel_recHit)
 
@@ -1035,7 +1412,7 @@ def main():
     for this_entry in xrange(all_entries):
         input_tree.GetEntry(this_entry)
 
-        if this_entry % 100000 == 0:
+        if this_entry % 200000 == 0:
             print "Loop #2 Procesing Event: ", this_entry
 
         # BPIX only (layer 1)
@@ -1045,25 +1422,28 @@ def main():
             # NB sin(theta) = tv3.Perp()/tv3.Mag()
             tv3 = ROOT.TVector3(pixel_recHit.gx, pixel_recHit.gy, pixel_recHit.gz)
 
-            if pixel_recHit.tz >= 0:
-                beta = math.atan(-pixel_recHit.tz/pixel_recHit.ty)
+            if (pixel_recHit.ty!=0):
+                if pixel_recHit.tz >= 0:
+                    beta = math.atan(-pixel_recHit.tz/pixel_recHit.ty)
+                else:
+                    beta = math.atan(pixel_recHit.tz/pixel_recHit.ty)
+                if beta<0: 
+                    beta = math.pi+beta
             else:
-                beta = math.atan(pixel_recHit.tz/pixel_recHit.ty)
-            if beta<0: 
-                beta = math.pi+beta
+                beta = 0.
+
+            # your preferred definition of eta
+#            the_eta = tv3.Eta()
+#            the_eta = -math.log(math.tan(0.5*beta))
 
             # residuals for clusters Q<1.5*Q_ave from primaries only (same selection as Morris Swartz)
-            # exclude clusters at the x+ edge of the module (charge drifting outside the silicon)
+            # exclude clusters at the edges of the module (charge drifting outside the silicon)
             if pixel_recHit.process == 2 and NotModuleEdge(pixel_recHit.x*CmToUm, pixel_recHit.y*CmToUm):
                hsEta.FillSecondLoop(math.fabs(tv3.Eta()), pixel_recHit)
+#               hsPhi.FillSecondLoop(tv3.Phi(), pixel_recHit)
+#               hsX.FillSecondLoop(pixel_recHit.x*CmToUm, pixel_recHit)
 #               hsZeta.FillSecondLoop(math.fabs(tv3.z()), pixel_recHit)
 #               hsCotgBeta.FillSecondLoop(math.fabs(1./math.tan(beta)), pixel_recHit)
-            # effective thickness estimated from eta of recHit
-            # the_eta = tv3.Eta()
-            # if pixel_recHit.q*ToKe < 1.5*Qave*tv3.Mag()/tv3.Perp():
-            #     hsEta.FillSecondLoop(math.fabs(the_eta), pixel_recHit, Qave*tv3.Mag()/tv3.Perp())
-            #     hsZeta.FillSecondLoop(math.fabs(tv3.z()), pixel_recHit, Qave*tv3.Mag()/tv3.Perp())
-            #     hsCotgBeta.FillSecondLoop(math.fabs(1./math.tan(beta)), pixel_recHit, Qave*tv3.Mag()/tv3.Perp())
 
 
 
@@ -1139,9 +1519,11 @@ def main():
     
     c1_localXY_roc_hitmap.SaveAs("c1_localXY_roc_hitmap.root")
     
-    hsEta.DrawAllCanvas(Qave)
-#    hsZeta.DrawAllCanvas(Qave)
-#    hsCotgBeta.DrawAllCanvas(Qave)
+    hsEta.DrawAllCanvas(Qave, options.thickness*ELossSilicon*ToKe)
+#    hsPhi.DrawAllCanvas(Qave, options.thickness*ELossSilicon*ToKe)
+#    hsX.DrawAllCanvas(Qave, options.thickness*ELossSilicon*ToKe)
+#    hsZeta.DrawAllCanvas(Qave, options.thickness*ELossSilicon*ToKe)
+#    hsCotgBeta.DrawAllCanvas(Qave, options.thickness*ELossSilicon*ToKe)
 
     output_root_file.Write()
     output_root_file.Close()
