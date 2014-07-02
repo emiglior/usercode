@@ -5,6 +5,6 @@
  <use   name="FWCore/ParameterSet"/>
  <use   name="SimTracker/TrackerHitAssociation"/>
  <use   name="RecoLocalTracker/SiPixelRecHits"/>
- <library   file="NewStdHitNtuplizer.cc" name="NewStdHitNtuplizer">
+ <library   file="*.cc" name="NewStdHitNtuplizer">
    <flags   EDM_PLUGIN="1"/>
 </library>
