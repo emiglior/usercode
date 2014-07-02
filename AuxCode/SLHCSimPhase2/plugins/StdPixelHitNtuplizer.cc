@@ -508,8 +508,8 @@ void StdPixelHitNtuplizer::fillPRecHit(const int detid_db, const int subid,
   recHit_.side  = side_num;
 
   /*-- --*/
-  const PixelGeomDetUnit *theGeomDet = dynamic_cast<const PixelGeomDetUnit*> (PixGeom );
-  const PixelTopology * topol = &(theGeomDet->specificTopology());
+  //  const PixelGeomDetUnit *theGeomDet = dynamic_cast<const PixelGeomDetUnit*> (PixGeom );
+  //  const PixelTopology * topol = &(theGeomDet->specificTopology());
   
 
 //  if ( subid == 1 ) {
