@@ -105,12 +105,8 @@ private:
   edm::ParameterSet conf_;
   edm::InputTag src_;
  
-  static const int DIGIMAX = 1000000;
-  static const int CLUSTERMAX = 100000;
   static const int DGPERCLMAX = 100;  
-  
-  void init();
-   
+     
   //--- Structures for ntupling:
   struct evt
   {
@@ -146,16 +142,17 @@ private:
   
     // digis
     int fDgN;  
-    int fDgRow[DIGIMAX], fDgCol[DIGIMAX];
-    int fDgDetId[DIGIMAX];
-    //   int fDgRoc[DIGIMAX], fDgRocR[DIGIMAX], fDgRocC[DIGIMAX];
-    float fDgAdc[DIGIMAX], fDgCharge[DIGIMAX];
+    int fDgRow[DGPERCLMAX], fDgCol[DGPERCLMAX];
+    int fDgDetId[DGPERCLMAX];
+    //   int fDgRoc[DGPERCLMAX], fDgRocR[DGPERCLMAX], fDgRocC[DGPERCLMAX];
+    float fDgAdc[DGPERCLMAX], fDgCharge[DGPERCLMAX];
 
     void init();
   } recHit_;
  
   TFile * tfile_;
   TTree * pixeltree_;
+  TTree * pixeltree2_;
 };
  
  
@@ -163,7 +160,8 @@ StdPixelHitNtuplizer::StdPixelHitNtuplizer(edm::ParameterSet const& conf) :
   conf_(conf), 
   src_( conf.getParameter<edm::InputTag>( "src" ) ),
   tfile_(0), 
-  pixeltree_(0)
+  pixeltree_(0),
+  pixeltree2_(0)
 {
 }
  
@@ -186,7 +184,8 @@ void StdPixelHitNtuplizer::beginJob()
   
   tfile_ = new TFile ( outputFile.c_str() , "RECREATE" );
   pixeltree_ = new TTree("PixelNtuple","Pixel hit analyzer ntuple");
- 
+  pixeltree2_ = new TTree("Pixel2Ntuple","On-Track Pixel hit analyzer ntuple");
+
   int bufsize = 64000;
   //Common Branch
   // pixeltree_->Branch("evt",    &evt_,      "run/I:evtnum/I", bufsize);
@@ -232,6 +231,46 @@ void StdPixelHitNtuplizer::beginJob()
   pixeltree_->Branch("DgDetId",	 recHit_.fDgDetId	 ,"DgDetId[DgN]/I" );  
   pixeltree_->Branch("DgAdc",	 recHit_.fDgAdc		 ,"DgAdc[DgN]/F"   ); 
   pixeltree_->Branch("DgCharge", recHit_.fDgCharge	 ,"DgCharge[DgN]/F");  
+
+  //Common Branch (on-track)
+  pixeltree2_->Branch("evt",     &evt_ ,          "run/I:evtnum/I", bufsize);
+  pixeltree2_->Branch("pdgid",   &recHit_.pdgid,  "pdgid/I"  );
+  pixeltree2_->Branch("process", &recHit_.process,"process/I");
+  pixeltree2_->Branch("q",       &recHit_.q               ,"q/F"	    );	   
+  pixeltree2_->Branch("x",	&recHit_.x     		 ,"x/F"	    );	   
+  pixeltree2_->Branch("y",	&recHit_.y     		 ,"y/F"	    );	   
+  pixeltree2_->Branch("xx",	&recHit_.xx    		 ,"xx/F"	    );	   
+  pixeltree2_->Branch("xy",	&recHit_.xy    		 ,"xy/F"	    );	   
+  pixeltree2_->Branch("yy",	&recHit_.yy    		 ,"yy/F"	    );	   
+  pixeltree2_->Branch("row",	&recHit_.row   		 ,"row/F"    );		   
+  pixeltree2_->Branch("col",	&recHit_.col   		 ,"col/F"    );		   
+  pixeltree2_->Branch("gx",	&recHit_.gx    		 ,"gx/F"	    );	   
+  pixeltree2_->Branch("gy",	&recHit_.gy    		 ,"gy/F"	    );	   
+  pixeltree2_->Branch("gz",	&recHit_.gz    		 ,"gz/F"	    );	   
+  pixeltree2_->Branch("subid",	&recHit_.subid 		 ,"subid/I"  );	   
+  pixeltree2_->Branch("module",	&recHit_.module 	 ,"module/I" );	   
+  pixeltree2_->Branch("layer",	&recHit_.layer 		 ,"layer/I"  );	   
+  pixeltree2_->Branch("ladder",	&recHit_.ladder      	 ,"ladder/I" );	   
+  pixeltree2_->Branch("disk",	&recHit_.disk  		 ,"disk/I"   );	   
+  pixeltree2_->Branch("blade",	&recHit_.blade 		 ,"blade/I"  );	   
+  pixeltree2_->Branch("panel",	&recHit_.panel 		 ,"panel/I"  );	   
+  pixeltree2_->Branch("side",	&recHit_.side  		 ,"side/I"   );	   
+  pixeltree2_->Branch("nsimhit",	&recHit_.nsimhit	 ,"nsimhit/I");	   
+  pixeltree2_->Branch("spreadx",	&recHit_.spreadx	 ,"spreadx/I");	   
+  pixeltree2_->Branch("spready",	&recHit_.spready	 ,"spready/I");	   
+  pixeltree2_->Branch("hx",	&recHit_.hx		 ,"hx/F");	   
+  pixeltree2_->Branch("hy",	&recHit_.hy		 ,"hy/F");	   
+  pixeltree2_->Branch("tx",	&recHit_.tx		 ,"tx/F");	   
+  pixeltree2_->Branch("ty",	&recHit_.ty		 ,"ty/F");	   
+  pixeltree2_->Branch("tz",	&recHit_.tz		 ,"tz/F");	   
+  pixeltree2_->Branch("theta",	&recHit_.theta		 ,"theta/F" );	   
+  pixeltree2_->Branch("phi",	&recHit_.phi		 ,"phi/F"    );		   
+  pixeltree2_->Branch("DgN",	&recHit_.fDgN		 ,"DgN/I"    );		   
+  pixeltree2_->Branch("DgRow",	 recHit_.fDgRow		 ,"DgRow[DgN]/I"  );	   
+  pixeltree2_->Branch("DgCol",	 recHit_.fDgCol		 ,"DgCol[DgN]/I"   ); 
+  pixeltree2_->Branch("DgDetId",	 recHit_.fDgDetId	 ,"DgDetId[DgN]/I" );  
+  pixeltree2_->Branch("DgAdc",	 recHit_.fDgAdc		 ,"DgAdc[DgN]/F"   ); 
+  pixeltree2_->Branch("DgCharge", recHit_.fDgCharge	 ,"DgCharge[DgN]/F");  
 }
  
 // Functions that gets called by framework every event
@@ -269,6 +308,9 @@ void StdPixelHitNtuplizer::analyze(const edm::Event& e, const edm::EventSetup& e
     SiPixelRecHitCollection::const_iterator recHitIdIteratorEnd   = (recHitColl.product())->end();
  
     std::string detname ;
+
+    evt_.init();
+    fillEvt(e);
 
     // Loop over Detector IDs
     for ( ; recHitIdIterator != recHitIdIteratorEnd; recHitIdIterator++) {
@@ -332,11 +374,10 @@ void StdPixelHitNtuplizer::analyze(const edm::Event& e, const edm::EventSetup& e
 	    side_num    = tTopo->pxfSide(detId());
 	  }
 	  int num_simhit = matched.size();
+	  recHit_.init();
 	  fillPRecHit(  detid_db, subid,layer_num,ladder_num,module_num,disk_num,blade_num,panel_num,side_num,
 			iterRecHit, num_simhit, closest_simhit, geomDet );
-	  fillEvt(e);
 	  pixeltree_->Fill();
-	  init();
 	}
       } // end of rechit loop
     } // end of detid loop
@@ -427,13 +468,10 @@ void StdPixelHitNtuplizer::analyze(const edm::Event& e, const edm::EventSetup& e
 	      side_num    = tTopo->pxfSide(detId());
 	    }
 	    
+	    recHit_.init();
 	    fillPRecHit(detid_db, subid, layer_num,ladder_num,module_num,disk_num,blade_num,panel_num,side_num, 
-			ih, num_simhit, closest_simhit, geomDet );
-	    	    
-	    fillEvt(e);	    
-	    //	    pixeltree2_->Fill();
-	    init();
-	    
+			ih, num_simhit, closest_simhit, geomDet );	 
+	    pixeltree2_->Fill();	   
 	    /*
 	      TrackingRecHit * hit = (*ih)->clone();
 	      LocalPoint lp = hit->localPosition();
@@ -456,7 +494,6 @@ void StdPixelHitNtuplizer::analyze(const edm::Event& e, const edm::EventSetup& e
       delete pixhit;
     } //end of loop on tracking rechits
   } // end of loop on recotracks
-             
 } // end analyze function
  
 
@@ -522,7 +559,7 @@ void StdPixelHitNtuplizer::fillPRecHit(const int detid_db, const int subid,
       const std::vector<SiPixelCluster::Pixel>& pixvector = Cluster->pixels();
       //      std::cout << "  Found " << pixvector.size() << " pixels for this cluster " << std::endl;
       for (unsigned int i = 0; i < pixvector.size(); ++i) {
-	if (recHit_.fDgN > DIGIMAX - 1) break;
+	if (recHit_.fDgN > DGPERCLMAX - 1) break;
 	SiPixelCluster::Pixel holdpix = pixvector[i];
 	
 	recHit_.fDgRow[recHit_.fDgN]    = holdpix.x;
@@ -619,6 +656,30 @@ void StdPixelHitNtuplizer::fillPRecHit(const int detid_db, const int subid,
   recHit_.panel = panel_num;
   recHit_.side  = side_num;
 
+  if ( Cluster.isNonnull() ) { 
+            // -- Get digis of this cluster
+      const std::vector<SiPixelCluster::Pixel>& pixvector = Cluster->pixels();
+      //      std::cout << "  Found " << pixvector.size() << " pixels for this cluster " << std::endl;
+      for (unsigned int i = 0; i < pixvector.size(); ++i) {
+	if (recHit_.fDgN > DGPERCLMAX - 1) break;
+	SiPixelCluster::Pixel holdpix = pixvector[i];
+	
+	recHit_.fDgRow[recHit_.fDgN]    = holdpix.x;
+	recHit_.fDgCol[recHit_.fDgN]    = holdpix.y;
+	//	std::cout << "holdpix " << holdpix.x << " " <<  holdpix.y << std::endl;
+	recHit_.fDgDetId[recHit_.fDgN]  = detid_db;
+	recHit_.fDgAdc[recHit_.fDgN]    = -99.;
+	recHit_.fDgCharge[recHit_.fDgN] = holdpix.adc/1000.;	
+	++recHit_.fDgN;
+	
+      }      
+    } // if ( Cluster.isNonnull() )
+  else 
+    {
+      std::cout << "Pixel rechits with no associated cluster ?!?!?!!!!!!!!!!!!!!!!!!!!!!! " << std::endl;
+	// for (std::vector<TrajectoryMeasurement>::const_iterator tmeasIt = tmeasColl.begin(); ...
+    }
+
   //std::cout << "num_simhit = " << num_simhit << std::endl;
   if(num_simhit > 0) {
 
@@ -654,11 +715,6 @@ StdPixelHitNtuplizer::fillEvt(const edm::Event& E)
   evt_.evtnum = E.id().event();
 }
  
-void StdPixelHitNtuplizer::init()
-{
-  evt_.init();
-  recHit_.init();
-}
  
 void StdPixelHitNtuplizer::evt::init()
 {
@@ -703,7 +759,7 @@ void StdPixelHitNtuplizer::RecHit::init()
   theta = dummy_float;
   phi = dummy_float;
 
-  fDgN = DIGIMAX;
+  fDgN = DGPERCLMAX;
   for (int i = 0; i < fDgN; ++i) {
     fDgRow[i] = fDgCol[i] = -9999;
     fDgAdc[i] = fDgCharge[i] = -9999.;
