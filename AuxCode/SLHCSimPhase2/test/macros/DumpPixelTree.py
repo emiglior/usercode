@@ -2,6 +2,14 @@
 import sys
 import ROOT
 import array
+from optparse import OptionParser
+
+#################
+def argsort(seq):
+################
+    """ simplified version of the numpy.argsort() """
+    # http://stackoverflow.com/questions/3071415/efficient-method-to-calculate-the-rank-vector-of-a-list-in-python
+    return sorted(range(len(seq)), key = seq.__getitem__)
 
 #####################
 def declare_struct():
@@ -55,7 +63,20 @@ def declare_struct():
 ###############
 def main():
 ###############
+
+    parser = OptionParser()
+    parser.add_option("-l", "--lego", 
+                      action="store_true", dest="lego", default=False,
+                      help="lego plots (default is no lego plots)")
+    parser.add_option("-e", "--evts-to-dump",
+                      action="store", type="int", dest="evts_to_dump", default=20,
+                      help="max number of events to dump (for event display)")
+    (options, args) = parser.parse_args()
+
+
     verbose = False
+    max_evt_dumped = options.evts_to_dump
+    max_evt_dumped+=1 # temporary fix.... should find a better way to dump "last" event
 
     # output ascii file
     output_ascii_file = file("test.txt", 'w')
@@ -70,6 +91,26 @@ def main():
 
     input_tree = input_root_file.Get("PixelNtuple")            
     if verbose: input_tree.Print()
+
+
+    # sort the tree in case you want to display more than 1 cluster on the same module
+
+    # variables evtnum and DgDetId stored in array fV1 (see TTree::Draw)
+    # cf. http://root.cern.ch/root/roottalk/roottalk01/3646.html
+    nentries = input_tree.GetEntries()
+    input_tree.Draw("evt.evtnum*1000000000+DgDetId[0]","","goff")
+    print "nentries", nentries
+    # assign a "unique Id" to the cluster EEEMMMMMMMMM  
+    # EEE = evt number  (assumption: only one run number)
+    # MMMMMMMMM = detId number
+    uniqueId = array.array('l')  
+    for i in range(nentries):
+        uniqueId.append(int(input_tree.GetV1()[i]))
+    index_uniqueId = argsort(uniqueId)
+    if verbose:
+        for i in range(nentries):
+            print i, index_uniqueId[i]
+
 
     # import the ROOT defined struct(s) in pyROOT
     declare_struct()
@@ -87,16 +128,17 @@ def main():
     nC = 8*52 # cols or local_Y
     h2_localXY_digi = []
     c_localXY_digi = []
-    index_png = 0
-        
-    print len(h2_localXY_digi)
+    evt_dumped = 0
+    uniqueId_old = -1
+
+#    print len(h2_localXY_digi)
 
     for this_entry in xrange(all_entries):        
 
         if this_entry % 100 == 0:
             print "Procesing Event: ", this_entry
 
-        input_tree.GetEntry(this_entry)
+        input_tree.GetEntry(index_uniqueId[this_entry])
 
 # To access the events in a tree no variables need to be assigned to the different branches. Instead the leaves are available as properties of the tree, returning the values of the present event. 
         pixel_recHit.pdgid      = input_tree.pdgid
@@ -148,31 +190,46 @@ def main():
         # BPIX layer 1 only 
         if pixel_recHit.subid==1 and pixel_recHit.layer==1:     
 
-            # straw man event display
-            index_png += 1
-            if index_png < 50:
-                h2_localXY_digi.append(ROOT.TH2F("h2_localXY_digi"+str(index_png),"h2_localXY_digi",nR,-0.5,-0.5+nR,nC,-0.5,-0.5+nC))
-                h2_localXY_digi[-1].SetStats(ROOT.kFALSE)  
-                c_localXY_digi.append(ROOT.TCanvas("c_localXY_digi"+str(index_png),"c_localXY_digi",nR*2,nC*2)) # size of the canvas with the same aspect ratio of the module 
-       
             if verbose: print  "spread X, spread Y, DgN", pixel_recHit.spreadx, pixel_recHit.spready, pixel_recHit.DgN
             for iDg in range(pixel_recHit.DgN):
-                if verbose: print iDg, pixel_recHit.DgDetId[iDg], pixel_recHit.DgRow[iDg], pixel_recHit.DgCol[iDg] 
+                if verbose: print iDg, pixel_recHit.DgDetId[iDg], pixel_recHit.DgRow[iDg], pixel_recHit.DgCol[iDg]
                 print >> output_ascii_file, evt.evtnum,  pixel_recHit.DgDetId[iDg], pixel_recHit.DgRow[iDg], pixel_recHit.DgCol[iDg], int(pixel_recHit.DgCharge[iDg]*1000) # ADC (in ke) converted to int
-                if index_png < 50:
+            print >> output_ascii_file, "--> next rechit"
+
+            # straw man event display
+            if evt_dumped < max_evt_dumped:
+                if evt.evtnum*1000000000+pixel_recHit.DgDetId[0] > uniqueId_old: 
+
+                    if evt_dumped > 0:
+                        c_localXY_digi[-1].cd()
+                        h2_localXY_digi[-1].SetTitle("Evt: "+str(uniqueId_old/1000000000)+" Mod: "+str(uniqueId_old % 1000000000))
+                        if options.lego:
+                            h2_localXY_digi[-1].Draw("LEGOcolz")
+                        else:
+                            h2_localXY_digi[-1].Draw("colz")
+
+                        h2_localXY_digi[-1].SetMaximum(40.)
+                        c_localXY_digi[-1].SaveAs("c_localXY_digi_"+str(evt_dumped)+".png")
+
+                    h2_localXY_digi.append(ROOT.TH2F("h2_localXY_digi"+str(evt_dumped),"h2_localXY_digi",nR,-0.5,-0.5+nR,nC,-0.5,-0.5+nC))
+                    h2_localXY_digi[-1].SetStats(ROOT.kFALSE)  
+
+                    if options.lego:
+                        c_localXY_digi.append(ROOT.TCanvas("c_localXY_digi"+str(evt_dumped),"c_localXY_digi"))
+                    else:
+                        c_localXY_digi.append(ROOT.TCanvas("c_localXY_digi"+str(evt_dumped),"c_localXY_digi",nR*2,nC*2)) # size of the canvas with the same aspect ratio of the module
+
+                    uniqueId_old = evt.evtnum*1000000000+pixel_recHit.DgDetId[0]
+                    evt_dumped += 1
+
+                for iDg in range(pixel_recHit.DgN):
                     h2_localXY_digi[-1].SetBinContent(pixel_recHit.DgRow[iDg], pixel_recHit.DgCol[iDg], pixel_recHit.DgRow[iDg], pixel_recHit.DgCharge[iDg])
-            
-            if index_png < 50:
-                # straw man event display
-                c_localXY_digi[-1].cd()
-                h2_localXY_digi[-1].SetTitle("Evt: "+str(evt.evtnum)+" Mod: "+str(pixel_recHit.DgDetId[0]))
-                h2_localXY_digi[-1].Draw("colz")
-                h2_localXY_digi[-1].SetMaximum(40.)
-                c_localXY_digi[-1].SaveAs("c_localXY_digi_"+str(index_png)+".png")
-
+         
+# close ascii output
     output_ascii_file.close()
-
 
 ##################################
 if __name__ == "__main__":        
     main()
+
+
