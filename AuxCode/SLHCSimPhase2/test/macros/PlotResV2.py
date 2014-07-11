@@ -52,6 +52,9 @@ def getTH1LanGausFit(h1_in, pad):
 
     # Construct observable
 
+    # do not fit empty histos
+    if h1_in.GetEntries() < 1:
+        return 0., 0., 0., 0., 0., 0. 
 
     # parameters setting
     fr = [0.3*h1_in.GetMean(),10.0*h1_in.GetMean()]
@@ -628,23 +631,34 @@ class HistoStruct():
 
                 if (j==3):
 
-                    self.f_spreadX_qall_inMultBin[j].SetBinContent(i+1,self.spreadX_qall_inVBinTH1[i].Integral(j+1,self.spreadX_qall_inVBinTH1[i].GetNbinsX())/self.spreadX_qall_inVBinTH1[i].GetEntries()) 
-                    self.f_spreadX_qlow_inMultBin[j].SetBinContent(i+1,self.spreadX_qlow_inVBinTH1[i].Integral(j+1,self.spreadX_qlow_inVBinTH1[i].GetNbinsX())/self.spreadX_qlow_inVBinTH1[i].GetEntries()) 
-                    self.f_spreadX_qhigh_inMultBin[j].SetBinContent(i+1,self.spreadX_qhigh_inVBinTH1[i].Integral(j+1,self.spreadX_qhigh_inVBinTH1[i].GetNbinsX())/self.spreadX_qhigh_inVBinTH1[i].GetEntries())
-                    
-                    self.f_spreadY_qall_inMultBin[j].SetBinContent(i+1,self.spreadY_qall_inVBinTH1[i].Integral(j+1,self.spreadY_qall_inVBinTH1[i].GetNbinsX())/self.spreadY_qall_inVBinTH1[i].GetEntries()) 
-                    self.f_spreadY_qlow_inMultBin[j].SetBinContent(i+1,self.spreadY_qlow_inVBinTH1[i].Integral(j+1,self.spreadY_qlow_inVBinTH1[i].GetNbinsX())/self.spreadY_qlow_inVBinTH1[i].GetEntries())
-                    self.f_spreadY_qhigh_inMultBin[j].SetBinContent(i+1,self.spreadY_qhigh_inVBinTH1[i].Integral(j+1,self.spreadY_qhigh_inVBinTH1[i].GetNbinsX())/self.spreadY_qhigh_inVBinTH1[i].GetEntries())
+                    if self.spreadX_qall_inVBinTH1[i].GetEntries() > 0:
+                        self.f_spreadX_qall_inMultBin[j].SetBinContent(i+1,self.spreadX_qall_inVBinTH1[i].Integral(j+1,self.spreadX_qall_inVBinTH1[i].GetNbinsX())/self.spreadX_qall_inVBinTH1[i].GetEntries()) 
+                    if self.spreadX_qlow_inVBinTH1[i].GetEntries() > 0:
+                        self.f_spreadX_qlow_inMultBin[j].SetBinContent(i+1,self.spreadX_qlow_inVBinTH1[i].Integral(j+1,self.spreadX_qlow_inVBinTH1[i].GetNbinsX())/self.spreadX_qlow_inVBinTH1[i].GetEntries()) 
+                    if self.spreadX_qhigh_inVBinTH1[i].GetEntries() > 0:
+                        self.f_spreadX_qhigh_inMultBin[j].SetBinContent(i+1,self.spreadX_qhigh_inVBinTH1[i].Integral(j+1,self.spreadX_qhigh_inVBinTH1[i].GetNbinsX())/self.spreadX_qhigh_inVBinTH1[i].GetEntries())
+
+                    if self.spreadY_qall_inVBinTH1[i].GetEntries() > 0:                    
+                        self.f_spreadY_qall_inMultBin[j].SetBinContent(i+1,self.spreadY_qall_inVBinTH1[i].Integral(j+1,self.spreadY_qall_inVBinTH1[i].GetNbinsX())/self.spreadY_qall_inVBinTH1[i].GetEntries()) 
+                    if self.spreadY_qlow_inVBinTH1[i].GetEntries() > 0:
+                        self.f_spreadY_qlow_inMultBin[j].SetBinContent(i+1,self.spreadY_qlow_inVBinTH1[i].Integral(j+1,self.spreadY_qlow_inVBinTH1[i].GetNbinsX())/self.spreadY_qlow_inVBinTH1[i].GetEntries())
+                    if self.spreadY_qhigh_inVBinTH1[i].GetEntries() > 0:
+                        self.f_spreadY_qhigh_inMultBin[j].SetBinContent(i+1,self.spreadY_qhigh_inVBinTH1[i].Integral(j+1,self.spreadY_qhigh_inVBinTH1[i].GetNbinsX())/self.spreadY_qhigh_inVBinTH1[i].GetEntries())
                     
                 else:
+                    if self.spreadX_qall_inVBinTH1[i].GetEntries() > 0:
+                        self.f_spreadX_qall_inMultBin[j].SetBinContent(i+1,self.spreadX_qall_inVBinTH1[i].GetBinContent(j+1)/self.spreadX_qall_inVBinTH1[i].GetEntries()) 
+                    if self.spreadX_qlow_inVBinTH1[i].GetEntries() > 0:
+                        self.f_spreadX_qlow_inMultBin[j].SetBinContent(i+1,self.spreadX_qlow_inVBinTH1[i].GetBinContent(j+1)/self.spreadX_qlow_inVBinTH1[i].GetEntries()) 
+                    if self.spreadX_qhigh_inVBinTH1[i].GetEntries() > 0:
+                        self.f_spreadX_qhigh_inMultBin[j].SetBinContent(i+1,self.spreadX_qhigh_inVBinTH1[i].GetBinContent(j+1)/self.spreadX_qhigh_inVBinTH1[i].GetEntries())
                     
-                    self.f_spreadX_qall_inMultBin[j].SetBinContent(i+1,self.spreadX_qall_inVBinTH1[i].GetBinContent(j+1)/self.spreadX_qall_inVBinTH1[i].GetEntries()) 
-                    self.f_spreadX_qlow_inMultBin[j].SetBinContent(i+1,self.spreadX_qlow_inVBinTH1[i].GetBinContent(j+1)/self.spreadX_qlow_inVBinTH1[i].GetEntries()) 
-                    self.f_spreadX_qhigh_inMultBin[j].SetBinContent(i+1,self.spreadX_qhigh_inVBinTH1[i].GetBinContent(j+1)/self.spreadX_qhigh_inVBinTH1[i].GetEntries())
-                    
-                    self.f_spreadY_qall_inMultBin[j].SetBinContent(i+1,self.spreadY_qall_inVBinTH1[i].GetBinContent(j+1)/self.spreadY_qall_inVBinTH1[i].GetEntries()) 
-                    self.f_spreadY_qlow_inMultBin[j].SetBinContent(i+1,self.spreadY_qlow_inVBinTH1[i].GetBinContent(j+1)/self.spreadY_qlow_inVBinTH1[i].GetEntries())
-                    self.f_spreadY_qhigh_inMultBin[j].SetBinContent(i+1,self.spreadY_qhigh_inVBinTH1[i].GetBinContent(j+1)/self.spreadY_qhigh_inVBinTH1[i].GetEntries())
+                    if self.spreadY_qall_inVBinTH1[i].GetEntries() > 0:
+                        self.f_spreadY_qall_inMultBin[j].SetBinContent(i+1,self.spreadY_qall_inVBinTH1[i].GetBinContent(j+1)/self.spreadY_qall_inVBinTH1[i].GetEntries()) 
+                    if self.spreadY_qlow_inVBinTH1[i].GetEntries() > 0:
+                        self.f_spreadY_qlow_inMultBin[j].SetBinContent(i+1,self.spreadY_qlow_inVBinTH1[i].GetBinContent(j+1)/self.spreadY_qlow_inVBinTH1[i].GetEntries())
+                    if self.spreadY_qhigh_inVBinTH1[i].GetEntries() > 0:
+                        self.f_spreadY_qhigh_inMultBin[j].SetBinContent(i+1,self.spreadY_qhigh_inVBinTH1[i].GetBinContent(j+1)/self.spreadY_qhigh_inVBinTH1[i].GetEntries())
 
 
         the_label =  self.f_spreadX_qall_inMultBin[0].GetXaxis().GetTitle()        
@@ -1244,6 +1258,9 @@ def main():
     parser.add_option("-t", "--thickness",
                       action="store", type="float", dest="thickness", default=285,
                       help="thickness in um")
+    parser.add_option("-L", "--layer",
+                      action="store", type="int", dest="layer", default=-1,
+                      help="BPIX layer")
     
     (options, args) = parser.parse_args()
 
@@ -1305,8 +1322,8 @@ def main():
     h1_localY_witdh1_delta = ROOT.TH1F("h1_localY_witdh1_delta","h1_localY_witdh1_delta",80,-400,+400)    
 
     # size of the bin is dXxdY um^2
-    dX = 100
-    dY = 100 
+    dX = 100 #100
+    dY = 100 #100 
     nX = (8200*2)/dX
     nY = (32500*2)/dY
     print "Local HitMaps nX, nY: ", nX, nY
@@ -1351,7 +1368,7 @@ def main():
             h2_rzhitmapSubId2.Fill(tv3.z(),tv3.Perp())
 
         # BPIX only (layer 1)
-        if pixel_recHit.subid==1 and pixel_recHit.layer==1:
+        if pixel_recHit.subid==1 and pixel_recHit.layer==options.layer:
             h2_rzhitmapSelected.Fill(tv3.z(),tv3.Perp())
 
             # map of local positions 
@@ -1416,7 +1433,7 @@ def main():
             print "Loop #2 Procesing Event: ", this_entry
 
         # BPIX only (layer 1)
-        if pixel_recHit.subid==1 and pixel_recHit.layer==1:
+        if pixel_recHit.subid==1 and pixel_recHit.layer==options.layer:
 
             # global position of the rechit
             # NB sin(theta) = tv3.Perp()/tv3.Mag()
