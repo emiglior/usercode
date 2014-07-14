@@ -10,7 +10,7 @@ import FWCore.ParameterSet.VarParsing as VarParsing
 options = VarParsing.VarParsing()
 
 options.register('InputFileName',
-                 "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc11/ExtendedPhaseIPixel/step1_TTtoAnything_14TeV_pythia6_8k_evts.root", #default value
+                 "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc11/Extended2017/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_10k_evts.root", #default value
                  VarParsing.VarParsing.multiplicity.singleton, # singleton or list
                  VarParsing.VarParsing.varType.string,         # string, int, or float
                  "name of the input file ")
@@ -260,6 +260,20 @@ if options.AgeingScenario!="NoAgeing":
         process = customise_aging_1000(process)
     elif options.AgeingScenario=="3000":    
         process = customise_aging_3000(process)
+    elif options.AgeingScenario=="300newTune":	    
+        process = customise_aging_zero(process)
+        # 300/fb (aka Morris 150/fb): 0.40 0.30 0.0 0.0 
+        process.mix.digitizers.pixel.thePixelPseudoRadDamage_BPix1 = cms.double(0.40)
+        process.mix.digitizers.pixel.thePixelPseudoRadDamage_BPix2 = cms.double(0.30)
+        process.mix.digitizers.pixel.thePixelPseudoRadDamage_BPix3 = cms.double(0.0)
+        process.mix.digitizers.pixel.thePixelPseudoRadDamage_BPix4 = cms.double(0.0)
+    elif options.AgeingScenario=="500newTune":	    
+        process = customise_aging_zero(process)
+        # 500/fb (aka Morris 300/fb): 0.70 0.35 0.30 0.0 
+        process.mix.digitizers.pixel.thePixelPseudoRadDamage_BPix1 = cms.double(0.70)
+        process.mix.digitizers.pixel.thePixelPseudoRadDamage_BPix2 = cms.double(0.35)
+        process.mix.digitizers.pixel.thePixelPseudoRadDamage_BPix3 = cms.double(0.30)
+        process.mix.digitizers.pixel.thePixelPseudoRadDamage_BPix4 = cms.double(0.0)
     else:
         print "Unrecognized Ageing scenario, using default (=NoAgeing)"
 

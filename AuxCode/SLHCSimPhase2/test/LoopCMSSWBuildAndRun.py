@@ -44,14 +44,14 @@ def set_global_var(sample):
     CMSSW_VER="CMSSW_6_2_0_SLHC11"
     
     if (sample=="TTbar") | (sample=="ttbar") | (sample=="TTBar") :
-        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/Extended2017/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
+        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc11/Extended2017/TTbar/step1_TTtoAnything_2k_evts.root"
     elif (sample=="MinBias") | (sample=="minbias") :
-        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/Extended2017/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_15k_evts.root"
+        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc11/Extended2017/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_10k_evts.root"
     elif (sample=="IsoMuons") | (sample=="muons") | (sample=="Muons") :
-        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/Extended2017/ParticleGun/step1_FourMuPartGun_100kEvents.root"
+        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc11/Extended2017/ParticleGun/step1_FourMuPartGun_100kEvents.root"
     else :
         print "unrecongnize input sample, using default (=TTbar)"
-        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/612_slhc8/Extended2017/TTbar/step1_TTtoAnything_14TeV_pythia6_15k_evts.root"
+        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc11/Extended2017/TTbar/step1_TTtoAnything_2k_evts.root"
 
 ###### method to create recursively directories on EOS  #############
     
@@ -104,7 +104,7 @@ class Job:
 
 # >>>>>>>>> BA
 #                self.out_dir=os.path.join("/lustre/cms/store/user",USER,"SLHCSimPhase2/out","sample_"+sample,"pu_"+pu,"PixelROCRows_"+pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness, "BPixThr_"+bpixthr)
-        self.out_dir=os.path.join("/store/caf/user",USER,"TMP","SLHCSimPhase2/out","sample_"+sample,"pu_"+pu,"PixelROCRows_"+pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness, "BPixThr_"+bpixthr)
+        self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/out62XSLHC11_mtvTests","sample_"+sample,"pu_"+pu,"PixelROCRows_"+pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness, "BPixThr_"+bpixthr)
 # <<<<<<<<< LXBATCH
 #        os.system("mkdir -p "+self.out_dir)
         mkdir_eos(self.out_dir)        
@@ -140,7 +140,7 @@ class Job:
         fout.write("#BSUB -L /bin/sh \n")       
         fout.write("#BSUB -J "+self.job_basename+"\n")
         fout.write("#BSUB -oo "+os.path.join(LOG_DIR,self.job_basename)+".log \n") # LXBATCH
-        fout.write("#BSUB -q cmscaf1nd \n")                                        # LXBATCH
+        fout.write("#BSUB -q 1nd \n")                                        # LXBATCH
         fout.write("#BSUB -R \"rusage[mem=5000]\"\n")
         fout.write("### Auto-Generated Script by LoopCMSSWBuildAndRun.py ### \n")
         fout.write("JobName="+self.job_basename+" \n")
