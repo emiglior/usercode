@@ -46,7 +46,7 @@ def set_global_var(sample):
     if (sample=="TTbar") | (sample=="ttbar") | (sample=="TTBar") :
         GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc11/Extended2017/TTbar/step1_TTtoAnything_2k_evts.root"
     elif (sample=="MinBias") | (sample=="minbias") :
-        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc11/Extended2017/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_10k_evts.root"
+        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc11/Extended2017/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_12k_evts.root"
     elif (sample=="IsoMuons") | (sample=="muons") | (sample=="Muons") :
         GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc11/Extended2017/ParticleGun/step1_FourMuPartGun_100kEvents.root"
     else :
