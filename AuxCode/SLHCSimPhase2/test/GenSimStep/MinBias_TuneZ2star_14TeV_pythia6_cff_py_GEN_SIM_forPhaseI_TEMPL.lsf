@@ -6,10 +6,10 @@ JobName=MinBias_TuneZ2star_14TeV_pythia6_cff_GEN_SIM_${nEvts}_evts_seed_$mySeed
 
 echo  "Job started at " `date`
 
-CMSSW_DIR=${CMSSW_BASE}/src/MyTest/ExtendedPhaseIPixel
+CMSSW_DIR=${CMSSW_BASE}/src/AuxCode/SLHCSimPhase2/test/GenSimStep
 LXBATCH_DIR=$PWD
 
-cd $CMSSW_DIR
+cd ${CMSSW_BASE}/src
 eval `scramv1 runtime -sh`
 cd $LXBATCH_DIR
 
@@ -20,7 +20,7 @@ cmsRun MinBias_TuneZ2star_14TeV_pythia6_cff_py_GEN_SIM_forPhaseI_TEMPL.py myseed
 
 echo "Content of working directory is: " `ls -lrt`
 
-cmsStage step1_MinBias_TuneZ2star_14TeV_pythia6_${nEvts}_evts_seed_${mySeed}.root /store/caf/user/emiglior/SLHCSimPhase2/620_slhc11/ExtendedPhaseIPixel
+cmsStage -f step1_MinBias_TuneZ2star_14TeV_pythia6_${nEvts}_evts_seed_${mySeed}.root /store/caf/user/emiglior/SLHCSimPhase2/620_slhc11/Extended2017
 cp ${JobName}.out ${CMSSW_DIR}/outfiles
 
 echo  "Job ended at " `date`
