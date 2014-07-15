@@ -68,39 +68,70 @@ pixelCPE_phase1v2 = cms.PSet(
     )
 
 
-# phase1 100x150 um2  285/285 um 2000e Aging 300/fb
+### study of 300/fb and 500/fb aging
+# phase1 100x150 um2  285/285 um 2000e Aging CMSSW 300/fb
 pixelCPE_phase1_300fb = cms.PSet(
-    xerr_barrel_l1_ = cms.untracked.vdouble(0.00165,0.00093,0.00135),
-    xerr_barrel_l1_def_ = cms.untracked.double(0.0153),
-    yerr_barrel_l1_ = cms.untracked.vdouble(0.00296,0.00247,0.00355,0.00403,0.00439,0.00451,0.0046,0.00466,0.00475),
-    yerr_barrel_l1_def_ = cms.untracked.double(0.00481),
-    xerr_barrel_ln_ = cms.untracked.vdouble(0.000788,0.000841,0.00173),
-    xerr_barrel_ln_def_ = cms.untracked.double(0.0101),
-    yerr_barrel_ln_ = cms.untracked.vdouble(0.00289,0.00132,0.00197,0.00209,0.00219,0.00241,0.00241,0.00213,0.109),
-    yerr_barrel_ln_def_ = cms.untracked.double(0.0503),
+    xerr_barrel_ln_ = cms.untracked.vdouble(0.000742,0.000836,0.00174),
+    xerr_barrel_ln_def_ = cms.untracked.double(0.0102),
+    yerr_barrel_ln_ = cms.untracked.vdouble(0.00272,0.0013,0.00197,0.00208,0.00219,0.0024,0.00241,0.00213,0.113),
+    yerr_barrel_ln_def_ = cms.untracked.double(0.0531),
     xerr_endcap_ = cms.untracked.vdouble(0.00139,0.000664,0.00412),
     xerr_endcap_def_ = cms.untracked.double(0.00863),
     yerr_endcap_ = cms.untracked.vdouble(0.00263,0.00098,0.00712),
-    yerr_endcap_def_ = cms.untracked.double(0.00269)
-)
+    yerr_endcap_def_ = cms.untracked.double(0.00269),
+    xerr_barrel_l1_ = cms.untracked.vdouble(0.0015,0.000913,0.00135),
+    xerr_barrel_l1_def_ = cms.untracked.double(0.0155),
+    yerr_barrel_l1_ = cms.untracked.vdouble(0.00275,0.00247,0.00355,0.00402,0.00445,0.00453,0.00461,0.00467,0.00476),
+    yerr_barrel_l1_def_ = cms.untracked.double(0.00481)
+    )
 
-# phase1 100x150 um2  285/285 um 2000e Ageing 500/fb
+# phase1 100x150 um2  285/285 um 2000e Aging CMSSW 500/fb
 pixelCPE_phase1_500fb = cms.PSet(
-    xerr_barrel_l1_ = cms.untracked.vdouble(0.00179,0.00111,0.00137),
-    xerr_barrel_l1_def_ = cms.untracked.double(0.0181),
-    yerr_barrel_l1_ = cms.untracked.vdouble(0.00323,0.00369,0.00536,0.0062,0.00713,0.00739,0.00765,0.00803,0.00851),
-    yerr_barrel_l1_def_ = cms.untracked.double(0.00827),
-    xerr_barrel_ln_ = cms.untracked.vdouble(0.00083,0.000869,0.00172),
+    xerr_barrel_ln_ = cms.untracked.vdouble(0.000785,0.000864,0.00173),
     xerr_barrel_ln_def_ = cms.untracked.double(0.0102),
-    yerr_barrel_ln_ = cms.untracked.vdouble(0.00289,0.00143,0.00215,0.00239,0.0026,0.00297,0.00298,0.00253,0.115),
-    yerr_barrel_ln_def_ = cms.untracked.double(0.126),
+    yerr_barrel_ln_ = cms.untracked.vdouble(0.00272,0.00142,0.00216,0.00238,0.0026,0.00298,0.00298,0.00253,0.118),
+    yerr_barrel_ln_def_ = cms.untracked.double(0.125),
     xerr_endcap_ = cms.untracked.vdouble(0.00144,0.00069,0.00441),
     xerr_endcap_def_ = cms.untracked.double(0.00757),
     yerr_endcap_ = cms.untracked.vdouble(0.00266,0.00114,0.00766),
-    yerr_endcap_def_ = cms.untracked.double(0.0407)
-)
+    yerr_endcap_def_ = cms.untracked.double(0.0407),
+    xerr_barrel_l1_ = cms.untracked.vdouble(0.00167,0.00108,0.00138),
+    xerr_barrel_l1_def_ = cms.untracked.double(0.0187),
+    yerr_barrel_l1_ = cms.untracked.vdouble(0.00314,0.00369,0.00534,0.0062,0.00732,0.00743,0.00765,0.00809,0.00865),
+    yerr_barrel_l1_def_ = cms.untracked.double(0.00829)
+    )
 
+# phase1 100x150 um2  285/285 um 2000e Aging New tuning for 300/fb (2014.07.15)
+pixelCPE_phase1_300fb_new = cms.PSet(
+    xerr_barrel_ln_ = cms.untracked.vdouble(0.000677,0.000791,0.00177),
+    xerr_barrel_ln_def_ = cms.untracked.double(0.0103),
+    yerr_barrel_ln_ = cms.untracked.vdouble(0.00264,0.00119,0.00184,0.0019,0.002,0.00221,0.00224,0.00195,0.119),
+    yerr_barrel_ln_def_ = cms.untracked.double(0.127),
+    xerr_endcap_ = cms.untracked.vdouble(0.00129,0.000591,0.0042),
+    xerr_endcap_def_ = cms.untracked.double(0.0108),
+    yerr_endcap_ = cms.untracked.vdouble(0.00247,0.000765,0.00677),
+    yerr_endcap_def_ = cms.untracked.double(0.0482),
+    xerr_barrel_l1_ = cms.untracked.vdouble(0.00126,0.000741,0.00139),
+    xerr_barrel_l1_def_ = cms.untracked.double(0.014),
+    yerr_barrel_l1_ = cms.untracked.vdouble(0.0025,0.00143,0.00214,0.00231,0.00244,0.00248,0.00251,0.0025,0.00253),
+    yerr_barrel_l1_def_ = cms.untracked.double(0.00257)
+    )
 
+# phase1 100x150 um2  285/285 um 2000e Aging New tuning 500/fb  (2014.07.15)
+pixelCPE_phase1_500fb_new = cms.PSet(
+    xerr_barrel_ln_ = cms.untracked.vdouble(0.000698,0.000802,0.00176),
+    xerr_barrel_ln_def_ = cms.untracked.double(0.0103),
+    yerr_barrel_ln_ = cms.untracked.vdouble(0.00267,0.00127,0.00194,0.00209,0.00219,0.00233,0.00236,0.00205,0.121),
+    yerr_barrel_ln_def_ = cms.untracked.double(0.041),
+    xerr_endcap_ = cms.untracked.vdouble(0.00129,0.000591,0.00424),
+    xerr_endcap_def_ = cms.untracked.double(0.0103),
+    yerr_endcap_ = cms.untracked.vdouble(0.00247,0.000765,0.00675),
+    yerr_endcap_def_ = cms.untracked.double(0.026),
+    xerr_barrel_l1_ = cms.untracked.vdouble(0.0013,0.000807,0.00137),
+    xerr_barrel_l1_def_ = cms.untracked.double(0.0145),
+    yerr_barrel_l1_ = cms.untracked.vdouble(0.00238,0.00187,0.00276,0.00308,0.00333,0.00339,0.00345,0.00346,0.00351),
+    yerr_barrel_l1_def_ = cms.untracked.double(0.00359)
+    )
 
 #Dummy Pixel CPE (for test purposes)  
 pixelCPE_dummy= cms.PSet(
@@ -123,6 +154,8 @@ PixelCPE_dict = { 'pixelCPE_100x150_default' : pixelCPE_100x150_default,
                   'pixelCPE_phase1'          : pixelCPE_phase1         ,
                   'pixelCPE_phase1v2'        : pixelCPE_phase1v2       ,
                   'pixelCPE_phase1_300fb'    : pixelCPE_phase1_300fb   ,
-                  'pixelCPE_phase1_500fb'    : pixelCPE_phase1_500fb   ,   
+                  'pixelCPE_phase1_500fb'    : pixelCPE_phase1_500fb   ,
+                  'pixelCPE_phase1_300fb_new': pixelCPE_phase1_300fb_new   ,
+                  'pixelCPE_phase1_500fb_new': pixelCPE_phase1_500fb_new   ,   
                   'pixelCPE_dummy'           : pixelCPE_dummy
                   }
