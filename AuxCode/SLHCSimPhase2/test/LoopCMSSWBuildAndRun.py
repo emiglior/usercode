@@ -44,14 +44,14 @@ def set_global_var(sample):
     CMSSW_VER="CMSSW_6_2_0_SLHC11"
     
     if (sample=="TTbar") | (sample=="ttbar") | (sample=="TTBar") :
-        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc11/Extended2017/TTbar/step1_TTtoAnything_2k_evts.root"
+        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc11/Extended2017/TTbar/step1_TTtoAnything_10k_evts.root"
     elif (sample=="MinBias") | (sample=="minbias") :
-        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc11/Extended2017/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_12k_evts.root"
+        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc11/Extended2017/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_10k_evts.root"
     elif (sample=="IsoMuons") | (sample=="muons") | (sample=="Muons") :
         GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc11/Extended2017/ParticleGun/step1_FourMuPartGun_100kEvents.root"
     else :
         print "unrecongnize input sample, using default (=TTbar)"
-        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc11/Extended2017/TTbar/step1_TTtoAnything_2k_evts.root"
+        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc11/Extended2017/TTbar/step1_TTtoAnything_10k_evts.root"
 
 ###### method to create recursively directories on EOS  #############
     
@@ -241,7 +241,7 @@ class Job:
         fout.write("ls -lh . \n")
         fout.write(" # retrieve the outputs \n")
 #        fout.write("for RootOutputFile in $(ls *root ); do cp  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
-        fout.write("for RootOutputFile in $(ls *root ); do cmsStage  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
+        fout.write("for RootOutputFile in $(ls *root ); do cmsStage  -f ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
         fout.write("#cp ${CMSSW_BASE}/src/SLHCUpgradeSimulations/Geometry/data/PhaseI/PixelSkimmedGeometry_phase1.txt ${OUT_DIR} \n")
         fout.write("#cp ${CMSSW_BASE}/src/Geometry/TrackerCommonData/data/PhaseI/trackerStructureTopology.xml ${OUT_DIR} \n")
         fout.close()
@@ -346,7 +346,7 @@ def main():
     # Setup CMSSW variables
 #     os.system("source /swcms_slc5/CMSSW/cmsset_default.sh") # LXBATCH
 #     os.chdir(os.path.join(HOME,"SLHCSimPhase2",CMSSW_VER,"src"))
-    os.chdir(os.path.join(HOME,"MyWorkSpace/public","TMP","SLHCSimPhase2",CMSSW_VER,"src"))
+    os.chdir(os.path.join(HOME,"MyWorkSpace/public","TMP/TEST_MTV",CMSSW_VER,"src"))
     os.system("eval `scram r -sh`")
 
     # Split and submit
@@ -354,8 +354,8 @@ def main():
     (out,err) = child_edm.communicate()
 
     ### uncomment next to debug the script on 50 events
-    nEvents=10 # this line should be commented for running on the full GEN-SIM sample
-    #nEvents = int((out.split("\n")[1]).split()[3])
+    #nEvents=10000 # this line should be commented for running on the full GEN-SIM sample
+    nEvents = int((out.split("\n")[1]).split()[3])
     
     eventsPerJob = nEvents/int(opts.numberofjobs)
 
@@ -415,17 +415,17 @@ def main():
     # prepare the script for the harvesting step
     #############################################
     
-    harvestingname = PBS_DIR + "/jobs/"+opts.jobname+"_sample_"+mSample+"_pu"+mPileUp+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+mBPixThr+"_L0Thick"+mL0Thick+".sh"
+    harvestingname = PBS_DIR + "/jobs/"+opts.jobname+"_sample_"+mSample+"_pu"+mPileUp+"_age"+mAgeing+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+mBPixThr+"_L0Thick"+mL0Thick+".sh"
     fout=open(harvestingname,"w")
     fout.write("#!/bin/sh \n")
 #     fout.write("source /swcms_slc5/CMSSW/cmsset_default.sh \n") # LXBATCH
     fout.write("cmssw_ver="+CMSSW_VER+" \n")
 #    fout.write("cd "+os.path.join(HOME,"SLHCSimPhase2","${cmssw_ver}","src")+"\n") # LXBTACH
-    fout.write("cd "+os.path.join(HOME,"MyWorkSpace/public","TMP","SLHCSimPhase2","${cmssw_ver}","src")+"\n")
+    fout.write("cd "+os.path.join(HOME,"MyWorkSpace/public","TMP/TEST_MTV","${cmssw_ver}","src")+"\n")
     fout.write("eval `scram r -sh`\n")
     fout.write("DQMFileList="+DQMFileList[:-1]+" \n")
-    fout.write("cmsDriver.py step4 --geometry Extended2017 --customise SLHCUpgradeSimulations/Configuration/phase1TkCustoms.customise,AuxCode/SLHCSimPhase2/TkOnlyValidationCustoms.customise_tkonly --conditions auto:upgrade2017 --mc -s HARVESTING:validationHarvesting+dqmHarvesting --filein $DQMFileList --fileout file:step4_sample_"+mSample+"_pu"+mPileUp+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+mBPixThr+"_L0Thick"+mL0Thick+".root > step4_sample_"+mSample+"_pu"+mPileUp+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+mBPixThr+"_L0Thick"+mL0Thick+".log \n")
-    fout.write("mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root AuxCode/SLHCSimPhase2/test/step4_sample_"+mSample+"_pu"+mPileUp+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+ mBPixThr+"_L0Thick"+mL0Thick+".root")
+    fout.write("cmsDriver.py step4  --customise SLHCUpgradeSimulations/Configuration/combinedCustoms.cust_2017,AuxCode/SLHCSimPhase2/TkOnlyValidationCustoms.customise_tkonly --conditions auto:upgrade2017 --geometry Extended2017 --magField 38T_PostLS1 --mc -s HARVESTING:validationHarvesting+dqmHarvesting --filein $DQMFileList --fileout file:step4_sample_"+mSample+"_pu"+mPileUp+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+mBPixThr+"_L0Thick"+mL0Thick+".root > step4_sample_"+mSample+"_pu"+mPileUp+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+mBPixThr+"_L0Thick"+mL0Thick+".log \n")
+    fout.write("mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root AuxCode/SLHCSimPhase2/test/step4_sample_"+mSample+"_pu"+mPileUp+"_age"+mAgeing+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+ mBPixThr+"_L0Thick"+mL0Thick+".root")
 
  
     fout.close()
