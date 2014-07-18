@@ -88,10 +88,12 @@ if options.PUScenario!="NoPU":
         print "PU = 140"
     elif "10" in options.PUScenario:
         process.mix.input.nbPileupEvents.averageNumber = cms.double(10.000000)
+    elif "20" in options.PUScenario:
+        process.mix.input.nbPileupEvents.averageNumber = cms.double(20.000000)  
     elif "25" in options.PUScenario:
         process.mix.input.nbPileupEvents.averageNumber = cms.double(25.000000)
     elif "35" in options.PUScenario:
-        process.mix.input.nbPileupEvents.averageNumber = cms.double(35.000000)
+        process.mix.input.nbPileupEvents.averageNumber = cms.double(35.000000)      
     elif "50" in options.PUScenario:
         process.mix.input.nbPileupEvents.averageNumber = cms.double(50.000000)
     elif "70" in options.PUScenario:
