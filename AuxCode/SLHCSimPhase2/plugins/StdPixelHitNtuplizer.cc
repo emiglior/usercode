@@ -1,10 +1,6 @@
 /*
+  \class StdPixelHitNtuplizer
 */
-
-/** \class StdPixelHitNtuplizer
- * 
- *
- ************************************************************/
 
 // DataFormats
 #include "DataFormats/Common/interface/DetSetVector.h"
@@ -137,9 +133,16 @@ private:
     int nsimhit;
     int spreadx,spready;
     float hx, hy;
+    float hrow, hcol;
     float tx, ty, tz;
     float theta, phi;
   
+    // detector topology
+    int nRowsInDet;
+    int nColsInDet;
+    float pitchx;
+    float pitchy;
+
     // digis
     int fDgN;  
     int fDgRow[DGPERCLMAX], fDgCol[DGPERCLMAX];
@@ -220,12 +223,18 @@ void StdPixelHitNtuplizer::beginJob()
   pixeltree_->Branch("spready",	&recHit_.spready	 ,"spready/I");	   
   pixeltree_->Branch("hx",	&recHit_.hx		 ,"hx/F");	   
   pixeltree_->Branch("hy",	&recHit_.hy		 ,"hy/F");	   
+  pixeltree_->Branch("hrow",	&recHit_.hrow   	 ,"hrow/F");		   
+  pixeltree_->Branch("hcol",	&recHit_.hcol   	 ,"hcol/F");	
   pixeltree_->Branch("tx",	&recHit_.tx		 ,"tx/F");	   
   pixeltree_->Branch("ty",	&recHit_.ty		 ,"ty/F");	   
   pixeltree_->Branch("tz",	&recHit_.tz		 ,"tz/F");	   
   pixeltree_->Branch("theta",	&recHit_.theta		 ,"theta/F" );	   
   pixeltree_->Branch("phi",	&recHit_.phi		 ,"phi/F"    );		   
-  pixeltree_->Branch("DgN",	&recHit_.fDgN		 ,"DgN/I"    );		   
+  pixeltree_->Branch("DgN",	&recHit_.fDgN		 ,"DgN/I"    );	
+  pixeltree_->Branch("nRowsInDet", &recHit_.nRowsInDet	 ,"nRowsInDet/I");	
+  pixeltree_->Branch("nColsInDet", &recHit_.nColsInDet	 ,"nColsInDet/I");
+  pixeltree_->Branch("pitchx",     &recHit_.pitchx	 ,"pitchx/F");
+  pixeltree_->Branch("pitchy",     &recHit_.pitchy	 ,"pitchy/F");	   
   pixeltree_->Branch("DgRow",	 recHit_.fDgRow		 ,"DgRow[DgN]/I"  );	   
   pixeltree_->Branch("DgCol",	 recHit_.fDgCol		 ,"DgCol[DgN]/I"   ); 
   pixeltree_->Branch("DgDetId",	 recHit_.fDgDetId	 ,"DgDetId[DgN]/I" );  
@@ -255,16 +264,22 @@ void StdPixelHitNtuplizer::beginJob()
   pixeltree2_->Branch("blade",	&recHit_.blade 		 ,"blade/I"  );	   
   pixeltree2_->Branch("panel",	&recHit_.panel 		 ,"panel/I"  );	   
   pixeltree2_->Branch("side",	&recHit_.side  		 ,"side/I"   );	   
-  pixeltree2_->Branch("nsimhit",	&recHit_.nsimhit	 ,"nsimhit/I");	   
-  pixeltree2_->Branch("spreadx",	&recHit_.spreadx	 ,"spreadx/I");	   
-  pixeltree2_->Branch("spready",	&recHit_.spready	 ,"spready/I");	   
+  pixeltree2_->Branch("nsimhit",&recHit_.nsimhit	 ,"nsimhit/I");	   
+  pixeltree2_->Branch("spreadx",&recHit_.spreadx	 ,"spreadx/I");	   
+  pixeltree2_->Branch("spready",&recHit_.spready	 ,"spready/I");	   
   pixeltree2_->Branch("hx",	&recHit_.hx		 ,"hx/F");	   
-  pixeltree2_->Branch("hy",	&recHit_.hy		 ,"hy/F");	   
+  pixeltree2_->Branch("hy",	&recHit_.hy		 ,"hy/F");
+  pixeltree2_->Branch("hrow",	&recHit_.hrow   	 ,"hrow/F");		   
+  pixeltree2_->Branch("hcol",	&recHit_.hcol   	 ,"hcol/F");
   pixeltree2_->Branch("tx",	&recHit_.tx		 ,"tx/F");	   
   pixeltree2_->Branch("ty",	&recHit_.ty		 ,"ty/F");	   
   pixeltree2_->Branch("tz",	&recHit_.tz		 ,"tz/F");	   
   pixeltree2_->Branch("theta",	&recHit_.theta		 ,"theta/F" );	   
-  pixeltree2_->Branch("phi",	&recHit_.phi		 ,"phi/F"    );		   
+  pixeltree2_->Branch("phi",	&recHit_.phi		 ,"phi/F"    );	
+  pixeltree2_->Branch("nRowsInDet", &recHit_.nRowsInDet	 ,"nRowsInDet/I");	
+  pixeltree2_->Branch("nColsInDet", &recHit_.nColsInDet	 ,"nColsInDet/I");
+  pixeltree2_->Branch("pitchx",     &recHit_.pitchx	 ,"pitchx/F");
+  pixeltree2_->Branch("pitchy",     &recHit_.pitchy	 ,"pitchy/F");	  	   
   pixeltree2_->Branch("DgN",	&recHit_.fDgN		 ,"DgN/I"    );		   
   pixeltree2_->Branch("DgRow",	 recHit_.fDgRow		 ,"DgRow[DgN]/I"  );	   
   pixeltree2_->Branch("DgCol",	 recHit_.fDgCol		 ,"DgCol[DgN]/I"   ); 
@@ -516,9 +531,6 @@ void StdPixelHitNtuplizer::fillPRecHit(const int detid_db, const int subid,
   recHit_.xx = le.xx();
   recHit_.xy = le.xy();
   recHit_.yy = le.yy();
-  //MeasurementPoint mp = topol->measurementPosition(LocalPoint(recHit_.x, recHit_.y));
-  //recHit_.row = mp.x();
-  //recHit_.col = mp.y();
   GlobalPoint GP = PixGeom->surface().toGlobal(pixeliter->localPosition());
   recHit_.gx = GP.x();
   recHit_.gy = GP.y();
@@ -544,15 +556,25 @@ void StdPixelHitNtuplizer::fillPRecHit(const int detid_db, const int subid,
   recHit_.panel = panel_num;
   recHit_.side  = side_num;
 
-  /*-- --*/
-  //  const PixelGeomDetUnit *theGeomDet = dynamic_cast<const PixelGeomDetUnit*> (PixGeom );
-  //  const PixelTopology * topol = &(theGeomDet->specificTopology());
+  /*-- module topology --*/
+  const PixelGeomDetUnit *theGeomDet = dynamic_cast<const PixelGeomDetUnit*> (PixGeom );
+  const PixelTopology * topol = &(theGeomDet->specificTopology());
+  recHit_.nRowsInDet =  topol->nrows();
+  recHit_.nColsInDet =  topol->ncolumns();
+  recHit_.pitchx     =	topol->pitch().first;      
+  recHit_.pitchy     =	topol->pitch().second;        
+
+  MeasurementPoint mp = topol->measurementPosition(LocalPoint(recHit_.x, recHit_.y));
+  recHit_.row = mp.x();
+  recHit_.col = mp.y();
   
-
-//  if ( subid == 1 ) {
-//    std::cout << "BPIX Layer "<< layer_num << " RectangularPixelTopology " << "nrows " << topol->nrows() << ", ncols " << topol->ncolumns() << ", pitchx " << topol->pitch().first << ", pitchy " << topol->pitch().second << std::endl;
-//  }
-
+  // if ( subid == 1 ) {
+  //     std::cout << "all hits: BPIX Layer "<< layer_num << " RectangularPixelTopology "
+  // 	      << " rechit row " << recHit_.row << 
+  // 	      << " , rechit col " << recHit_.col
+  // 	      << " , nrow " << topol->nrows() << ", ncols " << topol->ncolumns() << ", pitchx " << topol->pitch().first << ", pitchy " << topol->pitch().second 
+  // 	      << std::endl;
+  //  }
 
   if ( Cluster.isNonnull() ) { 
             // -- Get digis of this cluster
@@ -595,11 +617,16 @@ void StdPixelHitNtuplizer::fillPRecHit(const int detid_db, const int subid,
     recHit_.tx = (*closest_simhit).localDirection().x();
     recHit_.ty = (*closest_simhit).localDirection().y();
     recHit_.tz = (*closest_simhit).localDirection().z();
-   // alpha: angle with respect to local x axis in local (x,z) plane
-   // float cotalpha = sim_xdir/sim_zdir;
-   // beta: angle with respect to local y axis in local (y,z) plane
-   // float cotbeta = sim_ydir/sim_zdir;
 
+    MeasurementPoint hmp = topol->measurementPosition(LocalPoint(recHit_.hx, recHit_.hy));
+    recHit_.hrow = hmp.x();
+    recHit_.hcol = hmp.y();
+
+    // alpha: angle with respect to local x axis in local (x,z) plane
+    // float cotalpha = sim_xdir/sim_zdir;
+    // beta: angle with respect to local y axis in local (y,z) plane
+    // float cotbeta = sim_ydir/sim_zdir;
+    
     //std::cout << "num_simhit x, y = " << 0.5*(sim_x1+sim_x2) << " " << 0.5*(sim_y1+sim_y2) << std::endl;
   }
   /*
@@ -656,6 +683,18 @@ void StdPixelHitNtuplizer::fillPRecHit(const int detid_db, const int subid,
   recHit_.panel = panel_num;
   recHit_.side  = side_num;
 
+  /*-- module topology --*/
+  const PixelGeomDetUnit *theGeomDet = dynamic_cast<const PixelGeomDetUnit*> (PixGeom );
+  const PixelTopology * topol = &(theGeomDet->specificTopology());
+  recHit_.nRowsInDet =  topol->nrows();
+  recHit_.nColsInDet =  topol->ncolumns();
+  recHit_.pitchx     =	topol->pitch().first;      
+  recHit_.pitchy     =	topol->pitch().second;        
+
+  // if ( subid == 1 ) {
+  //     std::cout << "on track only: BPIX Layer "<< layer_num << " RectangularPixelTopology " << "nrows " << topol->nrows() << ", ncols " << topol->ncolumns() << ", pitchx " << topol->pitch().first << ", pitchy " << topol->pitch().second << std::endl;
+  //   }
+
   if ( Cluster.isNonnull() ) { 
             // -- Get digis of this cluster
       const std::vector<SiPixelCluster::Pixel>& pixvector = Cluster->pixels();
@@ -696,11 +735,16 @@ void StdPixelHitNtuplizer::fillPRecHit(const int detid_db, const int subid,
     recHit_.tx = (*closest_simhit).localDirection().x();
     recHit_.ty = (*closest_simhit).localDirection().y();
     recHit_.tz = (*closest_simhit).localDirection().z();
-   // alpha: angle with respect to local x axis in local (x,z) plane
-   // float cotalpha = sim_xdir/sim_zdir;
-   // beta: angle with respect to local y axis in local (y,z) plane
-   // float cotbeta = sim_ydir/sim_zdir;
 
+    MeasurementPoint hmp = topol->measurementPosition(LocalPoint(recHit_.hx, recHit_.hy));
+    recHit_.hrow = hmp.x();
+    recHit_.hcol = hmp.y();
+
+    // alpha: angle with respect to local x axis in local (x,z) plane
+    // float cotalpha = sim_xdir/sim_zdir;
+    // beta: angle with respect to local y axis in local (y,z) plane
+    // float cotbeta = sim_ydir/sim_zdir;
+    
     //std::cout << "num_simhit x, y = " << 0.5*(sim_x1+sim_x2) << " " << 0.5*(sim_y1+sim_y2) << std::endl;
   }
 
