@@ -78,7 +78,7 @@ if options.PUScenario!="NoPU":
     # Used to be
     #process.load('SimGeneral.MixingModule.mix_E8TeV_AVE_16_BX_25ns_cfi')
     process.load('SimGeneral.MixingModule.mix_POISSON_average_cfi')
-    process.mix.input.fileNames = cms.untracked.vstring(['root:://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc11/Extended2017/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_12k_evts.root'])
+    process.mix.input.fileNames = cms.untracked.vstring(['root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc11/Extended2017/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_12k_evts.root'])
     process.mix.bunchspace = cms.int32(25)
     process.mix.minBunch = cms.int32(-12)
     process.mix.maxBunch = cms.int32(3)
