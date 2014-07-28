@@ -1,8 +1,16 @@
 #!/usr/bin/env python
+
 import sys
 import ROOT
 import array
+import math
+
 from optparse import OptionParser
+
+# my modules
+from histo_struct import HistoStruct 
+from rechit_helpers import NotModuleEdge, CmToUm, ToKe, ELossSilicon
+from root_helpers import getTH1cdf
 
 #################
 def argsort(seq):
@@ -69,7 +77,6 @@ def declare_struct():
 ###############
 def main():
 ###############
-
     parser = OptionParser()
     parser.add_option("-l", "--lego", 
                       action="store_true", dest="lego", default=False,
@@ -77,6 +84,9 @@ def main():
     parser.add_option("-e", "--evts-to-dump",
                       action="store", type="int", dest="evts_to_dump", default=20,
                       help="max number of events to dump (for event display)")
+    parser.add_option("-t", "--thickness",
+                      action="store", type="float", dest="thickness", default=285,
+                      help="thickness in um")
     parser.add_option("-v", "--verbose",
                       action="store_true", dest="verbose", default=False,
                       help="verbose output")
@@ -85,6 +95,16 @@ def main():
 
     max_evt_dumped = options.evts_to_dump
     max_evt_dumped+=1 # temporary fix.... should find a better way to dump "last" event
+
+    # output root file
+    output_root_filename = "DumpPixelTreeHistos.root"
+    output_root_file = ROOT.TFile(output_root_filename,"RECREATE")
+
+    h1_qcorr  = ROOT.TH1F("h1_qcorr","h1_qcorr primaries;Q_{corr} [ke]; recHits",200,0.,400.)
+    ### histo containers
+    hsEta = HistoStruct("Eta" ,25, 0.,2.5, "|#eta|", output_root_file, False)
+
+
 
     # output ascii file
     output_ascii_file = file("test.txt", 'w')
@@ -142,11 +162,12 @@ def main():
     recHitCount = 1
     uniqueId_old = -1
 
-#    print len(h2_localXY_digi)
-
+####################
+# 1st loop on events
+####################
     for this_entry in xrange(all_entries):        
 
-        if this_entry % 100 == 0:
+        if this_entry % 10000 == 0:
             print "Processing rechit: ", this_entry
 
         input_tree.GetEntry(index_uniqueId[this_entry])
@@ -203,6 +224,8 @@ def main():
             pixel_recHit.DgDetId[iDg] = input_tree.DgDetId[iDg]
             pixel_recHit.DgAdc[iDg] = input_tree.DgAdc[iDg]
             pixel_recHit.DgCharge[iDg] =input_tree.DgCharge[iDg]
+
+
        
         # BPIX layer 1 only 
         if pixel_recHit.subid==1 and pixel_recHit.layer==1:     
@@ -214,6 +237,18 @@ def main():
                 if options.verbose: print iDg, pixel_recHit.DgDetId[iDg], pixel_recHit.DgRow[iDg], pixel_recHit.DgCol[iDg]
                 print >> output_ascii_file, evt.evtnum,  pixel_recHit.DgDetId[iDg], pixel_recHit.DgRow[iDg], pixel_recHit.DgCol[iDg], int(pixel_recHit.DgCharge[iDg]*1000) # ADC (in ke) converted to int
             print >> output_ascii_file, "--> next rechit"
+
+
+            # global position of the rechit
+            # NB sin(theta) = tv3.Perp()/tv3.Mag()
+            tv3 = ROOT.TVector3(pixel_recHit.gx, pixel_recHit.gy, pixel_recHit.gz)
+            if pixel_recHit.process == 2 and NotModuleEdge(pixel_recHit.x*CmToUm, pixel_recHit.y*CmToUm):
+                hsEta.FillFirstLoop(math.fabs(tv3.Eta()), pixel_recHit)
+
+                # ionization corrected for incident angle (only primaries at central eta) 
+                if math.fabs(tv3.Eta())<0.20 and pixel_recHit.process == 2:
+                    h1_qcorr.Fill(pixel_recHit.q*ToKe*math.fabs(pixel_recHit.tz))
+
 
             # straw man event display
             if evt_dumped < max_evt_dumped:
@@ -277,8 +312,94 @@ def main():
                 theSimHitPoints[-1].SetPoint(recHitCount,pixel_recHit.hrow,pixel_recHit.hcol) 
                 recHitCount +=1
 
+    h1_qcorr_norm = getTH1cdf(h1_qcorr)
+    Qave = h1_qcorr.GetMean()
+    print "Average Corrected Q cluster [ke]: ", Qave
+
+####################
+# 2nd loop on events
+####################
+    for this_entry in xrange(all_entries):        
+
+        if this_entry % 10000 == 0:
+            print "Processing rechit: ", this_entry
+
+        input_tree.GetEntry(index_uniqueId[this_entry])
+
+# To access the events in a tree no variables need to be assigned to the different branches. Instead the leaves are available as properties of the tree, returning the values of the present event. 
+        pixel_recHit.pdgid      = input_tree.pdgid
+        pixel_recHit.process    = input_tree.process
+        pixel_recHit.q          = input_tree.q
+        pixel_recHit.x          = input_tree.x
+        pixel_recHit.y          = input_tree.y
+        pixel_recHit.xx         = input_tree.xx
+        pixel_recHit.xy         = input_tree.xy
+        pixel_recHit.yy         = input_tree.yy
+        pixel_recHit.row        = input_tree.row
+        pixel_recHit.col        = input_tree.col
+        pixel_recHit.hrow       = input_tree.hrow
+        pixel_recHit.hcol       = input_tree.hcol
+        pixel_recHit.gx         = input_tree.gx
+        pixel_recHit.gy         = input_tree.gy
+        pixel_recHit.gz         = input_tree.gz
+        pixel_recHit.subid      = input_tree.subid
+        pixel_recHit.module     = input_tree.module
+        pixel_recHit.layer      = input_tree.layer
+        pixel_recHit.ladder     = input_tree.ladder
+        pixel_recHit.disk       = input_tree.disk
+        pixel_recHit.blade      = input_tree.blade
+        pixel_recHit.panel      = input_tree.panel
+        pixel_recHit.side       = input_tree.side
+        pixel_recHit.nsimhit    = input_tree.nsimhit
+        pixel_recHit.spreadx    = input_tree.spreadx
+        pixel_recHit.spready    = input_tree.spready
+        pixel_recHit.pitchx     = input_tree.pitchx
+        pixel_recHit.pitchy     = input_tree.pitchy
+        pixel_recHit.nColsInDet = input_tree.nColsInDet
+        pixel_recHit.nRowsInDet = input_tree.nRowsInDet
+        pixel_recHit.hx         = input_tree.hx
+        pixel_recHit.hy         = input_tree.hy
+        pixel_recHit.tx         = input_tree.tx
+        pixel_recHit.ty         = input_tree.ty
+        pixel_recHit.tz         = input_tree.tz
+        pixel_recHit.theta      = input_tree.theta
+        pixel_recHit.phi        = input_tree.phi
+        pixel_recHit.DgN        = input_tree.DgN
+
+        pixel_recHit.DgRow = array.array('i',[0]*100)
+        pixel_recHit.DgCol = array.array('i',[0]*100)
+        pixel_recHit.DgDetId = array.array('i',[0]*100)
+        pixel_recHit.DgAdc = array.array('f',[0]*100)
+        pixel_recHit.DgCharge = array.array('f',[0]*100)
+
+        for iDg in range(pixel_recHit.DgN):
+            pixel_recHit.DgRow[iDg] = input_tree.DgRow[iDg]
+            pixel_recHit.DgCol[iDg] = input_tree.DgCol[iDg]
+            pixel_recHit.DgDetId[iDg] = input_tree.DgDetId[iDg]
+            pixel_recHit.DgAdc[iDg] = input_tree.DgAdc[iDg]
+            pixel_recHit.DgCharge[iDg] =input_tree.DgCharge[iDg]
+
+
+        # BPIX layer 1 only 
+        if pixel_recHit.subid==1 and pixel_recHit.layer==1:     
+
+            # residuals for clusters Q<1.5*Q_ave from primaries only (same selection as Morris Swartz)
+            # exclude clusters at the edges of the module (charge drifting outside the silicon)       
+ 
+            # global position of the rechit
+            # NB sin(theta) = tv3.Perp()/tv3.Mag()
+            tv3 = ROOT.TVector3(pixel_recHit.gx, pixel_recHit.gy, pixel_recHit.gz)
+            hsEta.FillSecondLoop(math.fabs(tv3.Eta()), pixel_recHit)
+
+    hsEta.DrawAllCanvas(Qave, options.thickness*ELossSilicon*ToKe)
+
 # close ascii output
     output_ascii_file.close()
+
+# close root output
+    output_root_file.Write()
+    output_root_file.Close()
+
 
 ##################################
 if __name__ == "__main__":        
