@@ -108,7 +108,7 @@ def main():
 
     # output ascii file
     output_ascii_file = file("test.txt", 'w')
-    print >> output_ascii_file, "EventId ModuleId PixelRow PixelColumn pixelADC"
+    print >> output_ascii_file, "EventId ModuleId PixelRow PixelColumn pixelADC RecHitRow RecHitCol SimHitRow SimHitCol Primary"
 
     # input root file
     try:
@@ -230,15 +230,6 @@ def main():
         # BPIX layer 1 only 
         if pixel_recHit.subid==1 and pixel_recHit.layer==1:     
 
-            if options.verbose: 
-                print  "spread X, spread Y, DgN", pixel_recHit.spreadx, pixel_recHit.spready, pixel_recHit.DgN
-                print  "nColsInDet: ",pixel_recHit.nColsInDet," nRowInDet: ",pixel_recHit.nRowsInDet," pitchx: ",pixel_recHit.pitchx," pitchy: ",pixel_recHit.pitchy         
-            for iDg in range(pixel_recHit.DgN):
-                if options.verbose: print iDg, pixel_recHit.DgDetId[iDg], pixel_recHit.DgRow[iDg], pixel_recHit.DgCol[iDg]
-                print >> output_ascii_file, evt.evtnum,  pixel_recHit.DgDetId[iDg], pixel_recHit.DgRow[iDg], pixel_recHit.DgCol[iDg], int(pixel_recHit.DgCharge[iDg]*1000) # ADC (in ke) converted to int
-            print >> output_ascii_file, "--> next rechit"
-
-
             # global position of the rechit
             # NB sin(theta) = tv3.Perp()/tv3.Mag()
             tv3 = ROOT.TVector3(pixel_recHit.gx, pixel_recHit.gy, pixel_recHit.gz)
@@ -246,9 +237,19 @@ def main():
                 hsEta.FillFirstLoop(math.fabs(tv3.Eta()), pixel_recHit)
 
                 # ionization corrected for incident angle (only primaries at central eta) 
-                if math.fabs(tv3.Eta())<0.20 and pixel_recHit.process == 2:
+                if math.fabs(tv3.Eta())<0.20:
                     h1_qcorr.Fill(pixel_recHit.q*ToKe*math.fabs(pixel_recHit.tz))
 
+            if options.verbose: 
+                print  "spread X, spread Y, DgN", pixel_recHit.spreadx, pixel_recHit.spready, pixel_recHit.DgN
+                print  "nColsInDet: ",pixel_recHit.nColsInDet," nRowInDet: ",pixel_recHit.nRowsInDet," pitchx: ",pixel_recHit.pitchx," pitchy: ",pixel_recHit.pitchy         
+            for iDg in range(pixel_recHit.DgN):
+                if options.verbose: print iDg, pixel_recHit.DgDetId[iDg], pixel_recHit.DgRow[iDg], pixel_recHit.DgCol[iDg]
+                print >> output_ascii_file, evt.evtnum,  pixel_recHit.DgDetId[iDg], pixel_recHit.DgRow[iDg], pixel_recHit.DgCol[iDg], int(pixel_recHit.DgCharge[iDg]*1000), \
+                         pixel_recHit.row, pixel_recHit.col, pixel_recHit.hrow, pixel_recHit.hcol, (pixel_recHit.process == 2)  
+
+
+            print >> output_ascii_file, "--> next rechit"
 
             # straw man event display
             if evt_dumped < max_evt_dumped:
@@ -386,10 +387,12 @@ def main():
             # residuals for clusters Q<1.5*Q_ave from primaries only (same selection as Morris Swartz)
             # exclude clusters at the edges of the module (charge drifting outside the silicon)       
  
+            if pixel_recHit.process == 2 and NotModuleEdge(pixel_recHit.x*CmToUm, pixel_recHit.y*CmToUm):
             # global position of the rechit
             # NB sin(theta) = tv3.Perp()/tv3.Mag()
-            tv3 = ROOT.TVector3(pixel_recHit.gx, pixel_recHit.gy, pixel_recHit.gz)
-            hsEta.FillSecondLoop(math.fabs(tv3.Eta()), pixel_recHit)
+                tv3 = ROOT.TVector3(pixel_recHit.gx, pixel_recHit.gy, pixel_recHit.gz)
+                hsEta.FillSecondLoop(math.fabs(tv3.Eta()), pixel_recHit)
+
 
     hsEta.DrawAllCanvas(Qave, options.thickness*ELossSilicon*ToKe)
 
