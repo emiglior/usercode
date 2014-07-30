@@ -157,18 +157,18 @@ def main():
             # extraLabel should be set to describe the input dataset
             extraLabel = aSample.the_label
             if h1.GetLineStyle() == ROOT.kSolid:
-                legRMS.AddEntry(h1,'Q/Q_{av}<1'+extraLabel,'LP') 
+                legRMS.AddEntry(h1,'Q/Q_{av}<1; '+extraLabel,'LP') 
             elif h1.GetLineStyle() == ROOT.kDashed:
-                legRMS.AddEntry(h1,'1<Q/Q_{av}<1.5'+extraLabel,'LP')
+                legRMS.AddEntry(h1,'1<Q/Q_{av}<1.5; '+extraLabel,'LP')
             elif h1.GetLineStyle() == ROOT.kDotted:
-                legRMS.AddEntry(h1,'Q/Q_{av}<1.5'+extraLabel,'LP')
+                legRMS.AddEntry(h1,'Q/Q_{av}<1.5; '+extraLabel,'LP')
                 
     legRMS.Draw('same')
 
     if SampleList[0].is_rphi:
-        cRMSVsEta.SaveAs('foo_rphi.pdf')
+        cRMSVsEta.SaveAs('RMS_rphi.pdf')
     else:
-        cRMSVsEta.SaveAs('foo_rz.pdf')
+        cRMSVsEta.SaveAs('RMS_rz.pdf')
 
  
 #             tpv1 = ROOT.TPaveText(0.65,0.92,0.95,0.99,"NDC")
