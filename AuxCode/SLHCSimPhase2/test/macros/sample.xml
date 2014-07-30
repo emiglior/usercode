@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE SampleList SYSTEM "sample.dtd">
+
+<SampleList>
+<!--This is the sample list -->
+  <Sample ID="1" Coordinate="rz">
+	  <InputRootFile>DigitizerTest/Thr2000e/PixElePerADC_135_PixMaxADC_255/rmsVsEta_rz.root</InputRootFile>
+	  <Label>e/ADC=135 max ADC 255</Label>
+	  <Color>ROOT.kRed</Color>
+	  <MarkerStyle>ROOT.kOpenTriangleUp</MarkerStyle>
+  </Sample>
+  <Sample ID="2" Coordinate="rz">
+	  <InputRootFile>DigitizerTest/Thr2000e/PixElePerADC_540_PixMaxADC_63/rmsVsEta_rz.root</InputRootFile>
+	  <Label>e/ADC=540 max ADC 63</Label>
+	  <Color>ROOT.kBlue</Color>
+	  <MarkerStyle>ROOT.kOpenTriangleDown</MarkerStyle>
+  </Sample>
+  <Sample ID="3" Coordinate="rz">
+	  <InputRootFile>DigitizerTest/Thr2000e/PixElePerADC_2160_PixMaxADC_15/rmsVsEta_rz.root</InputRootFile>
+	  <Label>e/ADC=2160 max ADC 15</Label>
+	  <Color>ROOT.kBlack</Color>
+	  <MarkerStyle>ROOT.kOpenTriangleDown</MarkerStyle>
+  </Sample>
+
+</SampleList>

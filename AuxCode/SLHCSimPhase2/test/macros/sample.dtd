@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<!ELEMENT SampleList (Sample)+ >
+<!ELEMENT Sample (InputRootFile,Label,Color,MarkerStyle) >
+
+<!ATTLIST Sample ID CDATA #REQUIRED >
+<!ATTLIST Sample Coordinate (rphi|rz) "rphi" >
+
+<!ELEMENT InputRootFile (#PCDATA) >
+<!ELEMENT Label         (#PCDATA) >
+<!ELEMENT Color         (#PCDATA) >
+<!ELEMENT MarkerStyle   (#PCDATA) >

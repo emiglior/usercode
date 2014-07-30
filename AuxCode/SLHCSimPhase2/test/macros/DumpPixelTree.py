@@ -78,6 +78,9 @@ def declare_struct():
 def main():
 ###############
     parser = OptionParser()
+    parser.add_option("-f", "--file",  
+                      action="store", type="string", dest="input_root_filename",
+                      help="input root file")
     parser.add_option("-l", "--lego", 
                       action="store_true", dest="lego", default=False,
                       help="lego plots (default is no lego plots)")
@@ -100,7 +103,8 @@ def main():
     output_root_filename = "DumpPixelTreeHistos.root"
     output_root_file = ROOT.TFile(output_root_filename,"RECREATE")
 
-    h1_qcorr  = ROOT.TH1F("h1_qcorr","h1_qcorr primaries;Q_{corr} [ke]; recHits",200,0.,400.)
+    h1_qcorr    = ROOT.TH1F("h1_qcorr"   ,"h1_qcorr primaries;Q_{corr} [ke]; recHits",200,0.,400.)
+    h1_digiADC  = ROOT.TH1F("h1_digiADC" ,"h1_digiADC;[ke];"                         ,350,0.,35.)
     ### histo containers
     hsEta = HistoStruct("Eta" ,25, 0.,2.5, "|#eta|", output_root_file, False)
 
@@ -112,7 +116,7 @@ def main():
 
     # input root file
     try:
-        input_root_file = ROOT.TFile.Open("stdgrechitfullph1g_ntuple_test.root")
+        input_root_file = ROOT.TFile.Open(options.input_root_filename)
     except:
         print "No input file specified"
         sys.exit()
@@ -152,7 +156,7 @@ def main():
     all_entries = input_tree.GetEntries()
     print "all_entries ", all_entries
 
-    nR = 160  # rows or local_X
+    nR = 2*80 # rows or local_X
     nC = 8*52 # cols or local_Y
     h2_localXY_digi = []
     theRecHitPoints = []
@@ -161,13 +165,15 @@ def main():
     evt_dumped = 0
     recHitCount = 1
     uniqueId_old = -1
+    
+    zoomFactor = 2
 
 ####################
 # 1st loop on events
 ####################
     for this_entry in xrange(all_entries):        
 
-        if this_entry % 10000 == 0:
+        if this_entry % 50000 == 0:
             print "Processing rechit: ", this_entry
 
         input_tree.GetEntry(index_uniqueId[this_entry])
@@ -245,9 +251,10 @@ def main():
                 print  "nColsInDet: ",pixel_recHit.nColsInDet," nRowInDet: ",pixel_recHit.nRowsInDet," pitchx: ",pixel_recHit.pitchx," pitchy: ",pixel_recHit.pitchy         
             for iDg in range(pixel_recHit.DgN):
                 if options.verbose: print iDg, pixel_recHit.DgDetId[iDg], pixel_recHit.DgRow[iDg], pixel_recHit.DgCol[iDg]
-                print >> output_ascii_file, evt.evtnum,  pixel_recHit.DgDetId[iDg], pixel_recHit.DgRow[iDg], pixel_recHit.DgCol[iDg], int(pixel_recHit.DgCharge[iDg]*1000), \
+                print >> output_ascii_file, evt.evtnum,  pixel_recHit.DgDetId[iDg], pixel_recHit.DgRow[iDg], pixel_recHit.DgCol[iDg], int(pixel_recHit.DgCharge[iDg]/ToKe), \
                          pixel_recHit.row, pixel_recHit.col, pixel_recHit.hrow, pixel_recHit.hcol, (pixel_recHit.process == 2)  
-
+                # monitor cluster charge in each pixel
+                h1_digiADC.Fill(pixel_recHit.DgCharge[iDg])
 
             print >> output_ascii_file, "--> next rechit"
 
@@ -301,7 +308,7 @@ def main():
                     if options.lego:
                         c_localXY_digi.append(ROOT.TCanvas("c_localXY_digi"+str(evt_dumped),"c_localXY_digi"))
                     else:
-                        c_localXY_digi.append(ROOT.TCanvas("c_localXY_digi"+str(evt_dumped),"c_localXY_digi",nR*2,nC*2)) # size of the canvas with the same aspect ratio of the module
+                        c_localXY_digi.append(ROOT.TCanvas("c_localXY_digi"+str(evt_dumped),"c_localXY_digi",nR*zoomFactor,nC*zoomFactor)) # size of the canvas with the same aspect ratio of the module
 
                     uniqueId_old = evt.evtnum*1000000000+pixel_recHit.DgDetId[0]
                     evt_dumped += 1
@@ -322,7 +329,7 @@ def main():
 ####################
     for this_entry in xrange(all_entries):        
 
-        if this_entry % 10000 == 0:
+        if this_entry % 50000 == 0:
             print "Processing rechit: ", this_entry
 
         input_tree.GetEntry(index_uniqueId[this_entry])
