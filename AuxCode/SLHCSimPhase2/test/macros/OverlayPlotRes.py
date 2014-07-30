@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from xml.dom.minidom import parse
+from optparse import OptionParser
 import ROOT
 
 ################################################
@@ -69,7 +70,13 @@ def main():
     ROOT.gStyle.SetOptTitle(0)
     ROOT.gStyle.SetMarkerSize(1.2)
     
-    dom = parse("sample.xml")
+    parser = OptionParser()
+    parser.add_option("-f", "--file",  
+                      action="store", type="string", dest="input_xml_file",
+                      help="input XML file")
+    (options, args) = parser.parse_args()
+
+    dom = parse(options.input_xml_file)
 
     def handleSampleList(samples, sample_list):
         for sample in samples:
