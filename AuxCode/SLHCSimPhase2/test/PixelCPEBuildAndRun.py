@@ -39,8 +39,8 @@ def set_global_var():
     LAUNCH_BASE = os.environ.get('CMSSW_BASE')
     PBS_DIR = os.path.join(os.getcwd(),"PBS")
     LOG_DIR = os.path.join(os.getcwd(),"log")
-    SCRAM_ARCH = "slc5_amd64_gcc472"
-    CMSSW_VER="CMSSW_6_2_0_SLHC11"
+    SCRAM_ARCH = "slc6_amd64_gcc472"
+    CMSSW_VER="CMSSW_6_2_0_SLHC17_patch1"
     
 ###### method to create recursively directories on EOS  #############
     
@@ -90,7 +90,7 @@ class Job:
         self.islocal=islocal
         self.launch_dir=LAUNCH_BASE
 
-        self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/out62XSLHC11","PixelROCRows_" +pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness,"BPixThr_"+bpixthr)
+        self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/out62XSLHC17patch1","PixelROCRows_" +pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness,"BPixThr_"+bpixthr)
 
         if(self.job_id==1):
             mkdir_eos(self.out_dir)
@@ -195,24 +195,18 @@ class Job:
         fout.write("echo \"After git cms-addpkg\" \n")
         fout.write("pwd \n")
         fout.write("ls -l . \n")
-        fout.write("git pull https://github.com/mmusich/cmssw ChangePitch_on620_SLHC11 \n")
+        fout.write("git pull https://github.com/mmusich/cmssw ChangePitch_on620_SLHC17_patch1 \n")
         fout.write("### 1 ended  \n")
         
-        fout.write("git clone -b 620_slhc11_phase1 git://github.com/emiglior/usercode.git \n")
+        fout.write("git clone -b 620_slhc17_patch1_phase1 git://github.com/emiglior/usercode.git \n")
         fout.write("mv usercode/AuxCode .\n")
 
-        ###### please make sure to delete this line afterwards!!!!!! #######
-        #fout.write("mv usercode/RecoLocalTracker .\n")        
-        # for the moment we ignore this (to be used to change the matching window)
-        #fout.write("mv usercode/SimTracker .\n")
         fout.write("rm -fr usercode \n")
         fout.write("git cms-checkdeps -a \n")
 
         fout.write("# compile \n")
         if(self.islocal):
             fout.write("cp "+self.launch_dir+"/src/AuxCode/SLHCSimPhase2/plugins/NewStdHitNtuplizer.cc ./AuxCode/SLHCSimPhase2/plugins/NewStdHitNtuplizer.cc \n")
-            ###### please make sure to delete this line afterwards!!!!!! #######
-            #fout.write("cp "+self.launch_dir+"/src/RecoLocalTracker/SiPixelRecHits/src/PixelCPEBase.cc ./RecoLocalTracker/SiPixelRecHits/src/PixelCPEBase.cc \n")
             
         fout.write("scram b -j 8 \n") 
         fout.write("eval `scram r -sh` \n")

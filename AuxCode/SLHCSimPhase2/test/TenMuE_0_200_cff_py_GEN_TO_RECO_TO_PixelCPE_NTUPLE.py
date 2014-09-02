@@ -1,6 +1,6 @@
 # Based on Auto generated configuration file
 # using: 
-# Revision: 1.14 
+# Revision: 1.20 
 # Source: /local/reps/CMSSW/CMSSW/Configuration/Applications/python/ConfigBuilder.py,v 
 # with command line options: Configuration/GenProduction/python/FourteenTeV/TenMuE_0_200_cfi.py --no_exec -s GEN,SIM,DIGI:pdigi_valid,L1,DIGI2RAW,RAW2DIGI,L1Reco,RECO --conditions auto:upgrade2017 --magField 38T_PostLS1 --eventcontent FEVTDEBUG --beamspot NoSmear --geometry Extended2017 --relval 10000,100 --datatier GEN-SIM-RECO -n 500  --customise SLHCUpgradeSimulations/Configuration/combinedCustoms.cust_2017 --fileout file:TenMuE_0_200_cff_py_GEN_SIM_RECO.root
 
@@ -79,7 +79,7 @@ process.maxEvents = cms.untracked.PSet(
 )
 
 myFirstEvent = (options.maxEvents * options.MySeed)+1
-print "firs Event:",myFirstEvent
+print "first Event:",myFirstEvent
 
 # Input source
 process.source = cms.Source("EmptySource",
@@ -92,8 +92,8 @@ process.options = cms.untracked.PSet(
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.14 $'),
-    annotation = cms.untracked.string('Configuration/GenProduction/python/FourteenTeV/TenMuE_0_200_cfi.py nevts:10'),
+    version = cms.untracked.string('$Revision: 1.20 $'),
+    annotation = cms.untracked.string('Configuration/GenProduction/python/FourteenTeV/TenMuE_0_200_cfi.py nevts:500'),
     name = cms.untracked.string('Applications')
 )
 
@@ -119,7 +119,7 @@ process.FEVTDEBUGoutput = cms.OutputModule("PoolOutputModule",
 
 # Additional output definition
 
-# Other statement
+# Other statements
 process.mix.digitizers = cms.PSet(process.theDigitizersValid)
 process.genstepfilter.triggerConditions=cms.vstring("generation_step")
 from Configuration.AlCa.GlobalTag import GlobalTag
@@ -233,6 +233,13 @@ if options.AgeingScenario!="NoAgeing":
         process = customise_aging_1000(process)
     elif options.AgeingScenario=="3000":    
         process = customise_aging_3000(process)
+    # Uncomment next block to add a new ageing scenario
+    # elif options.AgeingScenario=="AgeingOne":          
+    #         process = customise_aging_zero(process)
+    #         process.mix.digitizers.pixel.thePixelPseudoRadDamage_BPix1 = cms.double(1.0)
+    #         process.mix.digitizers.pixel.thePixelPseudoRadDamage_BPix2 = cms.double(1.0)
+    #         process.mix.digitizers.pixel.thePixelPseudoRadDamage_BPix3 = cms.double(1.0)
+    #         process.mix.digitizers.pixel.thePixelPseudoRadDamage_BPix4 = cms.double(1.0)
     else:
         print "Unrecognized Ageing scenario, using default (=NoAgeing)"
 
