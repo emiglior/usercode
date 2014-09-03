@@ -27,7 +27,7 @@ def ConfigSectionMap(config, section):
 def set_global_var():
     global USER
     global HOME
-    global PBS_DIR
+    global LSF_DIR
     global LOG_DIR
     
     global SCRAM_ARCH
@@ -37,7 +37,7 @@ def set_global_var():
     USER = os.environ.get('USER')
     HOME = os.environ.get('HOME')
     LAUNCH_BASE = os.environ.get('CMSSW_BASE')
-    PBS_DIR = os.path.join(os.getcwd(),"PBS")
+    LSF_DIR = os.path.join(os.getcwd(),"LSF")
     LOG_DIR = os.path.join(os.getcwd(),"log")
     SCRAM_ARCH = "slc6_amd64_gcc472"
     CMSSW_VER="CMSSW_6_2_0_SLHC17_patch1"
@@ -63,7 +63,7 @@ def mkdir_eos(out_path):
 
 ###########################################################################
 class Job:
-    """Main class to create and submit PBS jobs"""
+    """Main class to create and submit LSF jobs"""
 ###########################################################################
 
     def __init__(self, job_id, maxevents, ageing, pixelrocrows, pixelroccols, bpixthr, bpixl0thickness, myseed, islocal, queue,task_name):
@@ -102,24 +102,24 @@ class Job:
         self.cfg_dir=None
         self.outputPSetName=None
 
-        # PBS variables        
-        self.output_PBS_name=None
+        # LSF variables        
+        self.output_LSF_name=None
 
 ###############################
-    def createThePBSFile(self):
+    def createTheLSFFile(self):
 ###############################
 
-        # directory to store the PBS to be submitted
-        self.pbs_dir = PBS_DIR
-        if not os.path.exists(self.pbs_dir):
-            os.makedirs(self.pbs_dir)
+        # directory to store the LSF to be submitted
+        self.lsf_dir = LSF_DIR
+        if not os.path.exists(self.lsf_dir):
+            os.makedirs(self.lsf_dir)
 
-        jobs_dir = os.path.join(PBS_DIR,"jobs")
+        jobs_dir = os.path.join(LSF_DIR,"jobs")
         if not os.path.exists(jobs_dir):
             os.makedirs(jobs_dir)
 
-        self.output_PBS_name=self.job_basename+".pbs"
-        fout=open(os.path.join(self.pbs_dir,'jobs',self.output_PBS_name),'w')
+        self.output_LSF_name=self.job_basename+".lsf"
+        fout=open(os.path.join(self.lsf_dir,'jobs',self.output_LSF_name),'w')
     
         if not os.path.exists(LOG_DIR):
             os.makedirs(LOG_DIR)
@@ -150,7 +150,7 @@ class Job:
         fout.write("cd \n")
         fout.write("fi \n")
                    
-        fout.write("export SCRAM_ARCH=slc5_amd64_gcc472 \n")
+        fout.write("export SCRAM_ARCH=slc6_amd64_gcc472 \n")
         fout.write("# Setup variables   \n")
                                       
         fout.write("cmssw_ver="+CMSSW_VER+" \n")
@@ -166,7 +166,7 @@ class Job:
             fout.write("echo \"I AM NOT IN LOCAL MODE\" \n")
             fout.write("export PKG_DIR=${CMSSW_BASE}/src/AuxCode/SLHCSimPhase2/test \n")
 
-        # implement in the PBS script E.Brownson's recipe for changing the size of the pixels / part #1
+        # implement in the LSF script E.Brownson's recipe for changing the size of the pixels / part #1
         fout.write("# Eric Brownson's recipe to change the size of the pixels \n")
         fout.write("### 1: checkout CMSSW patches \n")
 
@@ -181,9 +181,6 @@ class Job:
         fout.write("ssh-add "+os.path.join(HOME,".ssh","id_rsa")+"\n")
         fout.write("# checkpoint: test that ssh connection is ok \n")
         fout.write("ssh -T git@github.com \n")
-        fout.write("git clone https://github.com/fwyzard/cms-git-tools \n")
-        fout.write("PATH=$PWD/cms-git-tools:$PATH \n")
-        fout.write("git cms-init -y --ssh \n")
         fout.write("cd $HOME/${cmssw_ver}/src  \n")
         fout.write("fi \n")
         fout.write("git cms-addpkg CalibTracker/SiPixelESProducers \n")
@@ -211,7 +208,7 @@ class Job:
         fout.write("scram b -j 8 \n") 
         fout.write("eval `scram r -sh` \n")
 
-        # implement in the PBS script E.Brownson's recipe for changing the size of the pixels / part #2
+        # implement in the LSF script E.Brownson's recipe for changing the size of the pixels / part #2
         fout.write("# Eric Brownson's recipe to change the size of the pixels \n")
         fout.write("### 2: modify the topology \n")
         fout.write("# trackerStructureTopology_template_L0.xml   -> L0    BPIX is changed \n")
@@ -234,13 +231,11 @@ class Job:
         
         fout.write("# Run CMSSW for GEN-NTUPLE steps \n")
         fout.write("cd "+os.path.join("AuxCode","SLHCSimPhase2","test")+"\n")
-        fout.write("cp ${PKG_DIR}/TenMuE_0_200_cff_py_GEN_TO_RECO_TO_PixelCPE_NTUPLE_templateReco.py ./dump_test.py \n")
-        fout.write("echo \"print process.dumpPython()\" >> dump_test.py \n")
-        fout.write("python dump_test.py > dumped.py \n")
+        fout.write("edmConfigDump ${PKG_DIR}/TenMuE_0_200_cff_py_GEN_TO_RECO_TO_PixelCPE_NTUPLE.py >> pset_dumped.py \n")
         fout.write("cmsRun ${PKG_DIR}/TenMuE_0_200_cff_py_GEN_TO_RECO_TO_PixelCPE_NTUPLE.py maxEvents=${maxevents} BPixThr=${bpixthr} AgeingScenario=${ageing} MySeed=${myseed} \n")
         fout.write("ls -lh . \n")
         fout.write("cmsStage -f ${PKG_DIR}/TenMuE_0_200_cff_py_GEN_TO_RECO_TO_PixelCPE_NTUPLE.py ${OUT_DIR}/TenMuE_0_200_cff_py_GEN_TO_RECO_TO_PixelCPE_NTUPLE.py \n")
-        fout.write("cmsStage -f dumped.py ${OUT_DIR}/dumped.py \n")
+        fout.write("cmsStage -f pset_dumped.py ${OUT_DIR}/pset_dumped.py \n")
         #fout.write("cd Brownson \n")
         #fout.write("make \n")
         #fout.write("ln -fs ../stdgrechitfullph1g_ntuple.root . \n")
@@ -258,8 +253,8 @@ class Job:
 ############################################
     def submit(self): 
 ############################################
-        os.system("chmod u+x " + os.path.join(self.pbs_dir,'jobs',self.output_PBS_name))
-        os.system("bsub < "+os.path.join(self.pbs_dir,'jobs',self.output_PBS_name)) #LXBATCH
+        os.system("chmod u+x " + os.path.join(self.lsf_dir,'jobs',self.output_LSF_name))
+        os.system("bsub < "+os.path.join(self.lsf_dir,'jobs',self.output_LSF_name)) #LXBATCH
 
 #################
 def main():            
@@ -373,7 +368,7 @@ def main():
     for theseed in range(1,int(mJobsInTask)+1):
 
         ajob=Job(theseed, nEvents, mAgeing, mRocRows, mRocCols, mBPixThr, mL0Thick, theseed, opts.localmode,mQueue,opts.jobname)
-        ajob.createThePBSFile()        
+        ajob.createTheLSFFile()        
 
         out_dir = ajob.out_dir # save for later usage
     
@@ -399,7 +394,7 @@ def main():
     # prepare the script for the harvesting step
     #############################################
 
-    harvestingname = PBS_DIR + "/jobs/PixelCPENtuple_"+opts.jobname+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+mBPixThr+"_L0Thick"+mL0Thick+".csh"
+    harvestingname = LSF_DIR + "/jobs/PixelCPENtuple_"+opts.jobname+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+mBPixThr+"_L0Thick"+mL0Thick+".csh"
     fout=open(harvestingname,"w")
 
     fout.write("#!/bin/tcsh \n")

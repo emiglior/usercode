@@ -28,7 +28,7 @@ def ConfigSectionMap(config, section):
 def set_global_var(sample):
     global USER
     global HOME
-    global PBS_DIR
+    global LSF_DIR
     global LOG_DIR
     
     global SCRAM_ARCH
@@ -38,7 +38,7 @@ def set_global_var(sample):
 
     USER = os.environ.get('USER')
     HOME = os.environ.get('HOME')
-    PBS_DIR = os.path.join(os.getcwd(),"PBS") 
+    LSF_DIR = os.path.join(os.getcwd(),"LSF") 
     LOG_DIR = os.path.join(os.getcwd(),"log")
     SCRAM_ARCH = "slc6_amd64_gcc472"
     CMSSW_VER="CMSSW_6_2_0_SLHC17_patch1"
@@ -74,7 +74,7 @@ def mkdir_eos(out_path):
 
 ###########################################################################
 class Job:
-    """Main class to create and submit PBS jobs"""
+    """Main class to create and submit LSF jobs"""
 ###########################################################################
 
     def __init__(self, job_id,firstevent,maxevents, sample, pu, ageing, pixelrocrows, pixelroccols, bpixthr, bpixl0thickness, pixelcpe):
@@ -114,24 +114,24 @@ class Job:
         self.cfg_dir=None
         self.outputPSetName=None
 
-# PBS variables        
-        self.output_PBS_name=None
+# LSF variables        
+        self.output_LSF_name=None
 
 ###############################
-    def createThePBSFile(self):
+    def createTheLSFFile(self):
 ###############################
 
-# directory to store the PBS to be submitted
-        self.pbs_dir = PBS_DIR
-        if not os.path.exists(self.pbs_dir):
-            os.makedirs(self.pbs_dir)
+# directory to store the LSF to be submitted
+        self.lsf_dir = LSF_DIR
+        if not os.path.exists(self.lsf_dir):
+            os.makedirs(self.lsf_dir)
 
-        jobs_dir = os.path.join(PBS_DIR,"jobs")
+        jobs_dir = os.path.join(LSF_DIR,"jobs")
         if not os.path.exists(jobs_dir):
             os.makedirs(jobs_dir)
 
-        self.output_PBS_name=self.job_basename+".pbs"
-        fout=open(os.path.join(self.pbs_dir,'jobs',self.output_PBS_name),'w')
+        self.output_LSF_name=self.job_basename+".lsf"
+        fout=open(os.path.join(self.lsf_dir,'jobs',self.output_LSF_name),'w')
     
         if not os.path.exists(LOG_DIR):
             os.makedirs(LOG_DIR)
@@ -163,7 +163,7 @@ class Job:
         fout.write("fi \n")
 
         
-        fout.write("export SCRAM_ARCH=slc5_amd64_gcc472 \n")
+        fout.write("export SCRAM_ARCH=slc6_amd64_gcc472 \n")
         fout.write("# Setup variables   \n")
 
         fout.write("cmssw_ver="+CMSSW_VER+" \n")
@@ -172,7 +172,7 @@ class Job:
         fout.write("cd ${cmssw_ver}/src \n")
         fout.write("eval `scram r -sh` \n")
 
-        # implement in the PBS script E.Brownson's recipe for changing the size of the pixels / part #1
+        # implement in the LSF script E.Brownson's recipe for changing the size of the pixels / part #1
         fout.write("# Eric Brownson's recipe to change the size of the pixels \n")
         fout.write("### 1: checkout CMSSW patches \n")
 
@@ -213,7 +213,7 @@ class Job:
         fout.write("scram b -j 8 \n")
         fout.write("eval `scram r -sh` \n")
         
-        # implement in the PBS script E.Brownson's recipe for changing the size of the pixels / part #2
+        # implement in the LSF script E.Brownson's recipe for changing the size of the pixels / part #2
         fout.write("# Eric Brownson's recipe to change the size of the pixels \n")
         fout.write("### 2: modify the topology \n")
         fout.write("# trackerStructureTopology_template_L0.xml   -> L0    BPIX is changed \n")
@@ -249,8 +249,8 @@ class Job:
 ############################################
     def submit(self):
 ############################################
-        os.system("chmod u+x " + os.path.join(self.pbs_dir,'jobs',self.output_PBS_name))
-        os.system("bsub < "+os.path.join(self.pbs_dir,'jobs',self.output_PBS_name)) #LXBATCH
+        os.system("chmod u+x " + os.path.join(self.lsf_dir,'jobs',self.output_LSF_name))
+        os.system("bsub < "+os.path.join(self.lsf_dir,'jobs',self.output_LSF_name)) #LXBATCH
 
 #################
 def main():            
@@ -383,7 +383,7 @@ def main():
         print "- Job n. ",jobIndex," will process events from: ",firstEvent," to ",firstEvent+eventsPerJob-1
         
         ajob=Job(opts.jobname, firstEvent, eventsPerJob, mSample, mPileUp, mAgeing, mRocRows, mRocCols, mBPixThr, mL0Thick, mPixelCPE)
-        ajob.createThePBSFile()
+        ajob.createTheLSFFile()
 
         dqmoutput=ajob.job_basename+".root"
         dqmoutput.replace("digitodqm_","digitodqm_inDQM")        
@@ -415,7 +415,7 @@ def main():
     # prepare the script for the harvesting step
     #############################################
     
-    harvestingname = PBS_DIR + "/jobs/"+opts.jobname+"_sample_"+mSample+"_pu"+mPileUp+"_age"+mAgeing+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+mBPixThr+"_L0Thick"+mL0Thick+".sh"
+    harvestingname = LSF_DIR + "/jobs/"+opts.jobname+"_sample_"+mSample+"_pu"+mPileUp+"_age"+mAgeing+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+mBPixThr+"_L0Thick"+mL0Thick+".sh"
     fout=open(harvestingname,"w")
     fout.write("#!/bin/sh \n")
 #     fout.write("source /swcms_slc5/CMSSW/cmsset_default.sh \n") # LXBATCH
