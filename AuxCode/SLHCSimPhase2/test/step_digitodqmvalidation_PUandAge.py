@@ -10,7 +10,7 @@ import FWCore.ParameterSet.VarParsing as VarParsing
 options = VarParsing.VarParsing()
 
 options.register('InputFileName',
-                 "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc11/Extended2017/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_12k_evts.root", #default value
+                 "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc17_patch1/Extended2017/L0Thick_0.285/step1_MinBias_TuneZ2star_14TeV_pythia6_50kEvts.root", #default value
                  VarParsing.VarParsing.multiplicity.singleton, # singleton or list
                  VarParsing.VarParsing.varType.string,         # string, int, or float
                  "name of the input file ")
@@ -78,7 +78,7 @@ if options.PUScenario!="NoPU":
     # Used to be
     #process.load('SimGeneral.MixingModule.mix_E8TeV_AVE_16_BX_25ns_cfi')
     process.load('SimGeneral.MixingModule.mix_POISSON_average_cfi')
-    process.mix.input.fileNames = cms.untracked.vstring(['root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc11/Extended2017/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_12k_evts.root'])
+    process.mix.input.fileNames = cms.untracked.vstring(['root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc17_patch1/Extended2017/L0Thick_0.285/step1_MinBias_TuneZ2star_14TeV_pythia6_50kEvts.root'])
     process.mix.bunchspace = cms.int32(25)
     process.mix.minBunch = cms.int32(-12)
     process.mix.maxBunch = cms.int32(3)
@@ -264,20 +264,13 @@ if options.AgeingScenario!="NoAgeing":
         process = customise_aging_1000(process)
     elif options.AgeingScenario=="3000":    
         process = customise_aging_3000(process)
-    elif options.AgeingScenario=="300newTune":	    
-        process = customise_aging_zero(process)
-        # 300/fb (aka Morris 150/fb): 0.40 0.30 0.0 0.0 
-        process.mix.digitizers.pixel.thePixelPseudoRadDamage_BPix1 = cms.double(0.40)
-        process.mix.digitizers.pixel.thePixelPseudoRadDamage_BPix2 = cms.double(0.30)
-        process.mix.digitizers.pixel.thePixelPseudoRadDamage_BPix3 = cms.double(0.0)
-        process.mix.digitizers.pixel.thePixelPseudoRadDamage_BPix4 = cms.double(0.0)
-    elif options.AgeingScenario=="500newTune":	    
-        process = customise_aging_zero(process)
-        # 500/fb (aka Morris 300/fb): 0.70 0.35 0.30 0.0 
-        process.mix.digitizers.pixel.thePixelPseudoRadDamage_BPix1 = cms.double(0.70)
-        process.mix.digitizers.pixel.thePixelPseudoRadDamage_BPix2 = cms.double(0.35)
-        process.mix.digitizers.pixel.thePixelPseudoRadDamage_BPix3 = cms.double(0.30)
-        process.mix.digitizers.pixel.thePixelPseudoRadDamage_BPix4 = cms.double(0.0)
+    # Uncomment next block to add a new ageing scenario
+    # elif options.AgeingScenario=="AgeingOne":          
+    #         process = customise_aging_zero(process)
+    #         process.mix.digitizers.pixel.thePixelPseudoRadDamage_BPix1 = cms.double(1.0)
+    #         process.mix.digitizers.pixel.thePixelPseudoRadDamage_BPix2 = cms.double(1.0)
+    #         process.mix.digitizers.pixel.thePixelPseudoRadDamage_BPix3 = cms.double(1.0)
+    #         process.mix.digitizers.pixel.thePixelPseudoRadDamage_BPix4 = cms.double(1.0)
     else:
         print "Unrecognized Ageing scenario, using default (=NoAgeing)"
 

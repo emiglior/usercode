@@ -182,7 +182,6 @@ process.make_ntuple = cms.Path(process.ReadLocalMeasurement)
 ######################################################################################
 
 # Schedule definition
-# Schedule definition
 process.schedule = cms.Schedule(process.generation_step,process.genfiltersummary_step,process.simulation_step,process.digitisation_step,process.L1simulation_step,process.digi2raw_step,process.raw2digi_step,process.L1Reco_step,process.reconstruction_step,process.make_ntuple,process.endjob_step,process.FEVTDEBUGoutput_step)
 # filter all path with the production filter sequence
 for path in process.paths:
@@ -247,11 +246,6 @@ if options.AgeingScenario!="NoAgeing":
 from AuxCode.SLHCSimPhase2.PixelCPE_tables_cff import *
 process.PixelCPEGenericESProducer.PixelCPEList = PixelCPE_dict['pixelCPE_100x150_upgrade']
 
-## Superseeded by process = setCrossingFrameOn(process)
-# customize to make crossingFrames available (needed for turning on g4SimHits in the ROUList)
-#from AuxCode.SLHCSimPhase2.crossingFrameCustoms import *
-#customiseCrossingFrame(process)
-
 # Uncomment next two lines to change pixel DIGI threshold
 process.mix.digitizers.pixel.ThresholdInElectrons_BPix = cms.double(options.BPixThr)
 process.mix.digitizers.pixel.ThresholdInElectrons_BPix_L1 = cms.double(options.BPixThr)
@@ -264,7 +258,5 @@ process.mix.digitizers.pixel.AddNoise = cms.bool(False)
 process.mix.digitizers.pixel.AddThresholdSmearing = cms.bool(False)
 process.mix.digitizers.pixel.AddNoisyPixels = cms.bool(False)
 
-
-#print process.dumpPython()
 # End of customisation functions
 

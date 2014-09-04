@@ -44,14 +44,14 @@ def set_global_var(sample):
     CMSSW_VER="CMSSW_6_2_0_SLHC17_patch1"
     
     if (sample=="TTbar") | (sample=="ttbar") | (sample=="TTBar") :
-        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc17_patch1/Extended2017/TTbar/step1_TTtoAnything_8k_evts.root"
+        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc17_patch1/Extended2017/L0Thick_0.285/step1_TTtoAnything_12kEvts.root"
     elif (sample=="MinBias") | (sample=="minbias") :
-        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc17_patch1/Extended2017/MinBias/step1_MinBias_TuneZ2star_14TeV_pythia6_10k_evts.root"
+        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc17_patch1/Extended2017/L0Thick_0.285/step1_MinBias_TuneZ2star_14TeV_pythia6_50kEvts.root"
     elif (sample=="IsoMuons") | (sample=="muons") | (sample=="Muons") :
-        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc17_patch1/Extended2017/ParticleGun/step1_FourMuPartGun_100kEvents.root"
+        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc17_patch1/Extended2017/L0Thick_0.285/step1_FourMuPartGun_100kEvts.root" 
     else :
         print "unrecongnize input sample, using default (=TTbar)"
-        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc17_patch1/Extended2017/TTbar/step1_TTtoAnything_8k_evts.root"
+        GENSIM_FILE = "root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc17_patch1/Extended2017/L0Thick_0.285/step1_TTtoAnything_12kEvts.root"
 
 ###### method to create recursively directories on EOS  #############
     
@@ -101,11 +101,7 @@ class Job:
 
         # parameters for RECO
         self.pixelcpe=pixelcpe
-
-# >>>>>>>>> BA
-#                self.out_dir=os.path.join("/lustre/cms/store/user",USER,"SLHCSimPhase2/out","sample_"+sample,"pu_"+pu,"PixelROCRows_"+pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness, "BPixThr_"+bpixthr)
         self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/out62XSLHC17patch1_mtvTests","sample_"+sample,"pu_"+pu,"PixelROCRows_"+pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness, "BPixThr_"+bpixthr)
-# <<<<<<<<< LXBATCH
 #        os.system("mkdir -p "+self.out_dir)
         mkdir_eos(self.out_dir)        
 
@@ -344,9 +340,7 @@ def main():
     print "- Ageing Scenario            : ",mAgeing
     
     # Setup CMSSW variables
-#     os.system("source /swcms_slc5/CMSSW/cmsset_default.sh") # LXBATCH
-#     os.chdir(os.path.join(HOME,"SLHCSimPhase2",CMSSW_VER,"src"))
-    os.chdir(os.path.join(HOME,"MyWorkSpace/public","TMP/TEST_MTV",CMSSW_VER,"src"))
+    os.chdir(os.path.join(HOME,"MyWorkSpace/public","SLHCSimPhase2",CMSSW_VER,"src"))
     os.system("eval `scram r -sh`")
 
     # Split and submit
@@ -418,10 +412,8 @@ def main():
     harvestingname = LSF_DIR + "/jobs/"+opts.jobname+"_sample_"+mSample+"_pu"+mPileUp+"_age"+mAgeing+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+mBPixThr+"_L0Thick"+mL0Thick+".sh"
     fout=open(harvestingname,"w")
     fout.write("#!/bin/sh \n")
-#     fout.write("source /swcms_slc5/CMSSW/cmsset_default.sh \n") # LXBATCH
     fout.write("cmssw_ver="+CMSSW_VER+" \n")
-#    fout.write("cd "+os.path.join(HOME,"SLHCSimPhase2","${cmssw_ver}","src")+"\n") # LXBTACH
-    fout.write("cd "+os.path.join(HOME,"MyWorkSpace/public","TMP/TEST_MTV","${cmssw_ver}","src")+"\n")
+    fout.write("cd "+os.path.join(HOME,"MyWorkSpace/public","SLHCSimPhase2","${cmssw_ver}","src")+"\n")
     fout.write("eval `scram r -sh`\n")
     fout.write("DQMFileList="+DQMFileList[:-1]+" \n")
     fout.write("cmsDriver.py step4  --customise SLHCUpgradeSimulations/Configuration/combinedCustoms.cust_2017,AuxCode/SLHCSimPhase2/TkOnlyValidationCustoms.customise_tkonly --conditions auto:upgrade2017 --geometry Extended2017 --magField 38T_PostLS1 --mc -s HARVESTING:validationHarvesting+dqmHarvesting --filein $DQMFileList --fileout file:step4_sample_"+mSample+"_pu"+mPileUp+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+mBPixThr+"_L0Thick"+mL0Thick+".root > step4_sample_"+mSample+"_pu"+mPileUp+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+mBPixThr+"_L0Thick"+mL0Thick+".log \n")

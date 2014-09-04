@@ -72,7 +72,7 @@ process.options = cms.untracked.PSet(
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.14 $'),
+    version = cms.untracked.string('$Revision: 1.20 $'),
     annotation = cms.untracked.string('FourMuPt_1_200_cfi nevts:10'),
     name = cms.untracked.string('Applications')
 )

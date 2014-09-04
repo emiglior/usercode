@@ -20,7 +20,7 @@ cmsRun MinBias_TuneZ2star_14TeV_pythia6_cff_py_GEN_SIM_forPhaseI_TEMPL.py myseed
 
 echo "Content of working directory is: " `ls -lrt`
 
-cmsStage -f step1_MinBias_TuneZ2star_14TeV_pythia6_${nEvts}_evts_seed_${mySeed}.root /store/caf/user/emiglior/SLHCSimPhase2/620_slhc11/Extended2017
+cmsStage -f step1_MinBias_TuneZ2star_14TeV_pythia6_${nEvts}_evts_seed_${mySeed}.root /store/caf/user/emiglior/SLHCSimPhase2/620_slhc17_patch1/Extended2017/L0Thick_0.285
 cp ${JobName}.out ${CMSSW_DIR}/outfiles
 
 echo  "Job ended at " `date`
