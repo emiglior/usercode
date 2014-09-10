@@ -21,6 +21,18 @@ options.register('BPixThr',
                  VarParsing.VarParsing.varType.int,
                  "BPix Clusterizer Threshold (2000 e- is default)")
 
+options.register('PixElePerADC',
+                 135,
+                 VarParsing.VarParsing.multiplicity.singleton,
+                 VarParsing.VarParsing.varType.float,
+                 "Pixel Digitizer e per ADC (135 e- is default)")
+
+options.register('PixMaxADC',
+                 255,
+                 VarParsing.VarParsing.multiplicity.singleton,
+                 VarParsing.VarParsing.varType.int,
+                 "Pixel Digitizer ADC max (255 / 8 bit is default)")
+
 options.register('AgeingScenario',
                  "NoAgeing", # default value
                  VarParsing.VarParsing.multiplicity.singleton, # singleton or list
@@ -258,7 +270,30 @@ process.mix.digitizers.pixel.AddNoise = cms.bool(False)
 process.mix.digitizers.pixel.AddThresholdSmearing = cms.bool(False)
 process.mix.digitizers.pixel.AddNoisyPixels = cms.bool(False)
 
+# from   SimTracker/SiPixelDigitizer/plugins/SiPixelDigitizerAlgorithm.cc
+# // ADC calibration 1adc count(135e.
+# // Corresponds to 2adc/kev, 270[e/kev]/135[e/adc](2[adc/kev]
+# // Be carefull, this parameter is also used in SiPixelDet.cc to
+# // calculate the noise in adc counts from noise in electrons.
+# // Both defaults should be the same.
+# theElectronPerADC(conf.getParameter<double>("ElectronPerAdc")),
+# // ADC saturation value, 255(8bit adc.
+# //theAdcFullScale(conf.getUntrackedParameter<int>("AdcFullScale",255)),
+# theAdcFullScale(conf.getParameter<int>("AdcFullScale")),
+# theAdcFullScaleStack(conf.exists("AdcFullScaleStack")?conf.getParameter<int>("AdcFullScaleStack"):255), <- this is for phase2 PS modules 
+
+# CAREFUL: gain is encoded in
+#http://cmslxr.fnal.gov/lxr/source/RecoLocalTracker/SiPixelClusterizer/src/PixelThresholdClusterizer.cc?v=%EF%BB%BFCMSSW_6_2_0_SLHC15#260
+process.mix.digitizers.pixel.AdcFullScale = cms.int32(options.PixMaxADC)        # default 255 (8 bit)
+process.mix.digitizers.pixel.ElectronPerAdc = cms.double(options.PixElePerADC)  # default 135 (255*135=34425)
+
+# Customise clusterizer
+#process.siPixelClusters.ChannelThreshold = cms.int32(1000)
+#process.siPixelClusters.SeedThreshold = cms.int32(1000)
+process.siPixelClusters.ClusterThreshold = cms.double(4000.0)
+process.siPixelClusters.ElectronPerAdc = cms.double(options.PixElePerADC)
 
 #print process.dumpPython()
 # End of customisation functions
+
 

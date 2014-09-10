@@ -193,6 +193,8 @@ class Job:
         fout.write("git cms-addpkg Geometry/TrackerCommonData \n")
         fout.write("git cms-addpkg SLHCUpgradeSimulations/Geometry \n")
         fout.write("git cms-addpkg SLHCUpgradeSimulations/Configuration \n")
+        fout.write("git cms-addpkg RecoLocalTracker/SiPixelRecHits \n")
+        fout.write("git cms-addpkg RecoLocalTracker/SiPixelClusterizer \n")
         fout.write("echo \"After git cms-addpkg\" \n")
         fout.write("pwd \n")
         fout.write("ls -l . \n")
@@ -201,7 +203,6 @@ class Job:
         
         fout.write("git clone -b 620_slhc17_patch1_phase1 git://github.com/emiglior/usercode.git \n")
         fout.write("mv usercode/AuxCode .\n")
-        fout.write("mv usercode/RecoLocalTracker .\n")
         fout.write("rm -fr usercode \n")
         fout.write("git cms-checkdeps -a \n")
 
@@ -340,7 +341,7 @@ def main():
     print "- Ageing Scenario            : ",mAgeing
     
     # Setup CMSSW variables
-    os.chdir(os.path.join(HOME,"MyWorkSpace/public","SLHCSimPhase2",CMSSW_VER,"src"))
+    os.chdir(os.path.join(HOME,"musich/public","SLHCSimPhase1",CMSSW_VER,"src"))
     os.system("eval `scram r -sh`")
 
     # Split and submit
@@ -348,8 +349,8 @@ def main():
     (out,err) = child_edm.communicate()
 
     ### uncomment next to debug the script on 50 events
-    #nEvents=10000 # this line should be commented for running on the full GEN-SIM sample
-    nEvents = int((out.split("\n")[1]).split()[3])
+    nEvents=100 # this line should be commented for running on the full GEN-SIM sample
+    #nEvents = int((out.split("\n")[1]).split()[3])
     
     eventsPerJob = nEvents/int(opts.numberofjobs)
 

@@ -66,7 +66,7 @@ class Job:
     """Main class to create and submit LSF jobs"""
 ###########################################################################
 
-    def __init__(self, job_id, maxevents, ageing, pixelrocrows, pixelroccols, bpixthr, bpixl0thickness, myseed, islocal, queue,task_name):
+    def __init__(self, job_id, maxevents, ageing, pixelrocrows, pixelroccols, pixeleperadc, pixmaxadc, bpixthr, bpixl0thickness, myseed, islocal, queue,task_name):
 ############################################################################################################################
         
         # store the job-ID (since it is created in a for loop)
@@ -82,6 +82,10 @@ class Job:
         # parameters of the pixel digitizer 
         self.pixelrocrows=pixelrocrows
         self.pixelroccols=pixelroccols
+
+        self.pixeleperadc=pixeleperadc 
+        self.pixmaxadc=pixmaxadc
+        
         self.bpixl0thickness=bpixl0thickness
 
         self.bpixthr=bpixthr
@@ -90,14 +94,14 @@ class Job:
         self.islocal=islocal
         self.launch_dir=LAUNCH_BASE
 
-        self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/out62XSLHC17patch1","PixelROCRows_" +pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness,"BPixThr_"+bpixthr)
+        self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/out62XSLHC17patch1nn/PixelClusterizerStudy/TestThresholds","PixelROCRows_" +pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness,"BPixThr_"+bpixthr,"eToADC_"+pixeleperadc,"MaxADC_"+pixmaxadc)
 
         if(self.job_id==1):
             mkdir_eos(self.out_dir)
 
-        self.job_basename  = self.task_name + '_pixelCPE_age' + self.ageing + '_PixelROCRows' + self.pixelrocrows + "_PixelROCCols" + self.pixelroccols +"_L0Thick" + self.bpixl0thickness + "_BPixThr" + self.bpixthr +"_seed" +str(self.myseed)
+        self.job_basename  = self.task_name + '_pixelCPE_age' + self.ageing + '_PixelROCRows' + self.pixelrocrows + "_PixelROCCols" + self.pixelroccols +"_L0Thick" + self.bpixl0thickness + "_BPixThr" + self.bpixthr + 'eToADC_' + self.pixeleperadc + 'MaxADC_' + self.pixmaxadc +"_seed" +str(self.myseed)
 
-        self.task_basename = self.task_name + '_pixelCPE_age' + self.ageing + '_PixelROCRows' + self.pixelrocrows + "_PixelROCCols" + self.pixelroccols +"_L0Thick" + self.bpixl0thickness + "_BPixThr" + self.bpixthr
+        self.task_basename = self.task_name + '_pixelCPE_age' + self.ageing + '_PixelROCRows' + self.pixelrocrows + "_PixelROCCols" + self.pixelroccols +"_L0Thick" + self.bpixl0thickness + "_BPixThr" + self.bpixthr + 'eToADC_' + self.pixeleperadc + 'MaxADC_' + self.pixmaxadc
         
         self.cfg_dir=None
         self.outputPSetName=None
@@ -141,6 +145,9 @@ class Job:
         fout.write("pixelrocrows="+self.pixelrocrows+" \n")
         fout.write("ageing="+self.ageing+" \n")
         fout.write("bpixthr="+self.bpixthr+" \n")
+        fout.write("pixeleperadc="+self.pixeleperadc+" \n") 
+        fout.write("pixmaxadc="+self.pixmaxadc+" \n")
+        
         fout.write("myseed="+str(self.myseed)+" \n")
         
         fout.write("if [ ! \"$LSB_JOBID\" = \"\" ]; then \n")
@@ -171,7 +178,7 @@ class Job:
         fout.write("### 1: checkout CMSSW patches \n")
 
         fout.write("if [ ! \"$LSB_JOBID\" = \"\" ]; then \n")
-
+        fout.write("echo \"!!!!!!!!!!!!!!RUNNING IN BATCH!!!!!!!!!!!!! \" \n")
         fout.write("cd \n")
         fout.write("# git config needed to avoid \n")
         fout.write("# error: SSL certificate problem: unable to get local issuer certificate while accessing \n")
@@ -199,13 +206,20 @@ class Job:
 
         fout.write("git clone -b 620_slhc17_patch1_phase1 git://github.com/emiglior/usercode.git \n")
         fout.write("mv usercode/AuxCode .\n")
+
+        ###### please make sure to delete this line afterwards!!!!!! #######
+        #fout.write("mv usercode/RecoLocalTracker .\n")        
+        # for the moment we ignore this (to be used to change the matching window)
+        #fout.write("mv usercode/SimTracker .\n")
         fout.write("rm -fr usercode \n")
         fout.write("git cms-checkdeps -a \n")
 
         fout.write("# compile \n")
         if(self.islocal):
-            fout.write("cp "+self.launch_dir+"/src/AuxCode/SLHCSimPhase2/plugins/NewStdHitNtuplizer.cc ./AuxCode/SLHCSimPhase2/plugins/NewStdHitNtuplizer.cc \n")
-            
+            fout.write("cp "+self.launch_dir+"/src/AuxCode/SLHCSimPhase2/plugins/StdPixelHitNtuplizer.cc ./AuxCode/SLHCSimPhase2/plugins/StdPixelHitNtuplizer.cc \n")
+            fout.write("cp  -vr "+self.launch_dir+"/src/RecoLocalTracker/SiPixelClusterizer ./RecoLocalTracker \n")
+            fout.write("ls -l ./RecoLocalTracker/SiPixelClusterizer/src \n")           
+ 
         fout.write("scram b -j 8 \n") 
         fout.write("eval `scram r -sh` \n")
 
@@ -232,10 +246,10 @@ class Job:
         
         fout.write("# Run CMSSW for GEN-NTUPLE steps \n")
         fout.write("cd "+os.path.join("AuxCode","SLHCSimPhase2","test")+"\n")
-        fout.write("edmConfigDump ${PKG_DIR}/TenMuE_0_200_cff_py_GEN_TO_RECO_TO_PixelCPE_NTUPLE.py >> pset_dumped.py \n")
-        fout.write("cmsRun ${PKG_DIR}/TenMuE_0_200_cff_py_GEN_TO_RECO_TO_PixelCPE_NTUPLE.py maxEvents=${maxevents} BPixThr=${bpixthr} AgeingScenario=${ageing} MySeed=${myseed} \n")
+        fout.write("edmConfigDump ${PKG_DIR}//TenMuE_0_200_cff_py_GEN_TO_RECO_TO_PixelClusterizerStudy_NTUPLE.py >> pset_dumped.py \n")
+        fout.write("cmsRun ${PKG_DIR}/TenMuE_0_200_cff_py_GEN_TO_RECO_TO_PixelClusterizerStudy_NTUPLE.py maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} BPixThr=${bpixthr} AgeingScenario=${ageing} MySeed=${myseed} \n")
         fout.write("ls -lh . \n")
-        fout.write("cmsStage -f ${PKG_DIR}/TenMuE_0_200_cff_py_GEN_TO_RECO_TO_PixelCPE_NTUPLE.py ${OUT_DIR}/TenMuE_0_200_cff_py_GEN_TO_RECO_TO_PixelCPE_NTUPLE.py \n")
+        fout.write("cmsStage -f ${PKG_DIR}/TenMuE_0_200_cff_py_GEN_TO_RECO_TO__PixelClusterizerStudy_NTUPLE.py ${OUT_DIR}/TenMuE_0_200_cff_py_GEN_TO_RECO_TO__PixelClusterizerStudy_NTUPLE.py \n")
         fout.write("cmsStage -f pset_dumped.py ${OUT_DIR}/pset_dumped.py \n")
         #fout.write("cd Brownson \n")
         #fout.write("make \n")
@@ -283,6 +297,11 @@ def main():
     group.add_option('-c','--ROCCols',help='ROC Cols (default 52 -> dv=150 um)', dest='roccols', action='store', default='52')
     group.add_option('-t','--Layer0Thick',help='BPix L0 sensor thickness', dest='layer0thick', action='store', default='0.285')
     group.add_option('-T','--BPixThr',help='BPix Threshold', dest='bpixthr', action='store', default='2000')
+
+    group.add_option('--PixElePerADC',help='Pix ele per ADC', dest='pixeleperadc', action='store', default='135')
+    group.add_option('--PixMaxADC'   ,help='Pix max ADC',     dest='pixmaxadc',  action='store', default='255')
+        
+    
     group.add_option('-a','--ageing',help='set ageing',dest='ageing',action='store',default='NoAgeing')
     parser.add_option_group(group)
 
@@ -292,7 +311,9 @@ def main():
     # initialize needed input 
     mRocRows = None
     mRocCols = None
-    mBPixthr = None
+    mBPixThr = None
+    mPixElePerADC = None
+    mPixMaxADC    = None
     mL0Thick = None
     mAgeing  = None
     mQueue   = None
@@ -311,7 +332,9 @@ def main():
         mRocRows    = ConfigSectionMap(config,"PixelConfiguration")['rocrows']   
         mRocCols    = ConfigSectionMap(config,"PixelConfiguration")['roccols']   
         mL0Thick    = ConfigSectionMap(config,"PixelConfiguration")['layer0thickness']
-        mBPixThr    = ConfigSectionMap(config,"PixelConfiguration")['bpixthr']   
+        mBPixThr    = ConfigSectionMap(config,"PixelConfiguration")['bpixthr']
+        mPixElePerADC = ConfigSectionMap(config,"PixelConfiguration")['pixeleperadc']
+        mPixMaxADC    = ConfigSectionMap(config,"PixelConfiguration")['pixmaxadc']   
         mAgeing     = ConfigSectionMap(config,"PixelConfiguration")['ageing']    
         mNOfEvents  = ConfigSectionMap(config,"JobConfiguration")['numberofevents']
         mJobsInTask = ConfigSectionMap(config,"JobConfiguration")['numberofjobs']
@@ -327,6 +350,8 @@ def main():
         mRocCols    = opts.roccols
         mL0Thick    = opts.layer0thick
         mBPixThr    = opts.bpixthr
+        mPixElePerADC = opts.pixeleperadc
+        mPixMaxADC    = opts.pixmaxadc  
         mAgeing     = opts.ageing
         mNOfEvents  = opts.numberofevents
         mJobsInTask = opts.jobsInTask
@@ -355,6 +380,8 @@ def main():
     print "- Events/Job                 : ",mNOfEvents
     print "- Queue                      : ",mQueue
     print "- Jobname                    : ",opts.jobname
+    print "- e per ADC                  : ",mPixElePerADC
+    print "- Max ADC                    : ",mPixMaxADC
     print "- ROCRows                    : ",mRocRows
     print "- ROCCols                    : ",mRocCols
     print "- L0 Thickness               : ",mL0Thick
@@ -368,7 +395,7 @@ def main():
 
     for theseed in range(1,int(mJobsInTask)+1):
 
-        ajob=Job(theseed, nEvents, mAgeing, mRocRows, mRocCols, mBPixThr, mL0Thick, theseed, opts.localmode,mQueue,opts.jobname)
+        ajob=Job(theseed, nEvents, mAgeing, mRocRows, mRocCols, mPixElePerADC, mPixMaxADC, mBPixThr, mL0Thick, theseed, opts.localmode,mQueue,opts.jobname)
         ajob.createTheLSFFile()        
 
         out_dir = ajob.out_dir # save for later usage
