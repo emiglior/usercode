@@ -33,11 +33,13 @@ def set_global_var(sample):
     
     global SCRAM_ARCH
     global CMSSW_VER
+    global LAUNCH_BASE
 
     global GENSIM_FILE
 
     USER = os.environ.get('USER')
     HOME = os.environ.get('HOME')
+    LAUNCH_BASE = os.environ.get('CMSSW_BASE')
     LSF_DIR = os.path.join(os.getcwd(),"LSF") 
     LOG_DIR = os.path.join(os.getcwd(),"log")
     SCRAM_ARCH = "slc6_amd64_gcc472"
@@ -341,7 +343,7 @@ def main():
     print "- Ageing Scenario            : ",mAgeing
     
     # Setup CMSSW variables
-    os.chdir(os.path.join(HOME,"musich/public","SLHCSimPhase1",CMSSW_VER,"src"))
+    os.chdir(LAUNCH_BASE)
     os.system("eval `scram r -sh`")
 
     # Split and submit
@@ -349,8 +351,8 @@ def main():
     (out,err) = child_edm.communicate()
 
     ### uncomment next to debug the script on 50 events
-    nEvents=100 # this line should be commented for running on the full GEN-SIM sample
-    #nEvents = int((out.split("\n")[1]).split()[3])
+    #nEvents=100 # this line should be commented for running on the full GEN-SIM sample
+    nEvents = int((out.split("\n")[1]).split()[3])
     
     eventsPerJob = nEvents/int(opts.numberofjobs)
 
