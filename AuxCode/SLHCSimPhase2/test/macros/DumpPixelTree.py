@@ -9,7 +9,7 @@ from optparse import OptionParser
 
 # my modules
 from histo_struct import HistoStruct 
-from rechit_helpers import NotModuleEdge, CmToUm, ToKe, ELossSilicon
+from rechit_helpers import NotModuleEdge, NotDeltaCandidate, CmToUm, ToKe, ELossSilicon
 from root_helpers import getTH1cdf
 
 #################
@@ -90,6 +90,12 @@ def main():
     parser.add_option("-t", "--thickness",
                       action="store", type="float", dest="thickness", default=285,
                       help="thickness in um")
+    parser.add_option("-r", "--rocrows",
+                      action="store", type="int", dest="ROCrows", default=80,
+                      help="ROC rows")
+    parser.add_option("-c", "--roccols",
+                      action="store", type="int", dest="ROCcols", default=52,
+                      help="ROC cols")
     parser.add_option("-v", "--verbose",
                       action="store_true", dest="verbose", default=False,
                       help="verbose output")
@@ -103,12 +109,39 @@ def main():
     output_root_filename = "DumpPixelTreeHistos.root"
     output_root_file = ROOT.TFile(output_root_filename,"RECREATE")
 
-    h1_qcorr    = ROOT.TH1F("h1_qcorr"   ,"h1_qcorr primaries;Q_{corr} [ke]; recHits",200,0.,400.)
-    h1_digiADC  = ROOT.TH1F("h1_digiADC" ,"h1_digiADC;[ke];"                         ,350,0.,35.)
+    h1_qraw     = ROOT.TH1F("h1_qraw"    ,"h1_qraw primaries;Q_{raw} [ke]; recHits"  ,200,0.,40.)
+    h1_qcorr    = ROOT.TH1F("h1_qcorr"   ,"h1_qcorr primaries;Q_{corr} [ke]; recHits",200,0.,40.)
+    h1_digiADC  = ROOT.TH1F("h1_digiADC" ,"h1_digiADC;[ke];"                         ,175,0.,35.)
+
+    h1_DeltaSpreadX  = ROOT.TH1F("h1_DeltaSpreadX"  ,"h1_DeltaSpreadX; pitch_{X}" ,70,-7.,7.)
+    h1_DeltaSpreadY  = ROOT.TH1F("h1_DeltaSpreadY"  ,"h1_DeltaSpreadY; pitch_{Y}" ,200,-20.,20.)
+    h2_DeltaSpreadXY = ROOT.TH2F("h2_DeltaSpreadXY" ,"h2_DeltaSpreadXY;pitch_{X}; pitch_{Y}",70,-7.,7.,200,-20.,20.)
+    
+# (x,y) and (x,eta) profile of the charge
+    nbin_x = 54
+    nbin_y = 4*nbin_x
+    rho_layer = 3.0 # average radius of BPIX L1
+    x_edge = 0.81  # dimension along local x (cm)        
+    y_edge = 26.0  # dimension along local y (cm) z+ ONLY
+    tv3 = ROOT.TVector3(x_edge, rho_layer, y_edge)
+    eta_max = tv3.Eta() 
+
+    h2_xy_occupancy = ROOT.TH2F("h2_xy_occupancy", 'occupancy per cell; x [cm]; y [cm];',\
+                                             nbin_x, -x_edge,  +x_edge,\
+                                             nbin_y,    0.00,  +y_edge)
+
+    p2D_xy_charge_one_cell = ROOT.TProfile2D("charge_one_cell_xy", 'charge per cell [ke]; x [cm]; y [cm];',\
+                                             nbin_x, -x_edge,  +x_edge,\
+                                             nbin_y,    0.00,  +y_edge)
+    p2D_xeta_charge_one_cell = ROOT.TProfile2D("charge_one_cell_xeta", 'charge per cell [ke]; x [cm]; #eta;',\
+                                               nbin_x, -x_edge,  +x_edge,\
+                                               nbin_y/4,  0.00,  +eta_max)
+
+
     ### histo containers
     hsEta = HistoStruct("Eta" ,25, 0.,2.5, "|#eta|", output_root_file, False)
-
-
+#    hsCotgBeta  = HistoStruct("CotgBeta" ,20,0.,4., "|cotg(#beta)|", output_root_file, False)
+#    hsXLocal = HistoStruct("XLocal" ,20, -0.8,0.8, "x_{local}", output_root_file, False)
 
     # output ascii file
     output_ascii_file = file("test.txt", 'w')
@@ -143,6 +176,7 @@ def main():
         for i in range(nentries):
             print i, index_uniqueId[i]
 
+    print "SORTED !!!"
 
     # import the ROOT defined struct(s) in pyROOT
     declare_struct()
@@ -156,8 +190,8 @@ def main():
     all_entries = input_tree.GetEntries()
     print "all_entries ", all_entries
 
-    nR = 2*80 # rows or local_X
-    nC = 8*52 # cols or local_Y
+    nR = 2*options.ROCrows # rows or local_X
+    nC = 8*options.ROCcols # cols or local_Y
     h2_localXY_digi = []
     theRecHitPoints = []
     theSimHitPoints = []
@@ -241,7 +275,21 @@ def main():
             tv3 = ROOT.TVector3(pixel_recHit.gx, pixel_recHit.gy, pixel_recHit.gz)
             if pixel_recHit.process == 2 and NotModuleEdge(pixel_recHit.x*CmToUm, pixel_recHit.y*CmToUm):
                 hsEta.FillFirstLoop(math.fabs(tv3.Eta()), pixel_recHit)
+#                hsCotgBeta.FillFirstLoop(math.fabs(pixel_recHit.ty/math.sqrt(1.-pixel_recHit.ty*pixel_recHit.ty)), pixel_recHit)
+#                hsXLocal.FillFirstLoop(pixel_recHit.x, pixel_recHit)
 
+                # monitor very large clusters
+                the_alpha = math.acos(pixel_recHit.tx) 
+                the_beta = math.acos(pixel_recHit.ty) 
+                # expected widths of the cluster in units of the pitch
+                wX = options.thickness*(math.tan(0.5*math.pi-the_alpha)+0.106*3.8)/(pixel_recHit.pitchx*CmToUm)
+                wY = options.thickness*(math.tan(0.5*math.pi-the_beta))/(pixel_recHit.pitchy*CmToUm)                
+                h1_DeltaSpreadX.Fill(wX-pixel_recHit.spreadx) 
+                h1_DeltaSpreadY.Fill(wY-pixel_recHit.spready)
+                h2_DeltaSpreadXY.Fill(wX-pixel_recHit.spreadx,wY-pixel_recHit.spready)
+
+                # ionization
+                h1_qraw.Fill(pixel_recHit.q*ToKe)
                 # ionization corrected for incident angle (only primaries at central eta) 
                 if math.fabs(tv3.Eta())<0.20:
                     h1_qcorr.Fill(pixel_recHit.q*ToKe*math.fabs(pixel_recHit.tz))
@@ -249,12 +297,31 @@ def main():
             if options.verbose: 
                 print  "spread X, spread Y, DgN", pixel_recHit.spreadx, pixel_recHit.spready, pixel_recHit.DgN
                 print  "nColsInDet: ",pixel_recHit.nColsInDet," nRowInDet: ",pixel_recHit.nRowsInDet," pitchx: ",pixel_recHit.pitchx," pitchy: ",pixel_recHit.pitchy         
+
+            # loop on all the digi's of a cluster
             for iDg in range(pixel_recHit.DgN):
                 if options.verbose: print iDg, pixel_recHit.DgDetId[iDg], pixel_recHit.DgRow[iDg], pixel_recHit.DgCol[iDg]
+
+                # dump current rechit into ascii file
                 print >> output_ascii_file, evt.evtnum,  pixel_recHit.DgDetId[iDg], pixel_recHit.DgRow[iDg], pixel_recHit.DgCol[iDg], int(pixel_recHit.DgCharge[iDg]/ToKe), \
                          pixel_recHit.row, pixel_recHit.col, pixel_recHit.hrow, pixel_recHit.hcol, (pixel_recHit.process == 2)  
+
                 # monitor cluster charge in each pixel
                 h1_digiADC.Fill(pixel_recHit.DgCharge[iDg])
+
+
+# (x,y) and (x,eta) profile of the charge
+            if pixel_recHit.process == 2:
+                for iDg in range(pixel_recHit.DgN):
+                    y_cm = ((pixel_recHit.module-4)*pixel_recHit.nColsInDet-pixel_recHit.DgCol[iDg])*pixel_recHit.pitchy
+                    x_cm = (pixel_recHit.DgRow[iDg]-0.5*pixel_recHit.nRowsInDet)*pixel_recHit.pitchx
+                    tv3_digi = ROOT.TVector3(x_cm, rho_layer, y_cm)
+                    the_eta_digi = tv3_digi.Eta() 
+
+                    h2_xy_occupancy.Fill(x_cm, y_cm)
+                    p2D_xy_charge_one_cell.Fill(x_cm, y_cm, pixel_recHit.DgCharge[iDg])
+                    p2D_xeta_charge_one_cell.Fill(x_cm, the_eta_digi, pixel_recHit.DgCharge[iDg])
+
 
             print >> output_ascii_file, "--> next rechit"
 
@@ -393,15 +460,20 @@ def main():
 
             # residuals for clusters Q<1.5*Q_ave from primaries only (same selection as Morris Swartz)
             # exclude clusters at the edges of the module (charge drifting outside the silicon)       
- 
-            if pixel_recHit.process == 2 and NotModuleEdge(pixel_recHit.x*CmToUm, pixel_recHit.y*CmToUm):
+            if pixel_recHit.process == 2 and NotModuleEdge(pixel_recHit.x*CmToUm, pixel_recHit.y*CmToUm): #\
+#               and  NotDeltaCandidate(pixel_recHit.tx, pixel_recHit.pitchx, pixel_recHit.spreadx,\
+#                                      pixel_recHit.ty, pixel_recHit.pitchy, pixel_recHit.spready,\
+#                                      options.thickness):
             # global position of the rechit
             # NB sin(theta) = tv3.Perp()/tv3.Mag()
                 tv3 = ROOT.TVector3(pixel_recHit.gx, pixel_recHit.gy, pixel_recHit.gz)
                 hsEta.FillSecondLoop(math.fabs(tv3.Eta()), pixel_recHit)
-
+#                hsCotgBeta.FillSecondLoop(math.fabs(pixel_recHit.ty/math.sqrt(1.-pixel_recHit.ty*pixel_recHit.ty)), pixel_recHit)
+#                hsXLocal.FillSecondLoop(pixel_recHit.x, pixel_recHit)
 
     hsEta.DrawAllCanvas(Qave, options.thickness*ELossSilicon*ToKe)
+#    hsCotgBeta.DrawAllCanvas(Qave, options.thickness*ELossSilicon*ToKe)
+#    hsXLocal.DrawAllCanvas(Qave, options.thickness*ELossSilicon*ToKe)
 
 # close ascii output
     output_ascii_file.close()

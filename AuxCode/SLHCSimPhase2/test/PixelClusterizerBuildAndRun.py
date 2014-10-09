@@ -66,7 +66,7 @@ class Job:
     """Main class to create and submit LSF jobs"""
 ###########################################################################
 
-    def __init__(self, job_id, maxevents, ageing, pixelrocrows, pixelroccols, pixeleperadc, pixmaxadc, bpixthr, bpixl0thickness, myseed, islocal, queue,task_name):
+    def __init__(self, job_id, maxevents, ageing, pixelrocrows, pixelroccols, pixeleperadc, pixmaxadc, chanthr, seedthr, clusthr, bpixthr, bpixl0thickness, myseed, islocal, queue,task_name):
 ############################################################################################################################
         
         # store the job-ID (since it is created in a for loop)
@@ -85,6 +85,11 @@ class Job:
 
         self.pixeleperadc=pixeleperadc 
         self.pixmaxadc=pixmaxadc
+
+        # parameter of the pixel clusterizer
+        self.chanthr=chanthr
+        self.seedthr=seedthr
+        self.clusthr=clusthr
         
         self.bpixl0thickness=bpixl0thickness
 
@@ -94,14 +99,14 @@ class Job:
         self.islocal=islocal
         self.launch_dir=LAUNCH_BASE
 
-        self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/out62XSLHC17patch1nn/PixelClusterizerStudy/TestThresholds","PixelROCRows_" +pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+self.bpixl0thickness,"BPixThr_"+bpixthr,"eToADC_"+pixeleperadc,"MaxADC_"+pixmaxadc)
+        self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/out62XSLHC17patch1nn/PixelClusterizerStudy/TestThresholds","PixelROCRows_" +pixelrocrows+"_PixelROCCols_"+pixelroccols,"L0Thick_"+bpixl0thickness,"BPixThr_"+bpixthr,"eToADC_"+pixeleperadc,"MaxADC_"+pixmaxadc,"ChanThr_"+chanthr,"SeedThr_"+seedthr,"ClusThr_"+clusthr)
 
         if(self.job_id==1):
             mkdir_eos(self.out_dir)
 
-        self.job_basename  = self.task_name + '_pixelCPE_age' + self.ageing + '_PixelROCRows' + self.pixelrocrows + "_PixelROCCols" + self.pixelroccols +"_L0Thick" + self.bpixl0thickness + "_BPixThr" + self.bpixthr + 'eToADC_' + self.pixeleperadc + 'MaxADC_' + self.pixmaxadc +"_seed" +str(self.myseed)
+        self.job_basename  = self.task_name + '_pixelCPE_age' + self.ageing + '_PixelROCRows' + self.pixelrocrows + "_PixelROCCols" + self.pixelroccols +"_L0Thick" + self.bpixl0thickness + "_BPixThr" + self.bpixthr + 'eToADC_' + self.pixeleperadc + 'MaxADC_' + self.pixmaxadc + 'ChanThr_'+ self.chanthr + 'SeedThr_' + self.seedthr + "ClusThr_" + self.clusthr + "_seed" +str(self.myseed)
 
-        self.task_basename = self.task_name + '_pixelCPE_age' + self.ageing + '_PixelROCRows' + self.pixelrocrows + "_PixelROCCols" + self.pixelroccols +"_L0Thick" + self.bpixl0thickness + "_BPixThr" + self.bpixthr + 'eToADC_' + self.pixeleperadc + 'MaxADC_' + self.pixmaxadc
+        self.task_basename = self.task_name + '_pixelCPE_age' + self.ageing + '_PixelROCRows' + self.pixelrocrows + "_PixelROCCols" + self.pixelroccols +"_L0Thick" + self.bpixl0thickness + "_BPixThr" + self.bpixthr + 'eToADC_' + self.pixeleperadc + 'MaxADC_' + self.pixmaxadc + 'ChanThr_'+ self.chanthr + 'SeedThr_' + self.seedthr + "ClusThr_" + self.clusthr
         
         self.cfg_dir=None
         self.outputPSetName=None
@@ -147,7 +152,9 @@ class Job:
         fout.write("bpixthr="+self.bpixthr+" \n")
         fout.write("pixeleperadc="+self.pixeleperadc+" \n") 
         fout.write("pixmaxadc="+self.pixmaxadc+" \n")
-        
+        fout.write("chanthr="+self.chanthr+" \n")
+        fout.write("seedthr="+self.seedthr+" \n")
+        fout.write("clusthr="+self.clusthr+" \n")
         fout.write("myseed="+str(self.myseed)+" \n")
         
         fout.write("if [ ! \"$LSB_JOBID\" = \"\" ]; then \n")
@@ -217,8 +224,8 @@ class Job:
         fout.write("# compile \n")
         if(self.islocal):
             fout.write("cp "+self.launch_dir+"/src/AuxCode/SLHCSimPhase2/plugins/StdPixelHitNtuplizer.cc ./AuxCode/SLHCSimPhase2/plugins/StdPixelHitNtuplizer.cc \n")
-            fout.write("cp  -vr "+self.launch_dir+"/src/RecoLocalTracker/SiPixelClusterizer ./RecoLocalTracker \n")
-            fout.write("ls -l ./RecoLocalTracker/SiPixelClusterizer/src \n")           
+            #fout.write("cp  -vr "+self.launch_dir+"/src/RecoLocalTracker/SiPixelClusterizer ./RecoLocalTracker \n")
+            #fout.write("ls -l ./RecoLocalTracker/SiPixelClusterizer/src \n")           
  
         fout.write("scram b -j 8 \n") 
         fout.write("eval `scram r -sh` \n")
@@ -246,8 +253,8 @@ class Job:
         
         fout.write("# Run CMSSW for GEN-NTUPLE steps \n")
         fout.write("cd "+os.path.join("AuxCode","SLHCSimPhase2","test")+"\n")
-        fout.write("edmConfigDump ${PKG_DIR}//TenMuE_0_200_cff_py_GEN_TO_RECO_TO_PixelClusterizerStudy_NTUPLE.py >> pset_dumped.py \n")
-        fout.write("cmsRun ${PKG_DIR}/TenMuE_0_200_cff_py_GEN_TO_RECO_TO_PixelClusterizerStudy_NTUPLE.py maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} BPixThr=${bpixthr} AgeingScenario=${ageing} MySeed=${myseed} \n")
+        fout.write("edmConfigDump ${PKG_DIR}/TenMuE_0_200_cff_py_GEN_TO_RECO_TO_PixelClusterizerStudy_NTUPLE.py >> pset_dumped.py \n")
+        fout.write("cmsRun ${PKG_DIR}/TenMuE_0_200_cff_py_GEN_TO_RECO_TO_PixelClusterizerStudy_NTUPLE.py maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} BPixThr=${bpixthr} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
         fout.write("ls -lh . \n")
         fout.write("cmsStage -f ${PKG_DIR}/TenMuE_0_200_cff_py_GEN_TO_RECO_TO__PixelClusterizerStudy_NTUPLE.py ${OUT_DIR}/TenMuE_0_200_cff_py_GEN_TO_RECO_TO__PixelClusterizerStudy_NTUPLE.py \n")
         fout.write("cmsStage -f pset_dumped.py ${OUT_DIR}/pset_dumped.py \n")
@@ -301,7 +308,10 @@ def main():
     group.add_option('--PixElePerADC',help='Pix ele per ADC', dest='pixeleperadc', action='store', default='135')
     group.add_option('--PixMaxADC'   ,help='Pix max ADC',     dest='pixmaxadc',  action='store', default='255')
         
-    
+    group.add_option('--SeedThr'   ,help='Cluster seed threshold',    dest='seedthr',  action='store', default='1000')
+    group.add_option('--ChanThr'   ,help='Cluster channel threshold', dest='chanthr',  action='store', default='1000')
+    group.add_option('--ClusThr'   ,help='Cluster channel threshold', dest='clusthr',  action='store', default='1000')
+
     group.add_option('-a','--ageing',help='set ageing',dest='ageing',action='store',default='NoAgeing')
     parser.add_option_group(group)
 
@@ -314,6 +324,9 @@ def main():
     mBPixThr = None
     mPixElePerADC = None
     mPixMaxADC    = None
+    mSeedThr = None
+    mClusThr = None
+    mChanThr = None
     mL0Thick = None
     mAgeing  = None
     mQueue   = None
@@ -335,6 +348,9 @@ def main():
         mBPixThr    = ConfigSectionMap(config,"PixelConfiguration")['bpixthr']
         mPixElePerADC = ConfigSectionMap(config,"PixelConfiguration")['pixeleperadc']
         mPixMaxADC    = ConfigSectionMap(config,"PixelConfiguration")['pixmaxadc']   
+        mSeedThr    = ConfigSectionMap(config,"PixelConfiguration")['seedthr']
+        mClusThr    = ConfigSectionMap(config,"PixelConfiguration")['clusthr']   
+        mChanThr    = ConfigSectionMap(config,"PixelConfiguration")['chanthr']               
         mAgeing     = ConfigSectionMap(config,"PixelConfiguration")['ageing']    
         mNOfEvents  = ConfigSectionMap(config,"JobConfiguration")['numberofevents']
         mJobsInTask = ConfigSectionMap(config,"JobConfiguration")['numberofjobs']
@@ -351,7 +367,10 @@ def main():
         mL0Thick    = opts.layer0thick
         mBPixThr    = opts.bpixthr
         mPixElePerADC = opts.pixeleperadc
-        mPixMaxADC    = opts.pixmaxadc  
+        mPixMaxADC    = opts.pixmaxadc
+        mSeedThr    = opts.seedthr
+        mClusThr    = opts.clusthr
+        mChanThr    = opts.chanthr
         mAgeing     = opts.ageing
         mNOfEvents  = opts.numberofevents
         mJobsInTask = opts.jobsInTask
@@ -382,10 +401,13 @@ def main():
     print "- Jobname                    : ",opts.jobname
     print "- e per ADC                  : ",mPixElePerADC
     print "- Max ADC                    : ",mPixMaxADC
+    print "- Clusterizer Channel Thresh : ",mChanThr
+    print "- Clusterizer Seed Thresh    : ",mSeedThr
+    print "- Clusterizer Cluster Thresh : ",mClusThr
     print "- ROCRows                    : ",mRocRows
     print "- ROCCols                    : ",mRocCols
     print "- L0 Thickness               : ",mL0Thick
-    print "- Clusterizer Threshold      : ",mBPixThr
+    print "- BPIX Digitizer Threshold   : ",mBPixThr
     print "- Ageing Scenario            : ",mAgeing
     print "- Total events to run        : ",int(mNOfEvents)*int(mJobsInTask)     
 
@@ -395,7 +417,7 @@ def main():
 
     for theseed in range(1,int(mJobsInTask)+1):
 
-        ajob=Job(theseed, nEvents, mAgeing, mRocRows, mRocCols, mPixElePerADC, mPixMaxADC, mBPixThr, mL0Thick, theseed, opts.localmode,mQueue,opts.jobname)
+        ajob=Job(theseed, nEvents, mAgeing, mRocRows, mRocCols, mPixElePerADC, mPixMaxADC, mChanThr, mSeedThr, mClusThr, mBPixThr, mL0Thick, theseed, opts.localmode,mQueue,opts.jobname)
         ajob.createTheLSFFile()        
 
         out_dir = ajob.out_dir # save for later usage
@@ -422,36 +444,23 @@ def main():
     # prepare the script for the harvesting step
     #############################################
 
-    harvestingname = LSF_DIR + "/jobs/PixelCPENtuple_"+opts.jobname+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+mBPixThr+"_L0Thick"+mL0Thick+".csh"
+    harvestingname = LSF_DIR + "/jobs/PixelCPENtuple_"+opts.jobname+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+mBPixThr+"_L0Thick"+mL0Thick+".sh"
     fout=open(harvestingname,"w")
 
-    fout.write("#!/bin/tcsh \n")
-    fout.write("set COUNT=0 \n")
-    fout.write("set OUT_DIR="+out_dir+" \n")
+    fout.write("#!/bin/bash \n")
+    fout.write("OUT_DIR="+out_dir+" \n")
     fout.write("cd "+os.path.join(LAUNCH_BASE,"src","AuxCode","SLHCSimPhase2","test")+"\n")
-    fout.write("cmsenv \n")
-    fout.write("mkdir /tmp/$USER/"+link_name+" \n")
-    fout.write("foreach inputfile (`cmsLs "+out_dir+"`) \n")
-    fout.write("set namebase=`echo $inputfile |awk '{split($0,b,\"/\"); print b[11]}'` \n")
-    fout.write("if (\"$namebase\" =~ *\"stdgrechitfullph1g\"*) then \n")
-    fout.write("echo \"copying: $COUNT $OUT_DIR/$namebase\" \n") 
-    fout.write("cmsStage -f $OUT_DIR/$namebase /tmp/$USER/"+link_name+" \n")
-    fout.write("@ COUNT+=1 \n")
-    fout.write("if ($COUNT == "+mJobsInTask+") then \n")
-    fout.write("break \n")
-    fout.write("endif \n")
-    fout.write("endif \n") 
-    fout.write("end \n")
-    fout.write("echo \"copied $COUNT files\" \n")
+    fout.write("eval `scram r -sh` \n")
+    fout.write("mkdir -p /tmp/$USER/"+link_name+" \n")
+    fout.write("for inputfile in `cmsLs "+out_dir+" |grep seed | grep root`; do \n")
+    fout.write("   namebase=`echo $inputfile |awk '{split($0,b,\"/\"); print b[15]}'` \n")
+    fout.write("   cmsStage -f $OUT_DIR/$namebase /tmp/$USER/"+link_name+" \n")
+    fout.write("# Uncomment next line to clean up EOS space \n")
+    fout.write("#  cmsRm $OUT_DIR/$namebase \n")
+    fout.write("done \n")
     fout.write("cd /tmp/$USER/"+link_name+" \n")
-    fout.write("hadd ${TMPDIR}/stdgrechitfullph1g_ntuple_"+link_name+".root ${TMPDIR}/stdgrechitfullph1g_ntuple_*.root \n")
-    fout.write("cmsStage -f stdgrechitfullph1g_ntuple_"+link_name+".root /store/caf/user/$USER/SLHCSimPhase2/PixelNtuples \n")
-    fout.write("cd "+os.path.join("${CMSSW_BASE}","src","AuxCode","SLHCSimPhase2","test","Brownson")+"\n") 
-    fout.write("make \n")
-    fout.write("ln -fs /tmp/$USER/"+link_name+"/stdgrechitfullph1g_ntuple_"+link_name+"*.root ./stdgrechitfullph1g_ntuple.root \n")
-    fout.write("./res \n")
-    #fout.write("for RootOutputFile in $(ls *pdf ); do cp  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
-    fout.write("for EpsOutputFile in $(ls *eps ); do cp  ${EpsOutputFile}    ${OUT_DIR}/${EpsOutputFile} ; done \n")
+    fout.write("hadd /tmp/$USER/stdgrechitfullph1g_ntuple_"+link_name+".root /tmp/$USER/"+link_name+"/stdgrechitfullph1g_ntuple_*.root \n")
+    fout.write("cmsStage -f /tmp/$USER/stdgrechitfullph1g_ntuple_"+link_name+".root $OUT_DIR \n")
     os.system("chmod u+x "+harvestingname)
     
 if __name__ == "__main__":        

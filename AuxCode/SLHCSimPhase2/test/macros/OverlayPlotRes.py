@@ -5,7 +5,7 @@ from optparse import OptionParser
 import ROOT
 
 ################################################
-def getModifiedTH1Fs(file, color, canvas):
+def getModifiedTH1Fs(canvas, file, color, marker):
 ################################################
     """ main function to acces to the TGraphErrors and return them with a modified style """
 
@@ -19,6 +19,7 @@ def getModifiedTH1Fs(file, color, canvas):
 # Get TGraph from MultiGraph        
         if ca.InheritsFrom('TH1F') and ca.GetLineStyle() != ROOT.kDotted: 
 #        if ca.InheritsFrom('TH1F'):
+            ca.SetMarkerStyle(marker)
             ca.SetMarkerColor(color)
             ca.SetLineColor(color)
             ca.SetLineWidth(3)
@@ -58,8 +59,30 @@ class Sample:
             self.the_marker_style = ROOT.kOpenTriangleUp
         elif marker_style == 'ROOT.kOpenTriangleDown':
             self.the_marker_style = ROOT.kOpenTriangleDown
+        elif marker_style == 'ROOT.kOpenCircle':
+            self.the_marker_style = ROOT.kOpenCircle
+        elif marker_style == 'ROOT.kFullTriangleUp':
+            self.the_marker_style = ROOT.kFullTriangleUp
+        elif marker_style == 'ROOT.kFullTriangleDown':
+            self.the_marker_style = ROOT.kFullTriangleDown
+        elif marker_style == 'ROOT.kFullCircle':
+            self.the_marker_style = ROOT.kFullCircle
 
- 
+
+#####################
+class DrawingOptions:
+#####################
+    """ class to map the DrawingOptions elements in the xml file """
+
+    def __init__(self, ymin, ymax, yndiv, x1legend, x2legend, y1legend, y2legend):
+        self.ymin = ymin
+        self.ymax = ymax
+        self.yndiv = yndiv
+        self.x1legend = x1legend
+        self.x2legend = x2legend
+        self.y1legend = y1legend
+        self.y2legend = y2legend
+
 
 ############
 def main():
@@ -78,7 +101,8 @@ def main():
 
     dom = parse(options.input_xml_file)
 
-    def handleSampleList(samples, sample_list):
+### parse & build "Sample(s)"
+    def handleSamples(samples, sample_list):
         for sample in samples:
             sample_list.append(handleSample(sample))
 
@@ -104,9 +128,48 @@ def main():
 
     def handleMarkerStyle(marker_style):
         return marker_style.firstChild.nodeValue
+        
+### parse & build "DrawingOptions"
+    def handleDrawingOptions(options):
+        o = DrawingOptions( \
+               handleYmin(options[0].getElementsByTagName("Ymin")[0]), \
+               handleYmax(options[0].getElementsByTagName("Ymax")[0]), \
+               handleYndiv(options[0].getElementsByTagName("Yndiv")[0]), \
+               handleY1legend(options[0].getElementsByTagName("X1legend")[0]), \
+               handleX2legend(options[0].getElementsByTagName("X2legend")[0]), \
+               handleY1legend(options[0].getElementsByTagName("Y1legend")[0]), \
+               handleY2legend(options[0].getElementsByTagName("Y2legend")[0]) \
+           )
+        return o
 
-    SampleList = []
-    handleSampleList(dom.getElementsByTagName('Sample'), SampleList)
+    def handleYmin(ymin):
+        return float(ymin.firstChild.nodeValue)
+
+    def handleYmax(ymax):
+        return float(ymax.firstChild.nodeValue)
+
+    def handleYndiv(yndiv):
+        return int(yndiv.firstChild.nodeValue)
+
+    def handleX1legend(x1legend):
+        return float(x1legend.firstChild.nodeValue)
+
+    def handleX2legend(x2legend):
+        return float(x2legend.firstChild.nodeValue)
+
+    def handleY1legend(y1legend):
+        return float(y1legend.firstChild.nodeValue)
+
+    def handleY2legend(y2legend):
+        return float(y2legend.firstChild.nodeValue)
+
+
+###
+
+    drawing_options = handleDrawingOptions(dom.getElementsByTagName('DrawingOptions'))
+
+    Samples = []
+    handleSamples(dom.getElementsByTagName('Sample'), Samples)
 
     legRMS = ROOT.TLegend(0.18,0.15,0.48,0.33)
     legRMS.SetFillColor(0)
@@ -120,11 +183,11 @@ def main():
     cRMSVsEta.SetGridy()
     
     first = True
-    for aSample in SampleList:
+    for aSample in Samples:
         if aSample.is_rphi:
-            h1array = getModifiedTH1Fs(aSample.the_root_file, aSample.the_color, 'cResVsEta_1')
+            h1array = getModifiedTH1Fs('cResVsEta_1', aSample.the_root_file, aSample.the_color, aSample.the_marker_style)
         else:
-            h1array = getModifiedTH1Fs(aSample.the_root_file, aSample.the_color, 'cResVsEta_2')
+            h1array = getModifiedTH1Fs('cResVsEta_2', aSample.the_root_file, aSample.the_color, aSample.the_marker_style)
 
         for h1 in h1array:            
             cRMSVsEta.cd()
@@ -136,21 +199,13 @@ def main():
                 h1.GetXaxis().CenterTitle(ROOT.kFALSE)
                 h1.GetXaxis().SetTitleOffset(1.)
 
-                if aSample.is_rphi:
-                    h1.GetYaxis().SetRangeUser(0.,20.)
-                    h1.GetYaxis().SetNdivisions(504,ROOT.kFALSE)
-                else:
-                    legRMS.SetX1(0.28)
-                    legRMS.SetX2(0.58)
-                    legRMS.SetY1(0.66)
-                    legRMS.SetY2(0.86)
-                    h1.GetYaxis().SetRangeUser(10.,40.)
-                    h1.GetYaxis().SetNdivisions(506,ROOT.kFALSE)
+                h1.GetYaxis().SetRangeUser(drawing_options.ymin, drawing_options.ymax)
+                h1.GetYaxis().SetNdivisions(drawing_options.yndiv,ROOT.kFALSE)
 
                 h1.GetYaxis().SetTitleOffset(1.)
                 h1.GetYaxis().SetTitle('RMS [#mum]')
                 h1.GetYaxis().CenterTitle(ROOT.kFALSE)
-                legRMS.AddEntry(0,'CMSSW 620 SLHC11','')                 
+                legRMS.AddEntry(0,'CMSSW 620 SLHC17_patch1','')                 
             else:
                 h1.Draw("CPsame")
 
@@ -163,9 +218,13 @@ def main():
             elif h1.GetLineStyle() == ROOT.kDotted:
                 legRMS.AddEntry(h1,'Q/Q_{av}<1.5; '+extraLabel,'LP')
                 
+    legRMS.SetX1(drawing_options.x1legend)
+    legRMS.SetX2(drawing_options.x2legend)
+    legRMS.SetY1(drawing_options.y1legend)
+    legRMS.SetY2(drawing_options.y2legend)
     legRMS.Draw('same')
 
-    if SampleList[0].is_rphi:
+    if Samples[0].is_rphi:
         cRMSVsEta.SaveAs('RMS_rphi.pdf')
     else:
         cRMSVsEta.SaveAs('RMS_rz.pdf')

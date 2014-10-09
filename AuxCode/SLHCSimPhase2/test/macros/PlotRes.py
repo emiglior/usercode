@@ -78,7 +78,10 @@ def main():
                       help="thickness in um")
     parser.add_option("-L", "--layer",
                       action="store", type="int", dest="layer", default=-1,
-                      help="BPIX layer")
+                      help="Pixel Layer")
+    parser.add_option("-S", "--subid",
+                      action="store", type="int", dest="subid", default=1,
+                      help="phase1: BPIX (subid=1) or FPIX (subid=2)")
     
     (options, args) = parser.parse_args()
 
@@ -158,10 +161,11 @@ def main():
 
     ### histo containers
     hsEta = HistoStruct("Eta" ,25, 0.,2.5, "|#eta|", output_root_file, options.gaussfit)
+#    hsRho = HistoStruct("Rho" ,30, 3.,18., "#rho", output_root_file, options.gaussfit)
 #    hsPhi = HistoStruct("Phi"    ,48, -3.15 ,+3.15, "#phi", output_root_file, options.gaussfit)
 #    hsX   = HistoStruct("LocalX" ,18, -8100.,+8100., "x", output_root_file, options.gaussfit)
 #    hsZeta = HistoStruct("Zeta",50, 0.,25., "|z|"   , output_root_file, options.gaussfit)
-#    hsCotgBeta  = HistoStruct("CotgBeta" ,30,0.,6., "|cotg(#beta)|", output_root_file, options.gaussfit)
+#    hsCotgBeta  = HistoStruct("CotgBeta" ,20,0.,4., "|cotg(#beta)|", output_root_file, options.gaussfit)
 
     all_entries = input_tree.GetEntries()
     if options.entries != -1:
@@ -185,8 +189,8 @@ def main():
         elif (pixel_recHit.subid==2): 
             h2_rzhitmapSubId2.Fill(tv3.z(),tv3.Perp())
 
-        # BPIX only (layer 1)
-        if pixel_recHit.subid==1 and pixel_recHit.layer==options.layer:
+        # Select one BPIX layer or FPIX disk
+        if pixel_recHit.subid==options.subid and (pixel_recHit.layer==options.layer or pixel_recHit.disk==options.layer) :
             h2_rzhitmapSelected.Fill(tv3.z(),tv3.Perp())
 
             # map of local positions 
@@ -211,37 +215,40 @@ def main():
 #            print "cos^2(a)+cos^2(b)+cos^2(g)=", pixel_recHit.tx*pixel_recHit.tx+pixel_recHit.ty*pixel_recHit.ty+pixel_recHit.tz*pixel_recHit.tz # debug
 
 
-            if (pixel_recHit.ty!=0):
-                if pixel_recHit.tz >= 0:
-                    beta = math.atan(-pixel_recHit.tz/pixel_recHit.ty)
-                else:
-                    beta = math.atan(pixel_recHit.tz/pixel_recHit.ty)
-                if beta<0: 
-                    beta = math.pi+beta                                
-            else:
-                beta = 0.
+            # if (pixel_recHit.ty!=0):
+            #     if pixel_recHit.tz >= 0:
+            #         beta = math.atan(-pixel_recHit.tz/pixel_recHit.ty)
+            #     else:
+            #         beta = math.atan(pixel_recHit.tz/pixel_recHit.ty)
+            #     if beta<0: 
+            #         beta = math.pi+beta                                
+            # else:
+            #     beta = 0.
 
             # your preferred definition of eta
 #            the_eta = tv3.Eta()
 #            the_eta = -math.log(math.tan(0.5*beta))
 
             # ionization corrected for incident angle (only primaries at central eta) 
-            if math.fabs(tv3.Eta())<0.20 and pixel_recHit.process == 2:
+#            if math.fabs(tv3.Eta())<0.20 and pixel_recHit.process == 2:
+            if pixel_recHit.process == 2:
                 h1_qcorr.Fill(pixel_recHit.q*ToKe*math.fabs(pixel_recHit.tz))
                 # effective thickness estimated from eta of recHit
 #                h1_qcorr.Fill(pixel_recHit.q*ToKe*tv3.Perp()/tv3.Mag())
 
             hsEta.FillFirstLoop(math.fabs(tv3.Eta()), pixel_recHit)
+#            hsRho.FillFirstLoop(math.fabs(tv3.Perp()), pixel_recHit)
 #            hsPhi.FillFirstLoop(tv3.Phi(), pixel_recHit)
 #            hsX.FillFirstLoop(pixel_recHit.x*CmToUm, pixel_recHit)
 #            hsZeta.FillFirstLoop(math.fabs(tv3.z()), pixel_recHit)
-#            hsCotgBeta.FillFirstLoop(math.fabs(1./math.tan(beta)), pixel_recHit)
+#            hsCotgBeta.FillFirstLoop(math.fabs(pixel_recHit.ty/math.sqrt(1.-pixel_recHit.ty*pixel_recHit.ty)), pixel_recHit)
 
     ### Compute the Q averaged in the central eta-bin
     output_root_file.cd("hitmapsAndCharge") 
     h1_qcorr_norm = getTH1cdf(h1_qcorr)
     Qave = h1_qcorr.GetMean()
     print "Average Corrected Q cluster [ke]: ", Qave
+
 
     ######## 2nd loop on the tree (required when selections based Qave are used)
     for this_entry in xrange(all_entries):
@@ -250,22 +257,21 @@ def main():
         if this_entry % 200000 == 0:
             print "Loop #2 Procesing Event: ", this_entry
 
-        # BPIX only (layer 1)
-        if pixel_recHit.subid==1 and pixel_recHit.layer==options.layer:
-
+        # Select on BPIX layer or FPIX disk
+        if pixel_recHit.subid==options.subid and (pixel_recHit.layer==options.layer or pixel_recHit.disk==options.layer) :
             # global position of the rechit
             # NB sin(theta) = tv3.Perp()/tv3.Mag()
             tv3 = ROOT.TVector3(pixel_recHit.gx, pixel_recHit.gy, pixel_recHit.gz)
 
-            if (pixel_recHit.ty!=0):
-                if pixel_recHit.tz >= 0:
-                    beta = math.atan(-pixel_recHit.tz/pixel_recHit.ty)
-                else:
-                    beta = math.atan(pixel_recHit.tz/pixel_recHit.ty)
-                if beta<0: 
-                    beta = math.pi+beta
-            else:
-                beta = 0.
+            # if (pixel_recHit.ty!=0):
+            #     if pixel_recHit.tz >= 0:
+            #         beta = math.atan(-pixel_recHit.tz/pixel_recHit.ty)
+            #     else:
+            #         beta = math.atan(pixel_recHit.tz/pixel_recHit.ty)
+            #     if beta<0: 
+            #         beta = math.pi+beta
+            # else:
+            #     beta = 0.
 
             # your preferred definition of eta
 #            the_eta = tv3.Eta()
@@ -275,11 +281,12 @@ def main():
             # exclude clusters at the edges of the module (charge drifting outside the silicon)
             if pixel_recHit.process == 2 and NotModuleEdge(pixel_recHit.x*CmToUm, pixel_recHit.y*CmToUm):
                hsEta.FillSecondLoop(math.fabs(tv3.Eta()), pixel_recHit)
+#               hsRho.FillSecondLoop(math.fabs(tv3.Perp()), pixel_recHit)
 #               hsPhi.FillSecondLoop(tv3.Phi(), pixel_recHit)
 #               hsX.FillSecondLoop(pixel_recHit.x*CmToUm, pixel_recHit)
 #               hsZeta.FillSecondLoop(math.fabs(tv3.z()), pixel_recHit)
 #               hsCotgBeta.FillSecondLoop(math.fabs(1./math.tan(beta)), pixel_recHit)
-
+#               hsCotgBeta.FillSecondLoop(math.fabs(pixel_recHit.ty/math.sqrt(1-pixel_recHit.ty*pixel_recHit.ty)), pixel_recHit)
 
 
     ########################
@@ -355,6 +362,7 @@ def main():
     c1_localXY_roc_hitmap.SaveAs("c1_localXY_roc_hitmap.root")
     
     hsEta.DrawAllCanvas(Qave, options.thickness*ELossSilicon*ToKe)
+#    hsRho.DrawAllCanvas(Qave, options.thickness*ELossSilicon*ToKe)
 #    hsPhi.DrawAllCanvas(Qave, options.thickness*ELossSilicon*ToKe)
 #    hsX.DrawAllCanvas(Qave, options.thickness*ELossSilicon*ToKe)
 #    hsZeta.DrawAllCanvas(Qave, options.thickness*ELossSilicon*ToKe)

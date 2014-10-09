@@ -87,22 +87,24 @@ public:
 protected:
  
   void fillEvt(const edm::Event& );
-  void fillSRecHit(const int subid, SiStripRecHit2DCollection::DetSet::const_iterator pixeliter,
+  void fillSRecHit(const int detid, const int subid, SiStripRecHit2DCollection::DetSet::const_iterator pixeliter,
 		   const GeomDet* theGeom);
-  void fillSRecHit(const int subid, SiStripMatchedRecHit2DCollection::DetSet::const_iterator pixeliter,
+  void fillSRecHit(const int detid, const int subid, SiStripMatchedRecHit2DCollection::DetSet::const_iterator pixeliter,
 		   const GeomDet* theGeom);
-  void fillSRecHit(const int subid, SiTrackerGSRecHit2DCollection::const_iterator pixeliter,
+  void fillSRecHit(const int detid, const int subid, SiTrackerGSRecHit2DCollection::const_iterator pixeliter,
 		   const GeomDet* theGeom);
   //void fillPRecHit(const int subid, SiPixelRecHitCollection::const_iterator pixeliter,
   //                 const GeomDet* PixGeom);
-  void fillPRecHit(const int subid, 
+  void fillPRecHit(const int detid,
+		   const int subid, 
 		   const int layer_num,const int ladder_num,const int module_num,
 		   const int disk_num,const int blade_num,const int panel_num,const int side_num,
 		   SiPixelRecHitCollection::DetSet::const_iterator pixeliter,
 		   const int num_simhit,
 		   std::vector<PSimHit>::const_iterator closest_simhit,
 		   const GeomDet* PixGeom);
-  void fillPRecHit(const int subid,
+  void fillPRecHit(const int detid, 
+		   const int subid,
 		   const int layer_num,const int ladder_num,const int module_num,
 		   const int disk_num,const int blade_num,const int panel_num,const int side_num,
 		   trackingRecHit_iterator pixeliter,
@@ -143,6 +145,7 @@ private:
     float gx;
     float gy;
     float gz;
+    int detid;
     int subid,module;
     int layer,ladder;           // BPix
     int disk,blade,panel,side;  // FPix
@@ -201,14 +204,14 @@ void NewStdHitNtuplizer::beginJob()
   //Common Branch
   pixeltree_->Branch("evt",    &evt_,      "run/I:evtnum/I", bufsize);
   pixeltree_->Branch("pixel_recHit", &recHit_, 
-		      "pdgid/I:process:q/F:x:y:xx:xy:yy:row:col:gx:gy:gz:subid/I:module:layer:ladder:disk:blade:panel:side:nsimhit:spreadx:spready:hx/F:hy:tx:ty:tz:theta:phi", bufsize);
+		      "pdgid/I:process:q/F:x:y:xx:xy:yy:row:col:gx:gy:gz:detid/I:subid:module:layer:ladder:disk:blade:panel:side:nsimhit:spreadx:spready:hx/F:hy:tx:ty:tz:theta:phi", bufsize);
   pixeltree2_->Branch("evt",    &evt_,      "run/I:evtnum/I", bufsize);
   pixeltree2_->Branch("pixel_recHit", &recHit_, 
-		      "pdgid/I:process:q/F:x:y:xx:xy:yy:row:col:gx:gy:gz:subid/I:module:layer:ladder:disk:blade:panel:side:nsimhit:spreadx:spready:hx/F:hy:tx:ty:tz:theta:phi", bufsize);
+		      "pdgid/I:process:q/F:x:y:xx:xy:yy:row:col:gx:gy:gz:detid/I:subid:module:layer:ladder:disk:blade:panel:side:nsimhit:spreadx:spready:hx/F:hy:tx:ty:tz:theta:phi", bufsize);
   // Strip Branches 
   striptree_->Branch("evt",    &evt_,      "run/I:evtnum/I", bufsize);
   striptree_->Branch("strip_recHit", &striprecHit_,
-		     "pdgid/I:process:q/F:x:y:xx:xy:yy:row:col:gx:gy:gz:subid/I:layer:nsimhit:hx/F:hy:tx:ty:tz:theta:phi", bufsize);
+		     "pdgid/I:process:q/F:x:y:xx:xy:yy:row:col:gx:gy:gz:detid/I:subid:layer:nsimhit:hx/F:hy:tx:ty:tz:theta:phi", bufsize);
  
 }
  
@@ -292,6 +295,7 @@ void NewStdHitNtuplizer::analyze(const edm::Event& e, const edm::EventSetup& es)
 	    } // end of simhit loop
 	  closest_simhit = closestit;
 	} // end matched emtpy
+	int detid_db = detId.rawId();
 	unsigned int subid = detId.subdetId();
 	int layer_num = -99,ladder_num=-99,module_num=-99,disk_num=-99,blade_num=-99,panel_num=-99,side_num=-99;       
 	if ( ( subid == PixelSubdetector::PixelBarrel ) || ( subid == PixelSubdetector::PixelEndcap ) ) {
@@ -309,7 +313,7 @@ void NewStdHitNtuplizer::analyze(const edm::Event& e, const edm::EventSetup& es)
 	    side_num    = tTopo->pxfSide(detId());
 	  }
 	  int num_simhit = matched.size();
-	  fillPRecHit(  subid,layer_num,ladder_num,module_num,disk_num,blade_num,panel_num,side_num,
+	  fillPRecHit(  detid_db, subid,layer_num,ladder_num,module_num,disk_num,blade_num,panel_num,side_num,
 			iterRecHit, num_simhit, closest_simhit, geomDet );
 	  fillEvt(e);
 	  pixeltree_->Fill();
@@ -386,7 +390,7 @@ void NewStdHitNtuplizer::analyze(const edm::Event& e, const edm::EventSetup& es)
 	  int num_simhit = matched.size();
 	  
 	  int layer_num = -99,ladder_num=-99,module_num=-99,disk_num=-99,blade_num=-99,panel_num=-99,side_num=-99;
-	  
+	  int detid_db = detId.rawId();
 	  unsigned int subid = detId.subdetId();
 	  if ( ( subid == PixelSubdetector::PixelBarrel ) || ( subid == PixelSubdetector::PixelEndcap ) ) {
 	    // 1 = PXB, 2 = PXF
@@ -403,7 +407,7 @@ void NewStdHitNtuplizer::analyze(const edm::Event& e, const edm::EventSetup& es)
 	      side_num    = tTopo->pxfSide(detId());
 	    }
 	    
-	    fillPRecHit(subid, layer_num,ladder_num,module_num,disk_num,blade_num,panel_num,side_num, 
+	    fillPRecHit(detid_db, subid, layer_num,ladder_num,module_num,disk_num,blade_num,panel_num,side_num, 
 			ih, num_simhit, closest_simhit, geomDet );
 	    	    
 	    fillEvt(e);	    
@@ -525,8 +529,9 @@ void NewStdHitNtuplizer::analyze(const edm::Event& e, const edm::EventSetup& es)
 	//                << geomDet->surface().toGlobal(iterRecHit->localPosition()).z() << " " 
 	//                << geomDet->surface().toGlobal(iterRecHit->localPosition()).perp() << std::endl;
 	//comment out end
+	int detid_db = detId.rawId();
 	unsigned int subid = detId.subdetId();
-	fillSRecHit(subid, iterRecHit, geomDet);
+	fillSRecHit(detid_db, subid, iterRecHit, geomDet);
 	fillEvt(e);
 	striptree_->Fill();
 	init();
@@ -614,8 +619,9 @@ void NewStdHitNtuplizer::analyze(const edm::Event& e, const edm::EventSetup& es)
 	//                << geomDet->surface().toGlobal(iterRecHit->localPosition()).z() << " " 
 	//                << geomDet->surface().toGlobal(iterRecHit->localPosition()).perp() << std::endl;
 	//comment out end
+	int detid_db = detId.rawId();
 	unsigned int subid = detId.subdetId();
-	fillSRecHit(subid, iterRecHit, geomDet);
+	fillSRecHit(detid_db, subid, iterRecHit, geomDet);
 	fillEvt(e);
 	striptree_->Fill();
 	init();
@@ -705,8 +711,9 @@ void NewStdHitNtuplizer::analyze(const edm::Event& e, const edm::EventSetup& es)
 	//                << geomDet->surface().toGlobal(iterRecHit->localPosition()).z() << " " 
 	//                << geomDet->surface().toGlobal(iterRecHit->localPosition()).perp() << std::endl;
 	//comment out end
+	int detid_db = detId.rawId();
 	unsigned int subid = detId.subdetId();
-	fillSRecHit(subid, iterRecHit, geomDet);
+	fillSRecHit(detid_db, subid, iterRecHit, geomDet);
 	fillEvt(e);
 	striptree_->Fill();
 	init();
@@ -716,7 +723,7 @@ void NewStdHitNtuplizer::analyze(const edm::Event& e, const edm::EventSetup& es)
              
 } // end analyze function
  
-void NewStdHitNtuplizer::fillSRecHit(const int subid, 
+void NewStdHitNtuplizer::fillSRecHit(const int detid, const int subid, 
 				  SiStripRecHit2DCollection::DetSet::const_iterator pixeliter,
 				  const GeomDet* theGeom)
 {
@@ -732,12 +739,13 @@ void NewStdHitNtuplizer::fillSRecHit(const int subid,
   striprecHit_.gx = GP.x();
   striprecHit_.gy = GP.y();
   striprecHit_.gz = GP.z();
+  striprecHit_.detid = detid;
   striprecHit_.subid = subid;
   GlobalPoint GP0 = theGeom->surface().toGlobal(LocalPoint(0,0,0));
   striprecHit_.theta = GP0.theta();
   striprecHit_.phi = GP0.phi();
 }
-void NewStdHitNtuplizer::fillSRecHit(const int subid, 
+void NewStdHitNtuplizer::fillSRecHit(const int detid, const int subid, 
 				  SiStripMatchedRecHit2DCollection::DetSet::const_iterator pixeliter,
 				  const GeomDet* theGeom)
 {
@@ -753,12 +761,13 @@ void NewStdHitNtuplizer::fillSRecHit(const int subid,
   striprecHit_.gx = GP.x();
   striprecHit_.gy = GP.y();
   striprecHit_.gz = GP.z();
+  striprecHit_.detid = detid;
   striprecHit_.subid = subid;
   GlobalPoint GP0 = theGeom->surface().toGlobal(LocalPoint(0,0,0));
   striprecHit_.theta = GP0.theta();
   striprecHit_.phi = GP0.phi();
 }
-void NewStdHitNtuplizer::fillSRecHit(const int subid, 
+void NewStdHitNtuplizer::fillSRecHit(const int detid, const int subid, 
 				  SiTrackerGSRecHit2DCollection::const_iterator pixeliter,
 				  const GeomDet* theGeom)
 {
@@ -777,6 +786,7 @@ void NewStdHitNtuplizer::fillSRecHit(const int subid,
   striprecHit_.gx = GP.x();
   striprecHit_.gy = GP.y();
   striprecHit_.gz = GP.z();
+  striprecHit_.detid = detid;
   striprecHit_.subid = subid;
   GlobalPoint GP0 = theGeom->surface().toGlobal(LocalPoint(0,0,0));
   striprecHit_.theta = GP0.theta();
@@ -786,7 +796,7 @@ void NewStdHitNtuplizer::fillSRecHit(const int subid,
 
 // Function for filling in all the rechits
 // I know it is lazy to pass everything, but I'm doing it anyway. -EB
-void NewStdHitNtuplizer::fillPRecHit(const int subid, 
+void NewStdHitNtuplizer::fillPRecHit(const int detid, const int subid, 
 				  const int layer_num,const int ladder_num,const int module_num,
 				  const int disk_num,const int blade_num,const int panel_num,const int side_num,
 				  SiPixelRecHitCollection::DetSet::const_iterator pixeliter,
@@ -818,6 +828,7 @@ void NewStdHitNtuplizer::fillPRecHit(const int subid,
   recHit_.spreadx = Cluster->sizeX();
   recHit_.spready = Cluster->sizeY();
  
+  recHit_.detid = detid;
   recHit_.subid = subid;
   recHit_.nsimhit = num_simhit;
   
@@ -863,7 +874,7 @@ void NewStdHitNtuplizer::fillPRecHit(const int subid,
 }
 
 // Function for filling in on track rechits
-void NewStdHitNtuplizer::fillPRecHit(const int subid, 
+void NewStdHitNtuplizer::fillPRecHit(const int detid, const int subid, 
 				     const int layer_num,const int ladder_num,const int module_num,
 				     const int disk_num,const int blade_num,const int panel_num,const int side_num,
 				     trackingRecHit_iterator ih,
@@ -887,6 +898,7 @@ void NewStdHitNtuplizer::fillPRecHit(const int subid,
   GlobalPoint GP0 = PixGeom->surface().toGlobal(LocalPoint(0,0,0));
   recHit_.theta = GP0.theta(); 
   recHit_.phi = GP0.phi(); 
+  recHit_.detid = detid;
   recHit_.subid = subid;
 
   //std::cout<<"before getting the cluster"<<std::endl;
@@ -974,6 +986,7 @@ void NewStdHitNtuplizer::RecHit::init()
   gy = dummy_float;
   gz = dummy_float;
   nsimhit = 0;
+  detid=-99;
   subid=-99;
   module=-99;
   layer=-99;
