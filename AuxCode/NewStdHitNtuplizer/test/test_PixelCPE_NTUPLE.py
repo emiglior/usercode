@@ -38,9 +38,11 @@ process.load('Configuration.StandardSequences.GeometryRecoDB_cff')
 process.load('Configuration.StandardSequences.GeometrySimDB_cff')
 process.load('Configuration.StandardSequences.MagneticField_38T_cff')
 process.load('Configuration.StandardSequences.Generator_cff')
+# for gaussian smeared vertex
+#process.load('IOMC.EventVertexGenerators.VtxSmearedGauss_cfi')
+process.load('Configuration.StandardSequences.VtxSmearedNoSmear_cff')
 process.load('GeneratorInterface.Core.genFilterSummary_cff')
 process.load('Configuration.StandardSequences.SimIdeal_cff')
-process.load('IOMC.EventVertexGenerators.VtxSmearedGauss_cfi')
 process.load('Configuration.StandardSequences.Digi_cff')
 process.load('Configuration.StandardSequences.SimL1Emulator_cff')
 process.load('Configuration.StandardSequences.DigiToRaw_cff')
@@ -89,8 +91,8 @@ process.configurationMetadata = cms.untracked.PSet(
 #outrootfile='file:TenMuE_0_200_cff_py_GEN_SIM_RECO.root'
 #outntuplefile='stdgrechitfullph1g_ntuple_age_'+str(options.MySeed)+'.root'
 
-outrootfile='file:TenMuE_0_200_cff_py_GEN_SIM_RECO_evts_'+str(options.maxEvents)+'_evts_seed_'+str(options.MySeed)+'.root'
-outntuplefile='stdgrechitfullph1g_ntuple_evts_'+str(options.maxEvents)+'_evts_seed_'+str(options.MySeed)+'.root'
+outrootfile='file:/tmp/emiglior/TenMuE_0_200_cff_py_GEN_SIM_RECO_evts_'+str(options.maxEvents)+'_evts_seed_'+str(options.MySeed)+'.root'
+outntuplefile='file:/tmp/emiglior/stdgrechitfullph1g_ntuple_evts_'+str(options.maxEvents)+'_evts_seed_'+str(options.MySeed)+'.root'
 print 'output file name:', outrootfile, outntuplefile
 
 process.FEVTDEBUGoutput = cms.OutputModule("PoolOutputModule",
@@ -131,9 +133,10 @@ process.generator = cms.EDProducer("FlatRandomEGunProducer",
     ),
     Verbosity = cms.untracked.int32(0),
     psethack = cms.string('Ten mu e 0 to 200'),
-    AddAntiParticle = cms.bool(True),
+    AddAntiParticle = cms.bool(True),				   
     firstRun = cms.untracked.uint32(1)
 )
+
 
 # Path and EndPath definitions
 process.generation_step = cms.Path(process.pgen)
@@ -151,11 +154,8 @@ process.FEVTDEBUGoutput_step = cms.EndPath(process.FEVTDEBUGoutput)
 ######################################################################################
 ### This fragment is meant to produce ntuples for the calibration of the pixel CPE ###
 # http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/UserCode/Brownson/SLHCUpgradeSimulations/test/resolutionPlotter/
-process.ReadLocalMeasurement = cms.EDAnalyzer("NewStdHitNtuplizer",
+process.ReadLocalMeasurement = cms.EDAnalyzer("StdPixelHitNtuplizer",
    src = cms.InputTag("siPixelRecHits"),
-   stereoRecHits = cms.InputTag("siStripMatchedRecHits","stereoRecHit"),
-   rphiRecHits = cms.InputTag("siStripMatchedRecHits","rphiRecHit"),
-   matchedRecHits = cms.InputTag("siStripMatchedRecHits","matchedRecHit"),
    ### if using simple (non-iterative) or old (as in 1_8_4) tracking
    trackProducer = cms.InputTag("generalTracks"),
    OutputFile = cms.string(outntuplefile),
