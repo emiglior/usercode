@@ -27,7 +27,7 @@ def ConfigSectionMap(config, section):
 def set_global_var():
     global USER
     global HOME
-    global PBS_DIR
+    global LSF_DIR
     global LOG_DIR
     
     global SCRAM_ARCH
@@ -37,10 +37,10 @@ def set_global_var():
     USER = os.environ.get('USER')
     HOME = os.environ.get('HOME')
     LAUNCH_BASE = os.environ.get('CMSSW_BASE')
-    PBS_DIR = os.path.join(os.getcwd(),"PBS")
+    LSF_DIR = os.path.join(os.getcwd(),"LSF")
     LOG_DIR = os.path.join(os.getcwd(),"log")
-    SCRAM_ARCH = "slc5_amd64_gcc472"
-    CMSSW_VER="CMSSW_5_3_3"
+    SCRAM_ARCH = "slc6_amd64_gcc472"
+    CMSSW_VER="CMSSW_5_3_21"
     
 ###### method to create recursively directories on EOS  #############
     
@@ -54,7 +54,7 @@ def mkdir_eos(out_path):
             (out, err) = p.communicate()
             p.wait()
 
-# now check that the directory exists
+    # now check that the directory exists
     p = subprocess.Popen(["cmsLs",out_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     (out, err) = p.communicate()
     p.wait()
@@ -63,15 +63,17 @@ def mkdir_eos(out_path):
 
 ###########################################################################
 class Job:
-    """Main class to create and submit PBS jobs"""
+    """Main class to create and submit LSF jobs"""
 ###########################################################################
 
-    def __init__(self, job_id, maxevents, myseed, islocal):
+    def __init__(self, job_id, maxevents, myseed, islocal, queue, task_name):
 ############################################################################################################################
         
         # store the job-ID (since it is created in a for loop)
         self.job_id=job_id
-        
+        self.task_name=task_name
+        self.queue=queue
+
         # max event used in this job
         self.maxevents=maxevents
 
@@ -82,34 +84,35 @@ class Job:
         self.islocal=islocal
         self.launch_dir=LAUNCH_BASE
 
-        self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/out","53X_phase0")
+        self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/out53X","53X_phase0")
 
         if(self.job_id==1):
             mkdir_eos(self.out_dir)
 
-        self.job_basename= "pixelCPE_53X_phase0_seed"+str(self.myseed)
-        
+        self.job_basename  = self.task_name + "_pixelCPE_53X_phase0_seed" +str(self.myseed)
+        self.task_basename  = self.task_name + "_pixelCPE_53X_phase0"
+
         self.cfg_dir=None
         self.outputPSetName=None
 
-# PBS variables        
-        self.output_PBS_name=None
+        # LSF variables        
+        self.output_LSF_name=None
 
 ###############################
-    def createThePBSFile(self):
+    def createTheLSFFile(self):
 ###############################
 
-# directory to store the PBS to be submitted
-        self.pbs_dir = PBS_DIR
-        if not os.path.exists(self.pbs_dir):
-            os.makedirs(self.pbs_dir)
+        # directory to store the LSF to be submitted
+        self.lsf_dir = LSF_DIR
+        if not os.path.exists(self.lsf_dir):
+            os.makedirs(self.lsf_dir)
 
-        jobs_dir = os.path.join(PBS_DIR,"jobs")
+        jobs_dir = os.path.join(LSF_DIR,"jobs")
         if not os.path.exists(jobs_dir):
             os.makedirs(jobs_dir)
 
-        self.output_PBS_name=self.job_basename+".pbs"
-        fout=open(os.path.join(self.pbs_dir,'jobs',self.output_PBS_name),'w')
+        self.output_LSF_name=self.job_basename+".lsf"
+        fout=open(os.path.join(self.lsf_dir,'jobs',self.output_LSF_name),'w')
     
         if not os.path.exists(LOG_DIR):
             os.makedirs(LOG_DIR)
@@ -119,7 +122,7 @@ class Job:
         fout.write("#BSUB -L /bin/sh \n")       
         fout.write("#BSUB -J "+self.job_basename+"\n")
         fout.write("#BSUB -oo "+os.path.join(LOG_DIR,self.job_basename)+".log \n") # LXBATCH
-        fout.write("#BSUB -q cmscaf1nd \n")                                        # LXBATCH      
+        fout.write("#BSUB -q "+self.queue+" \n")                                   # LXBATCH
         fout.write("### Auto-Generated Script by LoopCMSSWBuildAndRun.py ### \n")
         fout.write("JobName="+self.job_basename+" \n")
         fout.write("OUT_DIR="+self.out_dir+" \n")
@@ -133,7 +136,7 @@ class Job:
         fout.write("cd \n")
         fout.write("fi \n")
                    
-        fout.write("export SCRAM_ARCH=slc5_amd64_gcc472 \n")
+        fout.write("export SCRAM_ARCH=slc6_amd64_gcc472 \n")
         fout.write("# Setup variables   \n")
                                       
         fout.write("cmssw_ver="+CMSSW_VER+" \n")
@@ -149,7 +152,7 @@ class Job:
             fout.write("echo \"I AM NOT IN LOCAL MODE\" \n")
             fout.write("export PKG_DIR=${CMSSW_BASE}/src/AuxCode/NewStdHitNtuplizer/test \n")
 
-         # implement in the PBS script E.Brownson's recipe for changing the size of the pixels / part #1
+        # implement in the LSF script E.Brownson's recipe for changing the size of the pixels / part #1
         fout.write("# Eric Brownson's recipe to change the size of the pixels \n")
         fout.write("### 1: checkout CMSSW patches \n")
 
@@ -164,9 +167,6 @@ class Job:
         fout.write("ssh-add "+os.path.join(HOME,".ssh","id_rsa")+"\n")
         fout.write("# checkpoint: test that ssh connection is ok \n")
         fout.write("ssh -T git@github.com \n")
-        fout.write("git clone https://github.com/fwyzard/cms-git-tools \n")
-        fout.write("PATH=$PWD/cms-git-tools:$PATH \n")
-        fout.write("git cms-init -y --ssh \n")
         fout.write("cd $HOME/${cmssw_ver}/src  \n")
         fout.write("fi \n")
     
@@ -191,8 +191,8 @@ class Job:
 ############################################
     def submit(self):
 ############################################
-        os.system("chmod u+x " + os.path.join(self.pbs_dir,'jobs',self.output_PBS_name))
-        os.system("bsub < "+os.path.join(self.pbs_dir,'jobs',self.output_PBS_name)) #LXBATCH
+        os.system("chmod u+x " + os.path.join(self.lsf_dir,'jobs',self.output_LSF_name))
+        os.system("bsub < "+os.path.join(self.lsf_dir,'jobs',self.output_LSF_name)) #LXBATCH
 
 #################
 def main():            
@@ -201,17 +201,18 @@ def main():
     desc="""This is a description of %prog."""
     parser = OptionParser(description=desc,version='%prog version 0.1')
     parser.add_option('-s','--submit',  help='job submitted', dest='submit', action='store_true', default=False)
+    parser.add_option('-q','--queue',help='lxbatch queue for submission', dest='queue',action='store',default='cmscaf1nd')
     parser.add_option('-l','--local', help='reads local branch',dest='localmode',action='store_true', default=False)
     parser.add_option('-n','--numberofevents', help='number of events', dest='numberofevents', action='store', default='1')
     parser.add_option('-N','--jobsInTask', help='number of jobs in this task', dest='jobsInTask', action='store',default='500')  
-    parser.add_option('-j','--jobname', help='task name', dest='jobname', action='store', default='myjob')
-   
+    parser.add_option('-j','--jobname', help='task name', dest='jobname', action='store', default='myjob')   
+
     parser.add_option('-i','--input',help='set input configuration (overrides default)',dest='inputconfig',action='store',default=None)
     (opts, args) = parser.parse_args()
 
     # initialize needed input 
-   
-    mJobsInTask=None
+    mQueue      = None
+    mJobsInTask = None
  
     ConfigFile = opts.inputconfig
     
@@ -223,9 +224,9 @@ def main():
         config = ConfigParser.ConfigParser()
         config.read(ConfigFile)
          
-        mNOfEvents = ConfigSectionMap(config,"JobConfiguration")['numberofevents']
-        mJobsInTask= opts.jobsInTask
-
+        mNOfEvents  = ConfigSectionMap(config,"JobConfiguration")['numberofevents']
+        mJobsInTask = ConfigSectionMap(config,"JobConfiguration")['numberofjobs']
+        mQueue      = ConfigSectionMap(config,"JobConfiguration")['queue']
     else :
 
         print "********************************************************"
@@ -234,6 +235,7 @@ def main():
  
         mNOfEvents = opts.numberofevents
         mJobsInTask= opts.jobsInTask
+        mQueue      = opts.queue
      
 # check that chosen pixel size matches what is currently available in the trackerStructureTopology
 # https://twiki.cern.ch/twiki/bin/view/CMS/ExamplePhaseI#Changing_the_Pixel_Size
@@ -250,7 +252,8 @@ def main():
     print "- isLocal version            : ",opts.localmode
     print "- Jobs in Task               : ",mJobsInTask
     print "- Jobname                    : ",opts.jobname
-    print "- Total events to run        : ",mNOfEvents     
+    print "- Events/Job                 : ",mNOfEvents
+    print "- Total events to run        : ",int(mNOfEvents)*int(mJobsInTask)     
 
     nEvents=int(mNOfEvents)
     
@@ -258,8 +261,8 @@ def main():
 
     for theseed in range(1,int(mJobsInTask)+1):
 
-        ajob=Job(theseed, nEvents, theseed, opts.localmode)
-        ajob.createThePBSFile()        
+        ajob=Job(theseed, nEvents, theseed, opts.localmode, ,mQueue, opts.jobname)
+        ajob.createTheLSFFile()        
 
         out_dir = ajob.out_dir # save for later usage
     
@@ -285,35 +288,25 @@ def main():
     # prepare the script for the harvesting step
     #############################################
 
-    harvestingname = PBS_DIR + "/jobs/PixelCPENtuple_"+opts.jobname+".csh"
+    harvestingname = LSF_DIR + "/jobs/PixelCPENtuple_"+opts.jobname+".sh"
     fout=open(harvestingname,"w")
 
-    fout.write("#!/bin/tcsh \n")
-    fout.write("set COUNT=0 \n")
+    fout.write("#!/bin/bash \n")
     fout.write("OUT_DIR="+out_dir+" \n")
-    fout.write("mkdir /tmp/$USER/"+link_name+" \n")
-    fout.write("foreach inputfile (`cmsLs "+out_dir+"`) \n")
-    fout.write("set namebase=`echo $inputfile | awk '{split($0,b,\"/\"); print b[9]}'` \n")
-    fout.write("if (\"$namebase\" =~ *\"stdgrechitfullph1g\"*) then \n")
-    fout.write("echo \"copying: $COUNT $OUT_DIR/$namebase\" \n") 
-    fout.write("cmsStage $OUT_DIR/$namebase /tmp/$USER/"+link_name+" \n")
-    fout.write("@ COUNT+=1 \n")
-    fout.write("if ($COUNT == "+mJobsInTask+") then \n")
-    fout.write("break \n")
-    fout.write("endif \n")
-    fout.write("endif \n") 
-    fout.write("end \n")
-    fout.write("echo \"copied $COUNT files\" \n")
+    fout.write("cd "+os.path.join(LAUNCH_BASE,"src","AuxCode","SLHCSimPhase2","test")+"\n")
+    fout.write("eval `scram r -sh` \n")
+    fout.write("mkdir -p /tmp/$USER/"+link_name+" \n")
+    fout.write("for inputfile in `cmsLs "+out_dir+" |grep seed | grep root`; do \n")
+    fout.write("   namebase=`echo $inputfile |awk '{split($0,b,\"/\"); print b[15]}'` \n")
+    fout.write("   cmsStage -f $OUT_DIR/$namebase /tmp/$USER/"+link_name+" \n")
+    fout.write("# Uncomment next line to clean up EOS space \n")
+    fout.write("#  cmsRm $OUT_DIR/$namebase \n")
+    fout.write("done \n")
     fout.write("cd /tmp/$USER/"+link_name+" \n")
-    fout.write("hadd stdgrechitfullph1g_ntuple_"+link_name+"*.root \n")
-    fout.write("cmsStage -f stdgrechitfullph1g_ntuple_"+link_name+"*.root /store/caf/user/$USER/SLHCSimPhase2/PixelNtuples \n")
-    fout.write("cd "+os.path.join("${CMSSW_BASE}","src","AuxCode","SLHCSimPhase2","test","Brownson")+"\n") 
-    fout.write("make \n")
-    fout.write("ln -fs /tmp/$USER/"+link_name+"/stdgrechitfullph1g_ntuple_"+link_name+"*.root ./stdgrechitfullph1g_ntuple.root \n")
-    fout.write("./res \n")
-    #fout.write("for RootOutputFile in $(ls *pdf ); do cp  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
-    fout.write("for EpsOutputFile in $(ls *eps ); do cp  ${EpsOutputFile}    ${OUT_DIR}/${EpsOutputFile} ; done \n")
-      
+    fout.write("hadd /tmp/$USER/stdgrechitfullph1g_ntuple_"+link_name+".root /tmp/$USER/"+link_name+"/stdgrechitfullph1g_ntuple_*.root \n")
+    fout.write("cmsStage -f /tmp/$USER/stdgrechitfullph1g_ntuple_"+link_name+".root $OUT_DIR \n")
+    os.system("chmod u+x "+harvestingname)
+    
 if __name__ == "__main__":        
     main()
 
