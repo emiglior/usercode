@@ -261,7 +261,7 @@ def main():
 
     for theseed in range(1,int(mJobsInTask)+1):
 
-        ajob=Job(theseed, nEvents, theseed, opts.localmode, ,mQueue, opts.jobname)
+        ajob=Job(theseed, nEvents, theseed, opts.localmode, mQueue, opts.jobname)
         ajob.createTheLSFFile()        
 
         out_dir = ajob.out_dir # save for later usage
