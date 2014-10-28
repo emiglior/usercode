@@ -153,7 +153,6 @@ process.FEVTDEBUGoutput = cms.OutputModule("PoolOutputModule",
 # based on http://cmslxr.fnal.gov/lxr/source/DPGAnalysis/SiStripTools/test/OccupancyPlotsTest_phase2_cfg.py?v=CMSSW_6_2_0_SLHC17
 from DPGAnalysis.SiStripTools.occupancyplotsselections_phase2_cff import *
 
-
 process.spclusmultprod = cms.EDProducer("SiPixelClusterMultiplicityProducer",
                                         clusterdigiCollection = cms.InputTag("siPixelClusters"),
                                         wantedSubDets = cms.VPSet()
