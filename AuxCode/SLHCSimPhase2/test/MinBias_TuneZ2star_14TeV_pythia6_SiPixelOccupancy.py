@@ -1,8 +1,9 @@
 # Based on Auto generated configuration file
 # using: 
-# Revision: 1.14 
+# Revision: 1.20 
 # Source: /local/reps/CMSSW/CMSSW/Configuration/Applications/python/ConfigBuilder.py,v 
-# with command line options: Configuration/GenProduction/python/FourteenTeV/TenMuE_0_200_cfi.py --no_exec -s GEN,SIM,DIGI:pdigi_valid,L1,DIGI2RAW,RAW2DIGI,L1Reco,RECO --conditions auto:upgrade2017 --magField 38T_PostLS1 --eventcontent FEVTDEBUG --beamspot NoSmear --geometry Extended2017 --relval 10000,100 --datatier GEN-SIM-RECO -n 500  --customise SLHCUpgradeSimulations/Configuration/combinedCustoms.cust_2017 --fileout file:TenMuE_0_200_cff_py_GEN_SIM_RECO.root
+# with command line options: FourMuPt_1_200_cfi --conditions auto:upgradePLS3 -n 10 --eventcontent FEVTDEBUG --relval 10000,100 -s DIGI:pdigi_valid,L1,DIGI2RAW,RAW2DIGI,L1Reco,RECO, --datatier GEN-SIM-DIGI-RECO--beamspot Gauss --customise SLHCUpgradeSimulations/Configuration/combinedCustoms.cust_2023Pixel --geometry Extended2023Pixel,Extended2023PixelReco --magField 38T_PostLS1 --fileout file:step1.root
+
 
 import FWCore.ParameterSet.Config as cms
 import FWCore.ParameterSet.VarParsing as VarParsing
@@ -76,8 +77,8 @@ process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
 process.load('FWCore.MessageService.MessageLogger_cfi')
 process.load('Configuration.EventContent.EventContent_cff')
 process.load('SimGeneral.MixingModule.mixNoPU_cfi')
-process.load('Configuration.Geometry.GeometryExtended2017Reco_cff')
-process.load('Configuration.Geometry.GeometryExtended2017_cff')
+process.load('Configuration.Geometry.GeometryExtended2023PixelReco_cff')
+process.load('Configuration.Geometry.GeometryExtended2023Pixel_cff')
 process.load('Configuration.StandardSequences.MagneticField_38T_PostLS1_cff')
 process.load('Configuration.StandardSequences.Generator_cff')
 # for gaussian smeared vertex
@@ -149,8 +150,9 @@ process.FEVTDEBUGoutput = cms.OutputModule("PoolOutputModule",
     )
 )
 
-# based on https://github.com/cms-sw/cmssw/blob/CMSSW_6_2_X_SLHC/DPGAnalysis/SiStripTools/test/OccupancyPlotsTest_pixelphase1_cfg.py
-from DPGAnalysis.SiStripTools.occupancyplotsselections_pixelphase1_cff import *
+# based on http://cmslxr.fnal.gov/lxr/source/DPGAnalysis/SiStripTools/test/OccupancyPlotsTest_phase2_cfg.py?v=CMSSW_6_2_0_SLHC17
+from DPGAnalysis.SiStripTools.occupancyplotsselections_phase2_cff import *
+
 
 process.spclusmultprod = cms.EDProducer("SiPixelClusterMultiplicityProducer",
                                         clusterdigiCollection = cms.InputTag("siPixelClusters"),
@@ -189,7 +191,7 @@ process.TFileService = cms.Service('TFileService',
 process.mix.digitizers = cms.PSet(process.theDigitizersValid)
 process.genstepfilter.triggerConditions=cms.vstring("generation_step")
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:upgrade2017', '')
+process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:upgradePLS3', '')
 
 process.generator = cms.EDFilter("Pythia6GeneratorFilter",
     pythiaPylistVerbosity = cms.untracked.int32(1),
@@ -252,18 +254,21 @@ process.FEVTDEBUGoutput_step = cms.EndPath(process.FEVTDEBUGoutput)
 ######################################################################################
 
 # Schedule definition
-process.schedule = cms.Schedule(process.generation_step,process.genfiltersummary_step,process.simulation_step,process.digitisation_step,process.L1simulation_step,process.digi2raw_step,process.raw2digi_step,process.L1Reco_step,process.reconstruction_step,process.seqProducers,process.seqAnalyzers,process.endjob_step,process.FEVTDEBUGoutput_step)
+process.schedule = cms.Schedule(process.generation_step,process.genfiltersummary_step,process.simulation_step,
+
+process.digitisation_step,process.L1simulation_step,process.digi2raw_step,process.raw2digi_step,process.L1Reco_step,process.reconstruction_step,process.seqProducers,process.seqAnalyzers,
+
+process.endjob_step,process.FEVTDEBUGoutput_step)
 # filter all path with the production filter sequence
 for path in process.paths:
 	getattr(process,path)._seq = process.generator * getattr(process,path)._seq 
 
 # customisation of the process.
-
 # Automatic addition of the customisation function from SLHCUpgradeSimulations.Configuration.combinedCustoms
-from SLHCUpgradeSimulations.Configuration.combinedCustoms import cust_2017 
+from SLHCUpgradeSimulations.Configuration.combinedCustoms import cust_2023Pixel 
 
-#call to customisation function cust_2017 imported from SLHCUpgradeSimulations.Configuration.combinedCustoms
-process = cust_2017(process)
+#call to customisation function cust_2023Pixel imported from SLHCUpgradeSimulations.Configuration.combinedCustoms
+process = cust_2023Pixel(process)
 
 ###################################################################################################
 # N.B. This lines were add from the step3 (DIGI-RAW)
