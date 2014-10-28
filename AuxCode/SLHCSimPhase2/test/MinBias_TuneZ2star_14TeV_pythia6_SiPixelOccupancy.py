@@ -132,7 +132,7 @@ process.configurationMetadata = cms.untracked.PSet(
 )
 
 # Output definition
-outrootfile='file:TenMuE_0_200_cff_py_GEN_SIM_RECO_age_'+str(options.AgeingScenario)+'_BPixThr_'+str(options.BPixThr)+'_'+str(options.maxEvents)+'_evts_seed_'+str(options.MySeed)+'.root'
+outrootfile='file:MinBias_cff_py_GEN_SIM_RECO_age_'+str(options.AgeingScenario)+'_BPixThr_'+str(options.BPixThr)+'_'+str(options.maxEvents)+'_evts_seed_'+str(options.MySeed)+'.root'
 outntuplefile='OccupancyPlotsTest_MinBias_ntuple_age_'+str(options.AgeingScenario)+'_BPixThr_'+str(options.BPixThr)+'_'+str(options.maxEvents)+'_evts_seed_'+str(options.MySeed)+'.root'
 print 'output file name:', outrootfile, outntuplefile
 
@@ -169,7 +169,6 @@ process.spclusoccuprod.wantedSubDets.extend(OccupancyPlotsPixelWantedSubDets)
 process.seqMultProd = cms.Sequence( process.spclusmultprod + process.spclusoccuprod )
 
 process.load("DPGAnalysis.SiStripTools.occupancyplots_cfi")
-process.occupancyplots.wantedSubDets = OccupancyPlotsStripWantedSubDets
 process.occupancyplots.file = cms.untracked.FileInPath('SLHCUpgradeSimulations/Geometry/data/PhaseII/BarrelEndcap/PixelSkimmedGeometry.txt')
 
 process.pixeloccupancyplots = process.occupancyplots.clone()
