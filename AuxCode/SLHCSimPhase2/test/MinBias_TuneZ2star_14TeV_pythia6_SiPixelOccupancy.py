@@ -169,7 +169,7 @@ process.seqMultProd = cms.Sequence( process.spclusmultprod + process.spclusoccup
 
 process.load("DPGAnalysis.SiStripTools.occupancyplots_cfi")
 process.occupancyplots.wantedSubDets = OccupancyPlotsStripWantedSubDets
-process.occupancyplots.file = cms.untracked.FileInPath("SLHCUpgradeSimulations/Geometry/data/PhaseI/PixelSkimmedGeometry_phase1.txt")
+process.occupancyplots.file = cms.untracked.FileInPath('SLHCUpgradeSimulations/Geometry/data/PhaseII/BarrelEndcap/PixelSkimmedGeometry.txt')
 
 process.pixeloccupancyplots = process.occupancyplots.clone()
 process.pixeloccupancyplots.wantedSubDets = cms.VPSet()
