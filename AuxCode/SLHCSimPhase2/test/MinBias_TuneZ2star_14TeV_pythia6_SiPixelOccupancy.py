@@ -186,6 +186,7 @@ process.TFileService = cms.Service('TFileService',
                                    )
 
 # Other statements
+process.mix.playback = True
 process.mix.digitizers = cms.PSet(process.theDigitizersValid)
 process.genstepfilter.triggerConditions=cms.vstring("generation_step")
 from Configuration.AlCa.GlobalTag import GlobalTag
