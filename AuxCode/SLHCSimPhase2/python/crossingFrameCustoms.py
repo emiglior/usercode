@@ -8,7 +8,8 @@ def customiseCrossingFrame(process):
     process.theMixObjects.mixTracks.makeCrossingFrame = cms.untracked.bool(True)
 
     process.mix.mixObjects.mixSH.crossingFrames = cms.untracked.vstring('BSCHits', 
-                                                                        'FP420SI', 
+                                                                        'FP420SI',
+                                                                        'MuonGEMHits', 
                                                                         'MuonCSCHits', 
                                                                         'MuonDTHits', 
                                                                         'MuonRPCHits', 

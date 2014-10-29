@@ -2,9 +2,7 @@
 # using: 
 # Revision: 1.20 
 # Source: /local/reps/CMSSW/CMSSW/Configuration/Applications/python/ConfigBuilder.py,v 
-# with command line options: FourMuPt_1_200_cfi --conditions auto:upgradePLS3 -n 10 --eventcontent FEVTDEBUG --relval 10000,100 -s DIGI:pdigi_valid,L1,DIGI2RAW,RAW2DIGI,L1Reco,RECO, --datatier GEN-SIM-DIGI-RECO--beamspot Gauss --customise SLHCUpgradeSimulations/Configuration/combinedCustoms.cust_2023Pixel --geometry Extended2023Pixel,Extended2023PixelReco --magField 38T_PostLS1 --fileout file:step1.root
-
-
+# with command line options: FourMuPt_1_200_cfi --conditions auto:upgradePLS3 -n 10 --eventcontent FEVTDEBUG,DQM --relval 10000,100 -s GEN,SIM,DIGI:pdigi_valid,L1,DIGI2RAW,RAW2DIGI,L1Reco,RECO,VALIDATION,DQM --datatier GEN-SIM-DIGI-RAW-RECO,DQM --beamspot Gauss --customise SLHCUpgradeSimulations/Configuration/combinedCustoms.cust_2023Pixel --geometry Extended2023Pixel,Extended2023PixelReco --magField 38T_PostLS1 --fileout file:step_all.root --no_exec
 import FWCore.ParameterSet.Config as cms
 import FWCore.ParameterSet.VarParsing as VarParsing
 
@@ -143,7 +141,7 @@ process.FEVTDEBUGoutput = cms.OutputModule("PoolOutputModule",
     fileName = cms.untracked.string(outrootfile),
     dataset = cms.untracked.PSet(
         filterName = cms.untracked.string(''),
-        dataTier = cms.untracked.string('GEN-SIM-RECO')
+        dataTier = cms.untracked.string('GEN-SIM-DIGI-RAW-RECO')
     ),
     SelectEvents = cms.untracked.PSet(
         SelectEvents = cms.vstring('generation_step')
@@ -186,9 +184,8 @@ process.TFileService = cms.Service('TFileService',
                                    )
 
 # Other statements
-process.mix.playback = True
-process.mix.digitizers = cms.PSet(process.theDigitizersValid)
 process.genstepfilter.triggerConditions=cms.vstring("generation_step")
+process.mix.digitizers = cms.PSet(process.theDigitizersValid)
 from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:upgradePLS3', '')
 
@@ -269,7 +266,7 @@ process = cust_2023Pixel(process)
 # N.B. This lines were add from the step3 (DIGI-RAW)
 # produced by the cmsDriver command from runTheMatrix.py --what upgrade -l 10000
 # taken from https://twiki.cern.ch/twiki/bin/viewauth/CMS/Recipes620SLHC#Recipes_without_pileup
-# If not used the job will crash!
+# If not used the job will crash! (NO MORE IN USE IN 620_SLHC17 ??)
 ###################################################################################################
 
 # Automatic addition of the customisation function from SimGeneral.MixingModule.fullMixCustomize_cff
@@ -277,6 +274,9 @@ from SimGeneral.MixingModule.fullMixCustomize_cff import setCrossingFrameOn
 
 #call to customisation function setCrossingFrameOn imported from SimGeneral.MixingModule.fullMixCustomize_cff
 process = setCrossingFrameOn(process)
+
+# 620_SLHC17_patch1 Extended2023 MuonGEM added to digitizer
+process.mix.mixObjects.mixSH.crossingFrames.extend(['MuonGEMHits'])
 
 if options.AgeingScenario!="NoAgeing":
     # Automatic addition of the customisation function from SLHCUpgradeSimulations.Configuration.aging
