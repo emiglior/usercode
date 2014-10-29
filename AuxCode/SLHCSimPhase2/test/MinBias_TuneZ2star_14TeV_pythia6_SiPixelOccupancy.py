@@ -175,6 +175,17 @@ process.pixeloccupancyplots.wantedSubDets.extend(OccupancyPlotsPixelWantedSubDet
 process.pixeloccupancyplots.multiplicityMaps = cms.VInputTag(cms.InputTag("spclusmultprod"))
 process.pixeloccupancyplots.occupancyMaps = cms.VInputTag(cms.InputTag("spclusoccuprod"))
 
+# process.siStripQualityESProducer.ListOfRecordToMerge=cms.VPSet(
+# 	#    cms.PSet( record = cms.string("SiStripDetVOffRcd"),    tag    = cms.string("") ),
+# 	cms.PSet( record = cms.string("SiStripDetCablingRcd"), tag    = cms.string("") ),
+# 	cms.PSet( record = cms.string("RunInfoRcd"),           tag    = cms.string("") ),
+# 	cms.PSet( record = cms.string("SiStripBadChannelRcd"), tag    = cms.string("") ),
+# 	cms.PSet( record = cms.string("SiStripBadFiberRcd"),   tag    = cms.string("") ),
+# 	cms.PSet( record = cms.string("SiStripBadModuleRcd"),  tag    = cms.string("") )
+# 	)
+ 
+process.SiStripDetInfoFileReader = cms.Service("SiStripDetInfoFileReader")
+ 
 process.seqAnalyzers = cms.Path(process.pixeloccupancyplots) 
 
 process.seqProducers = cms.Path(process.seqMultProd)
