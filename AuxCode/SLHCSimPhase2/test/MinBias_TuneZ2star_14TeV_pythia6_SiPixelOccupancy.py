@@ -148,6 +148,28 @@ process.FEVTDEBUGoutput = cms.OutputModule("PoolOutputModule",
     )
 )
 
+###### begin of the ntuplizer fragment 
+# based on http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/UserCode/Brownson/SLHCUpgradeSimulations/test/resolutionPlotter/
+process.ReadLocalMeasurement = cms.EDAnalyzer("StdPixelHitNtuplizer",
+   src = cms.InputTag("siPixelRecHits"),
+   ### if using simple (non-iterative) or old (as in 1_8_4) tracking
+   trackProducer = cms.InputTag("generalTracks"),
+   OutputFile = cms.string(outntuplefile),
+   ### for using track hit association
+   associatePixel = cms.bool(True),
+   associateStrip = cms.bool(False),
+   associateRecoTracks = cms.bool(False),
+   ROUList = cms.vstring('g4SimHitsTrackerHitsPixelBarrelLowTof',
+                         'g4SimHitsTrackerHitsPixelBarrelHighTof',
+                         'g4SimHitsTrackerHitsPixelEndcapLowTof',
+                         'g4SimHitsTrackerHitsPixelEndcapHighTof')
+)
+# since cmsDriver generates a "Schedule" the ntuplizer needs to be defined as "Path"
+process.make_ntuple = cms.Path(process.ReadLocalMeasurement)
+###### end of ntuplizer fragment
+
+
+###### begin occupancy plots fragment
 # based on http://cmslxr.fnal.gov/lxr/source/DPGAnalysis/SiStripTools/test/OccupancyPlotsTest_phase2_cfg.py?v=CMSSW_6_2_0_SLHC17
 from DPGAnalysis.SiStripTools.occupancyplotsselections_phase2_cff import *
 
@@ -185,10 +207,9 @@ process.pixeloccupancyplots.occupancyMaps = cms.VInputTag(cms.InputTag("spclusoc
 # 	)
  
 process.SiStripDetInfoFileReader = cms.Service("SiStripDetInfoFileReader")
- 
 process.seqAnalyzers = cms.Path(process.pixeloccupancyplots) 
-
 process.seqProducers = cms.Path(process.seqMultProd)
+###### end of occupancy plots
 
 process.TFileService = cms.Service('TFileService',
                                    fileName = cms.string(outntuplefile)
@@ -261,7 +282,7 @@ process.FEVTDEBUGoutput_step = cms.EndPath(process.FEVTDEBUGoutput)
 ######################################################################################
 
 # Schedule definition
-process.schedule = cms.Schedule(process.generation_step,process.genfiltersummary_step,process.simulation_step,process.digitisation_step,process.L1simulation_step,process.digi2raw_step,process.raw2digi_step,process.L1Reco_step,process.reconstruction_step,process.seqProducers,process.seqAnalyzers,process.endjob_step,process.FEVTDEBUGoutput_step)
+process.schedule = cms.Schedule(process.generation_step,process.genfiltersummary_step,process.simulation_step,process.digitisation_step,process.L1simulation_step,process.digi2raw_step,process.raw2digi_step,process.L1Reco_step,process.reconstruction_step,process.seqProducers,process.seqAnalyzers,process.make_ntuple,process.endjob_step,process.FEVTDEBUGoutput_step)
 # filter all path with the production filter sequence
 for path in process.paths:
 	getattr(process,path)._seq = process.generator * getattr(process,path)._seq 

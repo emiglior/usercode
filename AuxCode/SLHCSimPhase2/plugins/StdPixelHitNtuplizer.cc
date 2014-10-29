@@ -14,7 +14,6 @@
 #include "DataFormats/SiPixelDetId/interface/PixelSubdetector.h"
 #include "DataFormats/SiPixelCluster/interface/SiPixelCluster.h"
 
-
 #include "DataFormats/TrajectorySeed/interface/TrajectorySeedCollection.h"
 #include "DataFormats/TrackCandidate/interface/TrackCandidateCollection.h"
 #include "DataFormats/TrackReco/interface/Track.h"
@@ -50,12 +49,9 @@
 #include "Geometry/TrackerGeometryBuilder/interface/PixelTopologyBuilder.h"
 
 // For ROOT
-#include <TROOT.h>
+#include "FWCore/ServiceRegistry/interface/Service.h"
+#include "CommonTools/UtilAlgos/interface/TFileService.h"
 #include <TTree.h>
-#include <TFile.h>
-#include <TF1.h>
-#include <TH2F.h>
-#include <TH1F.h>
 
 // STD
 #include <memory>
@@ -152,19 +148,18 @@ private:
 
     void init();
   } recHit_;
- 
-  TFile * tfile_;
+
+  edm::Service<TFileService> tFileService; 
   TTree * pixeltree_;
-  TTree * pixeltree2_;
+  TTree * pixeltreeOnTrack_;
 };
  
  
 StdPixelHitNtuplizer::StdPixelHitNtuplizer(edm::ParameterSet const& conf) : 
   conf_(conf), 
   src_( conf.getParameter<edm::InputTag>( "src" ) ),
-  tfile_(0), 
   pixeltree_(0),
-  pixeltree2_(0)
+  pixeltreeOnTrack_(0)
 {
 }
  
@@ -174,8 +169,6 @@ StdPixelHitNtuplizer::~StdPixelHitNtuplizer() { }
 void StdPixelHitNtuplizer::endJob() 
 {
   std::cout << " StdPixelHitNtuplizer::endJob" << std::endl;
-  tfile_->Write();
-  tfile_->Close();
 }
  
  
@@ -183,11 +176,8 @@ void StdPixelHitNtuplizer::endJob()
 void StdPixelHitNtuplizer::beginJob()
 {
   std::cout << " StdPixelHitNtuplizer::beginJob" << std::endl;
-  std::string outputFile = conf_.getParameter<std::string>("OutputFile");
-  
-  tfile_ = new TFile ( outputFile.c_str() , "RECREATE" );
-  pixeltree_ = new TTree("PixelNtuple","Pixel hit analyzer ntuple");
-  pixeltree2_ = new TTree("Pixel2Ntuple","On-Track Pixel hit analyzer ntuple");
+  pixeltree_        = tFileService->make<TTree>("PixelNtuple","Pixel hit analyzer ntuple");
+  pixeltreeOnTrack_ = tFileService->make<TTree>("PixelNtupleOnTrack","On-Track Pixel hit analyzer ntuple");
 
   int bufsize = 64000;
   //Common Branch
@@ -242,50 +232,50 @@ void StdPixelHitNtuplizer::beginJob()
   pixeltree_->Branch("DgCharge", recHit_.fDgCharge	 ,"DgCharge[DgN]/F");  
 
   //Common Branch (on-track)
-  pixeltree2_->Branch("evt",     &evt_ ,          "run/I:evtnum/I", bufsize);
-  pixeltree2_->Branch("pdgid",   &recHit_.pdgid,  "pdgid/I"  );
-  pixeltree2_->Branch("process", &recHit_.process,"process/I");
-  pixeltree2_->Branch("q",       &recHit_.q               ,"q/F"	    );	   
-  pixeltree2_->Branch("x",	&recHit_.x     		 ,"x/F"	    );	   
-  pixeltree2_->Branch("y",	&recHit_.y     		 ,"y/F"	    );	   
-  pixeltree2_->Branch("xx",	&recHit_.xx    		 ,"xx/F"	    );	   
-  pixeltree2_->Branch("xy",	&recHit_.xy    		 ,"xy/F"	    );	   
-  pixeltree2_->Branch("yy",	&recHit_.yy    		 ,"yy/F"	    );	   
-  pixeltree2_->Branch("row",	&recHit_.row   		 ,"row/F"    );		   
-  pixeltree2_->Branch("col",	&recHit_.col   		 ,"col/F"    );		   
-  pixeltree2_->Branch("gx",	&recHit_.gx    		 ,"gx/F"	    );	   
-  pixeltree2_->Branch("gy",	&recHit_.gy    		 ,"gy/F"	    );	   
-  pixeltree2_->Branch("gz",	&recHit_.gz    		 ,"gz/F"	    );	   
-  pixeltree2_->Branch("subid",	&recHit_.subid 		 ,"subid/I"  );	   
-  pixeltree2_->Branch("module",	&recHit_.module 	 ,"module/I" );	   
-  pixeltree2_->Branch("layer",	&recHit_.layer 		 ,"layer/I"  );	   
-  pixeltree2_->Branch("ladder",	&recHit_.ladder      	 ,"ladder/I" );	   
-  pixeltree2_->Branch("disk",	&recHit_.disk  		 ,"disk/I"   );	   
-  pixeltree2_->Branch("blade",	&recHit_.blade 		 ,"blade/I"  );	   
-  pixeltree2_->Branch("panel",	&recHit_.panel 		 ,"panel/I"  );	   
-  pixeltree2_->Branch("side",	&recHit_.side  		 ,"side/I"   );	   
-  pixeltree2_->Branch("nsimhit",&recHit_.nsimhit	 ,"nsimhit/I");	   
-  pixeltree2_->Branch("spreadx",&recHit_.spreadx	 ,"spreadx/I");	   
-  pixeltree2_->Branch("spready",&recHit_.spready	 ,"spready/I");	   
-  pixeltree2_->Branch("hx",	&recHit_.hx		 ,"hx/F");	   
-  pixeltree2_->Branch("hy",	&recHit_.hy		 ,"hy/F");
-  pixeltree2_->Branch("hrow",	&recHit_.hrow   	 ,"hrow/F");		   
-  pixeltree2_->Branch("hcol",	&recHit_.hcol   	 ,"hcol/F");
-  pixeltree2_->Branch("tx",	&recHit_.tx		 ,"tx/F");	   
-  pixeltree2_->Branch("ty",	&recHit_.ty		 ,"ty/F");	   
-  pixeltree2_->Branch("tz",	&recHit_.tz		 ,"tz/F");	   
-  pixeltree2_->Branch("theta",	&recHit_.theta		 ,"theta/F" );	   
-  pixeltree2_->Branch("phi",	&recHit_.phi		 ,"phi/F"    );	
-  pixeltree2_->Branch("nRowsInDet", &recHit_.nRowsInDet	 ,"nRowsInDet/I");	
-  pixeltree2_->Branch("nColsInDet", &recHit_.nColsInDet	 ,"nColsInDet/I");
-  pixeltree2_->Branch("pitchx",     &recHit_.pitchx	 ,"pitchx/F");
-  pixeltree2_->Branch("pitchy",     &recHit_.pitchy	 ,"pitchy/F");	  	   
-  pixeltree2_->Branch("DgN",	&recHit_.fDgN		 ,"DgN/I"    );		   
-  pixeltree2_->Branch("DgRow",	 recHit_.fDgRow		 ,"DgRow[DgN]/I"  );	   
-  pixeltree2_->Branch("DgCol",	 recHit_.fDgCol		 ,"DgCol[DgN]/I"   ); 
-  pixeltree2_->Branch("DgDetId",	 recHit_.fDgDetId	 ,"DgDetId[DgN]/I" );  
-  pixeltree2_->Branch("DgAdc",	 recHit_.fDgAdc		 ,"DgAdc[DgN]/F"   ); 
-  pixeltree2_->Branch("DgCharge", recHit_.fDgCharge	 ,"DgCharge[DgN]/F");  
+  pixeltreeOnTrack_->Branch("evt",     &evt_ ,          "run/I:evtnum/I", bufsize);
+  pixeltreeOnTrack_->Branch("pdgid",   &recHit_.pdgid,  "pdgid/I"  );
+  pixeltreeOnTrack_->Branch("process", &recHit_.process,"process/I");
+  pixeltreeOnTrack_->Branch("q",       &recHit_.q               ,"q/F"	    );	   
+  pixeltreeOnTrack_->Branch("x",	&recHit_.x     		 ,"x/F"	    );	   
+  pixeltreeOnTrack_->Branch("y",	&recHit_.y     		 ,"y/F"	    );	   
+  pixeltreeOnTrack_->Branch("xx",	&recHit_.xx    		 ,"xx/F"	    );	   
+  pixeltreeOnTrack_->Branch("xy",	&recHit_.xy    		 ,"xy/F"	    );	   
+  pixeltreeOnTrack_->Branch("yy",	&recHit_.yy    		 ,"yy/F"	    );	   
+  pixeltreeOnTrack_->Branch("row",	&recHit_.row   		 ,"row/F"    );		   
+  pixeltreeOnTrack_->Branch("col",	&recHit_.col   		 ,"col/F"    );		   
+  pixeltreeOnTrack_->Branch("gx",	&recHit_.gx    		 ,"gx/F"	    );	   
+  pixeltreeOnTrack_->Branch("gy",	&recHit_.gy    		 ,"gy/F"	    );	   
+  pixeltreeOnTrack_->Branch("gz",	&recHit_.gz    		 ,"gz/F"	    );	   
+  pixeltreeOnTrack_->Branch("subid",	&recHit_.subid 		 ,"subid/I"  );	   
+  pixeltreeOnTrack_->Branch("module",	&recHit_.module 	 ,"module/I" );	   
+  pixeltreeOnTrack_->Branch("layer",	&recHit_.layer 		 ,"layer/I"  );	   
+  pixeltreeOnTrack_->Branch("ladder",	&recHit_.ladder      	 ,"ladder/I" );	   
+  pixeltreeOnTrack_->Branch("disk",	&recHit_.disk  		 ,"disk/I"   );	   
+  pixeltreeOnTrack_->Branch("blade",	&recHit_.blade 		 ,"blade/I"  );	   
+  pixeltreeOnTrack_->Branch("panel",	&recHit_.panel 		 ,"panel/I"  );	   
+  pixeltreeOnTrack_->Branch("side",	&recHit_.side  		 ,"side/I"   );	   
+  pixeltreeOnTrack_->Branch("nsimhit",&recHit_.nsimhit	 ,"nsimhit/I");	   
+  pixeltreeOnTrack_->Branch("spreadx",&recHit_.spreadx	 ,"spreadx/I");	   
+  pixeltreeOnTrack_->Branch("spready",&recHit_.spready	 ,"spready/I");	   
+  pixeltreeOnTrack_->Branch("hx",	&recHit_.hx		 ,"hx/F");	   
+  pixeltreeOnTrack_->Branch("hy",	&recHit_.hy		 ,"hy/F");
+  pixeltreeOnTrack_->Branch("hrow",	&recHit_.hrow   	 ,"hrow/F");		   
+  pixeltreeOnTrack_->Branch("hcol",	&recHit_.hcol   	 ,"hcol/F");
+  pixeltreeOnTrack_->Branch("tx",	&recHit_.tx		 ,"tx/F");	   
+  pixeltreeOnTrack_->Branch("ty",	&recHit_.ty		 ,"ty/F");	   
+  pixeltreeOnTrack_->Branch("tz",	&recHit_.tz		 ,"tz/F");	   
+  pixeltreeOnTrack_->Branch("theta",	&recHit_.theta		 ,"theta/F" );	   
+  pixeltreeOnTrack_->Branch("phi",	&recHit_.phi		 ,"phi/F"    );	
+  pixeltreeOnTrack_->Branch("nRowsInDet", &recHit_.nRowsInDet	 ,"nRowsInDet/I");	
+  pixeltreeOnTrack_->Branch("nColsInDet", &recHit_.nColsInDet	 ,"nColsInDet/I");
+  pixeltreeOnTrack_->Branch("pitchx",     &recHit_.pitchx	 ,"pitchx/F");
+  pixeltreeOnTrack_->Branch("pitchy",     &recHit_.pitchy	 ,"pitchy/F");	  	   
+  pixeltreeOnTrack_->Branch("DgN",	&recHit_.fDgN		 ,"DgN/I"    );		   
+  pixeltreeOnTrack_->Branch("DgRow",	 recHit_.fDgRow		 ,"DgRow[DgN]/I"  );	   
+  pixeltreeOnTrack_->Branch("DgCol",	 recHit_.fDgCol		 ,"DgCol[DgN]/I"   ); 
+  pixeltreeOnTrack_->Branch("DgDetId",	 recHit_.fDgDetId	 ,"DgDetId[DgN]/I" );  
+  pixeltreeOnTrack_->Branch("DgAdc",	 recHit_.fDgAdc		 ,"DgAdc[DgN]/F"   ); 
+  pixeltreeOnTrack_->Branch("DgCharge", recHit_.fDgCharge	 ,"DgCharge[DgN]/F");  
 }
  
 // Functions that gets called by framework every event
@@ -486,7 +476,7 @@ void StdPixelHitNtuplizer::analyze(const edm::Event& e, const edm::EventSetup& e
 	    recHit_.init();
 	    fillPRecHit(detid_db, subid, layer_num,ladder_num,module_num,disk_num,blade_num,panel_num,side_num, 
 			ih, num_simhit, closest_simhit, geomDet );	 
-	    pixeltree2_->Fill();	   
+	    pixeltreeOnTrack_->Fill();	   
 	    /*
 	      TrackingRecHit * hit = (*ih)->clone();
 	      LocalPoint lp = hit->localPosition();
