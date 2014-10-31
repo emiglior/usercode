@@ -2,7 +2,7 @@
 # using: 
 # Revision: 1.20 
 # Source: /local/reps/CMSSW/CMSSW/Configuration/Applications/python/ConfigBuilder.py,v 
-# with command line options: FourMuPt_1_200_cfi --conditions auto:upgradePLS3 -n 10 --eventcontent FEVTDEBUG,DQM --relval 10000,100 -s GEN,SIM,DIGI:pdigi_valid,L1,DIGI2RAW,RAW2DIGI,L1Reco,RECO,VALIDATION,DQM --datatier GEN-SIM-DIGI-RAW-RECO,DQM --beamspot Gauss --customise SLHCUpgradeSimulations/Configuration/combinedCustoms.cust_2023Pixel --geometry Extended2023Pixel,Extended2023PixelReco --magField 38T_PostLS1 --fileout file:step_all.root --no_exec
+# with command line options: FourMuPt_1_200_cfi --conditions auto:upgradePLS3 -n 10 --eventcontent FEVTDEBUG,DQM --relval 10000,100 -s GEN,SIM,DIGI:pdigi_valid,L1,DIGI2RAW,RAW2DIGI,L1Reco,RECO,VALIDATION,DQM --datatier GEN-SIM-DIGI-RAW-RECO,DQM --beamspot Gauss --customise SLHCUpgradeSimulations/Configuration/combinedCustoms.cust_2023Muon --geometry Extended2023Muon,Extended2023MuonReco --magField 38T_PostLS1 --fileout file:step_all.root --no_exec
 import FWCore.ParameterSet.Config as cms
 import FWCore.ParameterSet.VarParsing as VarParsing
 
@@ -75,8 +75,8 @@ process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
 process.load('FWCore.MessageService.MessageLogger_cfi')
 process.load('Configuration.EventContent.EventContent_cff')
 process.load('SimGeneral.MixingModule.mixNoPU_cfi')
-process.load('Configuration.Geometry.GeometryExtended2023PixelReco_cff')
-process.load('Configuration.Geometry.GeometryExtended2023Pixel_cff')
+process.load('Configuration.Geometry.GeometryExtended2023MuonReco_cff')
+process.load('Configuration.Geometry.GeometryExtended2023Muon_cff')
 process.load('Configuration.StandardSequences.MagneticField_38T_PostLS1_cff')
 process.load('Configuration.StandardSequences.Generator_cff')
 # for gaussian smeared vertex
@@ -124,8 +124,8 @@ process.options = cms.untracked.PSet(
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.14 $'),
-    annotation = cms.untracked.string('Configuration/GenProduction/python/FourteenTeV/TenMuE_0_200_cfi.py nevts:10'),
+    version = cms.untracked.string('$Revision: 1.20 $'),
+    annotation = cms.untracked.string('FourMuPt_1_200_cfi nevts:10'),
     name = cms.untracked.string('Applications')
 )
 
@@ -189,7 +189,7 @@ process.spclusoccuprod.wantedSubDets.extend(OccupancyPlotsPixelWantedSubDets)
 process.seqMultProd = cms.Sequence( process.spclusmultprod + process.spclusoccuprod )
 
 process.load("DPGAnalysis.SiStripTools.occupancyplots_cfi")
-process.occupancyplots.file = cms.untracked.FileInPath('SLHCUpgradeSimulations/Geometry/data/PhaseII/BarrelEndcap/PixelSkimmedGeometry.txt')
+process.occupancyplots.file = cms.untracked.FileInPath('SLHCUpgradeSimulations/Geometry/data/PhaseII/Pixel10D/PixelSkimmedGeometry.txt')
 
 process.pixeloccupancyplots = process.occupancyplots.clone()
 process.pixeloccupancyplots.wantedSubDets = cms.VPSet()
@@ -288,11 +288,12 @@ for path in process.paths:
 	getattr(process,path)._seq = process.generator * getattr(process,path)._seq 
 
 # customisation of the process.
-# Automatic addition of the customisation function from SLHCUpgradeSimulations.Configuration.combinedCustoms
-from SLHCUpgradeSimulations.Configuration.combinedCustoms import cust_2023Pixel 
 
-#call to customisation function cust_2023Pixel imported from SLHCUpgradeSimulations.Configuration.combinedCustoms
-process = cust_2023Pixel(process)
+# Automatic addition of the customisation function from SLHCUpgradeSimulations.Configuration.combinedCustoms
+from SLHCUpgradeSimulations.Configuration.combinedCustoms import cust_2023Muon 
+
+#call to customisation function cust_2023Muon imported from SLHCUpgradeSimulations.Configuration.combinedCustoms
+process = cust_2023Muon(process)
 
 ###################################################################################################
 # N.B. This lines were add from the step3 (DIGI-RAW)
@@ -308,7 +309,7 @@ from SimGeneral.MixingModule.fullMixCustomize_cff import setCrossingFrameOn
 process = setCrossingFrameOn(process)
 
 # 620_SLHC17_patch1 Extended2023 MuonGEM added to digitizer
-process.mix.mixObjects.mixSH.crossingFrames.extend(['MuonGEMHits'])
+process.mix.mixObjects.mixSH.crossingFrames.extend(['MuonGEMHits', 'MuonME0Hits'])
 
 if options.AgeingScenario!="NoAgeing":
     # Automatic addition of the customisation function from SLHCUpgradeSimulations.Configuration.aging

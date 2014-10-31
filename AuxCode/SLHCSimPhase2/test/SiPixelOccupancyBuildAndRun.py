@@ -247,12 +247,12 @@ class Job:
         fout.write("# Eric Brownson's recipe to change the size of the pixels \n")
         fout.write("### 2: modify the topology \n")
         fout.write("# trackerStructureTopology_template.xml   -> BPIX is changed \n")
-        fout.write("sed -e \"s%PIXELROCROWS_L0L1%"+self.pixelrocrows_l0l1+"%g\" -e \"s%PIXELROCCOLS_L0L1%"+self.pixelroccols_l0l1+"%g\" -e \"s%PIXELROCROWS_L2L3%"+self.pixelrocrows_l2l3+"%g\" -e \"s%PIXELROCCOLS_L2L3%"+self.pixelroccols_l2l3+"%g\" ${PKG_DIR}/trackerStructureTopology_template.xml > Geometry/TrackerCommonData/data/PhaseII/BarrelEndcap/trackerStructureTopology.xml \n")
+        fout.write("sed -e \"s%PIXELROCROWS_L0L1%"+self.pixelrocrows_l0l1+"%g\" -e \"s%PIXELROCCOLS_L0L1%"+self.pixelroccols_l0l1+"%g\" -e \"s%PIXELROCROWS_L2L3%"+self.pixelrocrows_l2l3+"%g\" -e \"s%PIXELROCCOLS_L2L3%"+self.pixelroccols_l2l3+"%g\" ${PKG_DIR}/trackerStructureTopology_template.xml > Geometry/TrackerCommonData/data/PhaseII/Pixel10D/trackerStructureTopology.xml \n")
         fout.write("# Run CMSSW to complete the recipe for changing the size of the pixels \n")
 
         # recipe for phase II tracking
         fout.write("cmsRun SLHCUpgradeSimulations/Geometry/test/writeFile_phase2BE_cfg.py \n")
-        fout.write("mv PixelSkimmedGeometry_phase2BE.txt ${CMSSW_BASE}/src/SLHCUpgradeSimulations/Geometry/data/PhaseII/BarrelEndcap/PixelSkimmedGeometry.txt \n")        
+        fout.write("mv PixelSkimmedGeometry_phase2BE.txt ${CMSSW_BASE}/src/SLHCUpgradeSimulations/Geometry/data/PhaseII/Pixel10D/PixelSkimmedGeometry.txt \n")        
 
         fout.write("### 2 ended  \n")
 
