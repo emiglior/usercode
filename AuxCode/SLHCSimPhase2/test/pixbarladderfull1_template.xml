@@ -49,9 +49,9 @@
  <Constant name="ROChipY"           value="-([pixbarladder:Module1Thick]-
            [pixbarladder:ROChipThick123])/2"/>
  <Constant name="SensorY"           value="[ROChipY]+
-           ([pixbarladder:ROChipThick123]+[pixbarladder:SensorThick])/2"/>
+           ([pixbarladder:ROChipThick123]+[pixbarladderfull1:MySensorThick])/2"/>
  <Constant name="HybridY"           value="[SensorY]+
-           ([pixbarladder:SensorThick]+[pixbarladder:HybridThick])/2"/>
+           ([pixbarladderfull1:MySensorThick]+[pixbarladder:HybridThick])/2"/>
  <Constant name="CapacitorY"        value="[HybridY]+
            ([pixbarladder:HybridThick]+[pixbarladder:CapacitorThick])/2"/>
  <Constant name="CapacitorStripY"   value="[HybridY]+
@@ -83,9 +83,9 @@
  <Box name="PixelBarrelROChipFull"       dx="[pixbarladderfull1:ROChipWidth]/2"
       dy="[pixbarladder:ROChipThick123]/2"     dz="[pixbarladder:ActiveDz]/2"/>
  <Box name="PixelBarrelSensorFull"       dx="[pixbarladderfull1:SensorWidth]/2"
-      dy="[pixbarladder:SensorThick]/2"     dz="[pixbarladder:SensorDz]/2"/>
+      dy="[pixbarladderfull1:MySensorThick]/2"     dz="[pixbarladder:SensorDz]/2"/>
  <Box name="PixelBarrelActiveFull"       dx="[pixbarladderfull1:ActiveWidth]/2"
-      dy="[pixbarladder:ActiveDz]/2"        dz="[pixbarladder:SensorThick]/2"/>
+      dy="[pixbarladder:ActiveDz]/2"        dz="[pixbarladderfull1:MySensorThick]/2"/>
  <Box name="PixelBarrelHybridFull"       dx="[pixbarladderfull1:HybridWidth]/2"
       dy="[pixbarladder:HybridThick]/2"     dz="[pixbarladder:HybridDz]/2"/>
  <Tubs name="PixelBarrelCableBoundle1" rMin="[zero]"    rMax="[pixbarladder:CableBoundleDiameter]/2"
