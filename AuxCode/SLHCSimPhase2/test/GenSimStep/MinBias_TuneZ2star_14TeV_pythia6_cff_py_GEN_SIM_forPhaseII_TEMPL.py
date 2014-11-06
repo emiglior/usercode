@@ -2,7 +2,7 @@
 # using: 
 # Revision: 1.20 
 # Source: /local/reps/CMSSW/CMSSW/Configuration/Applications/python/ConfigBuilder.py,v 
-# with command line options: FourMuPt_1_200_cfi --conditions auto:upgrade2017 -n 10 --eventcontent FEVTDEBUG --relval 10000,100 -s GEN,SIM --datatier GEN-SIM --beamspot Gauss --customise SLHCUpgradeSimulations/Configuration/combinedCustoms.cust_2017 --geometry Extended2017 --magField 38T_PostLS1 --fileout file:step1.root --no_exec
+# with command line options: FourMuPt_1_200_cfi --conditions auto:upgradePLS3 -n 10 --eventcontent FEVTDEBUG --relval 10000,100 -s GEN,SIM --datatier GEN-SIM --beamspot Gauss --customise SLHCUpgradeSimulations/Configuration/combinedCustoms.cust_2023Muon --geometry Extended2023Muon,Extended2023MuonReco --magField 38T_PostLS1 --fileout file:step1.root
 import FWCore.ParameterSet.Config as cms
 import FWCore.ParameterSet.VarParsing as VarParsing
 
@@ -35,8 +35,8 @@ process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
 process.load('FWCore.MessageService.MessageLogger_cfi')
 process.load('Configuration.EventContent.EventContent_cff')
 process.load('SimGeneral.MixingModule.mixNoPU_cfi')
-process.load('Configuration.Geometry.GeometryExtended2017Reco_cff')
-process.load('Configuration.Geometry.GeometryExtended2017_cff')
+process.load('Configuration.Geometry.GeometryExtended2023MuonReco_cff')
+process.load('Configuration.Geometry.GeometryExtended2023Muon_cff')
 process.load('Configuration.StandardSequences.MagneticField_38T_PostLS1_cff')
 process.load('Configuration.StandardSequences.Generator_cff')
 process.load('IOMC.EventVertexGenerators.VtxSmearedGauss_cfi')
@@ -59,7 +59,6 @@ process.maxEvents = cms.untracked.PSet(
 myFirstEvent = (options.maxEvents * options.myseed)+1
 print "firs Event:",myFirstEvent
 
-
 # Input source
 process.source = cms.Source("EmptySource",
 			    firstEvent = cms.untracked.uint32(myFirstEvent),
@@ -72,14 +71,14 @@ process.options = cms.untracked.PSet(
 
 # Production Info
 process.configurationMetadata = cms.untracked.PSet(
-    version = cms.untracked.string('$Revision: 1.20 $'),
-    annotation = cms.untracked.string('FourMuPt_1_200_cfi nevts:10'),
-    name = cms.untracked.string('Applications')
+    version = cms.untracked.string('$Revision: 1.2 $'),
+    annotation = cms.untracked.string('PYTHIA6-MinBias TuneZ2star at 14TeV'),
+    name = cms.untracked.string('$Source: /local/reps/CMSSW/CMSSW/Configuration/GenProduction/python/FourteenTeV/MinBias_TuneZ2star_14TeV_pythia6_cff.py,v $')
 )
 
 # Output definition
 
-outrootfile='file:step1_FourMuPartGun_'+str(options.maxEvents)+'_evts_seed_'+str(options.myseed)+'.root'
+outrootfile='file:step1_MinBias_TuneZ2star_14TeV_pythia6_'+str(options.maxEvents)+'_evts_seed_'+str(options.myseed)+'.root'
 print 'output file name:', outrootfile
 
 process.FEVTDEBUGoutput = cms.OutputModule("PoolOutputModule",
@@ -101,24 +100,55 @@ process.FEVTDEBUGoutput = cms.OutputModule("PoolOutputModule",
 # Other statements
 process.genstepfilter.triggerConditions=cms.vstring("generation_step")
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:upgrade2017', '')
+process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:upgradePLS3', '')
 
-process.generator = cms.EDProducer("FlatRandomPtGunProducer",
-    PGunParameters = cms.PSet(
-        MaxPt = cms.double(200.0),
-        MinPt = cms.double(0.9),
-        PartID = cms.vint32(-13, -13),
-        MaxEta = cms.double(2.7),
-        MaxPhi = cms.double(3.14159265359),
-        MinEta = cms.double(-2.7),
-        MinPhi = cms.double(-3.14159265359)
-    ),
-    Verbosity = cms.untracked.int32(0),
-    psethack = cms.string('Four mu pt 1 to 200'),
-    AddAntiParticle = cms.bool(True),
-    firstRun = cms.untracked.uint32(1)
+process.generator = cms.EDFilter("Pythia6GeneratorFilter",
+    pythiaPylistVerbosity = cms.untracked.int32(1),
+    filterEfficiency = cms.untracked.double(1.0),
+    pythiaHepMCVerbosity = cms.untracked.bool(False),
+    comEnergy = cms.double(14000.0),
+    crossSection = cms.untracked.double(79150000000),
+    maxEventsToPrint = cms.untracked.int32(0),
+    PythiaParameters = cms.PSet(
+        pythiaUESettings = cms.vstring('MSTU(21)=1     ! Check on possible errors during program execution', 
+            'MSTJ(22)=2     ! Decay those unstable particles', 
+            'PARJ(71)=10 .  ! for which ctau  10 mm', 
+            'MSTP(33)=0     ! no K factors in hard cross sections', 
+            'MSTP(2)=1      ! which order running alphaS', 
+            'MSTP(51)=10042 ! structure function chosen (external PDF CTEQ6L1)', 
+            'MSTP(52)=2     ! work with LHAPDF', 
+            'PARP(82)=1.921 ! pt cutoff for multiparton interactions', 
+            'PARP(89)=1800. ! sqrts for which PARP82 is set', 
+            'PARP(90)=0.227 ! Multiple interactions: rescaling power', 
+            'MSTP(95)=6     ! CR (color reconnection parameters)', 
+            'PARP(77)=1.016 ! CR', 
+            'PARP(78)=0.538 ! CR', 
+            'PARP(80)=0.1   ! Prob. colored parton from BBR', 
+            'PARP(83)=0.356 ! Multiple interactions: matter distribution parameter', 
+            'PARP(84)=0.651 ! Multiple interactions: matter distribution parameter', 
+            'PARP(62)=1.025 ! ISR cutoff', 
+            'MSTP(91)=1     ! Gaussian primordial kT', 
+            'PARP(93)=10.0  ! primordial kT-max', 
+            'MSTP(81)=21    ! multiple parton interactions 1 is Pythia default', 
+            'MSTP(82)=4     ! Defines the multi-parton model'),
+        processParameters = cms.vstring('MSEL=0         ! User defined processes', 
+            'MSUB(11)=1     ! Min bias process', 
+            'MSUB(12)=1     ! Min bias process', 
+            'MSUB(13)=1     ! Min bias process', 
+            'MSUB(28)=1     ! Min bias process', 
+            'MSUB(53)=1     ! Min bias process', 
+            'MSUB(68)=1     ! Min bias process', 
+            'MSUB(92)=1     ! Min bias process, single diffractive', 
+            'MSUB(93)=1     ! Min bias process, single diffractive', 
+            'MSUB(94)=1     ! Min bias process, double diffractive', 
+            'MSUB(95)=1     ! Min bias process'),
+        parameterSets = cms.vstring('pythiaUESettings', 
+            'processParameters')
+    )
 )
 
+
+process.ProductionFilterSequence = cms.Sequence(process.generator)
 
 # Path and EndPath definitions
 process.generation_step = cms.Path(process.pgen)
@@ -131,14 +161,14 @@ process.FEVTDEBUGoutput_step = cms.EndPath(process.FEVTDEBUGoutput)
 process.schedule = cms.Schedule(process.generation_step,process.genfiltersummary_step,process.simulation_step,process.endjob_step,process.FEVTDEBUGoutput_step)
 # filter all path with the production filter sequence
 for path in process.paths:
-	getattr(process,path)._seq = process.generator * getattr(process,path)._seq 
+	getattr(process,path)._seq = process.ProductionFilterSequence * getattr(process,path)._seq 
 
 # customisation of the process.
 
 # Automatic addition of the customisation function from SLHCUpgradeSimulations.Configuration.combinedCustoms
-from SLHCUpgradeSimulations.Configuration.combinedCustoms import cust_2017 
+from SLHCUpgradeSimulations.Configuration.combinedCustoms import cust_2023Muon 
 
-#call to customisation function cust_2017 imported from SLHCUpgradeSimulations.Configuration.combinedCustoms
-process = cust_2017(process)
+#call to customisation function cust_2023Muon imported from SLHCUpgradeSimulations.Configuration.combinedCustoms
+process = cust_2023Muon(process)
 
 # End of customisation functions

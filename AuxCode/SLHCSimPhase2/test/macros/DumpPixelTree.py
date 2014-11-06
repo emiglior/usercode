@@ -154,7 +154,7 @@ def main():
         print "No input file specified"
         sys.exit()
 
-    input_tree = input_root_file.Get("PixelNtuple")            
+    input_tree = input_root_file.Get("ReadLocalMeasurement/PixelNtuple")            
     if options.verbose: input_tree.Print()
 
 
@@ -266,7 +266,8 @@ def main():
             pixel_recHit.DgCharge[iDg] =input_tree.DgCharge[iDg]
 
 
-       
+        # phase2 : BPIX subid==1&&layer<5
+        #          FPIX subid==2&&disk<11  
         # BPIX layer 1 only 
         if pixel_recHit.subid==1 and pixel_recHit.layer==1:     
 

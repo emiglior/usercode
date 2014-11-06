@@ -66,7 +66,7 @@ class Job:
     """Main class to create and submit LSF jobs"""
 ###########################################################################
 
-    def __init__(self, job_id, maxevents, ageing, pixelrocrows_l0l1, pixelroccols_l0l1, pixelrocrows_l2l3, pixelroccols_l2l3, pixeleperadc, pixmaxadc, chanthr, seedthr, clusthr, bpixthr, bpixl0l1thickness, bpixl2l3thickness, myseed, islocal, queue,task_name):
+    def __init__(self, job_id, maxevents, pu, ageing, pixelrocrows_l0l1, pixelroccols_l0l1, pixelrocrows_l2l3, pixelroccols_l2l3, pixeleperadc, pixmaxadc, chanthr, seedthr, clusthr, bpixthr, bpixl0l1thickness, bpixl2l3thickness, myseed, islocal, queue,task_name):
 ############################################################################################################################
         
         # store the job-ID (since it is created in a for loop)
@@ -98,6 +98,7 @@ class Job:
 
         self.bpixthr=bpixthr
         self.ageing=ageing
+        self.pu=pu
         self.myseed=myseed
         self.islocal=islocal
         self.launch_dir=LAUNCH_BASE
@@ -106,12 +107,14 @@ class Job:
                                       "PixelROCRows_"+pixelrocrows_l0l1+"_"+pixelrocrows_l2l3,\
                                       "PixelROCCols_"+pixelroccols_l0l1+"_"+pixelroccols_l2l3,\
                                       "BPIXThick_"+bpixl0l1thickness+"_"+bpixl2l3thickness,\
-                                      "BPixThr_"+bpixthr,"eToADC_"+pixeleperadc,"MaxADC_"+pixmaxadc,"ChanThr_"+chanthr,"SeedThr_"+seedthr,"ClusThr_"+clusthr)
+                                      "BPixThr_"+bpixthr,"eToADC_"+pixeleperadc,"MaxADC_"+pixmaxadc,\
+                                      "ChanThr_"+chanthr,"SeedThr_"+seedthr,"ClusThr_"+clusthr,\
+                                      "PU_"+self.pu)
 
         if(self.job_id==1):
             mkdir_eos(self.out_dir)
 
-        self.task_basename = self.task_name + "_pixelCPE_age" + self.ageing + "_PixelROCRows" + self.pixelrocrows_l0l1 + "_" +  self.pixelrocrows_l2l3 +\
+        self.task_basename = self.task_name + "_pixelCPE_age" + self.ageing + "_pu" + self.pu + "_PixelROCRows" + self.pixelrocrows_l0l1 + "_" +  self.pixelrocrows_l2l3 +\
             "_PixelROCCols" + self.pixelroccols_l0l1 + "_" +  self.pixelroccols_l2l3 +\
             "_BPIXThick" + self.bpixl0l1thickness + "_" + self.bpixl2l3thickness +\
             "_BPixThr" + self.bpixthr + 'eToADC_' + self.pixeleperadc + 'MaxADC_' + self.pixmaxadc + 'ChanThr_'+ self.chanthr + 'SeedThr_' + self.seedthr + "ClusThr_" + self.clusthr 
@@ -161,6 +164,7 @@ class Job:
         fout.write("pixelroccols_l2l3="+self.pixelroccols_l2l3+" \n")
         fout.write("pixelrocrows_l2l3="+self.pixelrocrows_l2l3+" \n")
         fout.write("ageing="+self.ageing+" \n")
+        fout.write("puscenario="+self.pu+" \n")
         fout.write("bpixthr="+self.bpixthr+" \n")
         fout.write("pixeleperadc="+self.pixeleperadc+" \n") 
         fout.write("pixmaxadc="+self.pixmaxadc+" \n")
@@ -269,9 +273,9 @@ class Job:
         fout.write("# Run CMSSW for GEN-NTUPLE steps \n")
         fout.write("cd "+os.path.join("AuxCode","SLHCSimPhase2","test")+"\n")
         fout.write("edmConfigDump ${PKG_DIR}/MinBias_TuneZ2star_14TeV_pythia6_SiPixelOccupancy.py >> pset_dumped.py \n")
-        fout.write("cmsRun ${PKG_DIR}/MinBias_TuneZ2star_14TeV_pythia6_SiPixelOccupancy.py maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} BPixThr=${bpixthr} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
+        fout.write("cmsRun ${PKG_DIR}/OneNuM_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py  maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} BPixThr=${bpixthr} PUScenario=${puscenario} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
         fout.write("ls -lh . \n")
-        fout.write("cmsStage -f ${PKG_DIR}/MinBias_TuneZ2star_14TeV_pythia6_SiPixelOccupancy.py ${OUT_DIR}/MinBias_TuneZ2star_14TeV_pythia6_SiPixelOccupancy.py \n")
+        fout.write("cmsStage -f ${PKG_DIR}/OneNuM_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py  ${OUT_DIR}/OneNuM_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py  \n")
         fout.write("cmsStage -f pset_dumped.py ${OUT_DIR}/pset_dumped.py \n")
         #fout.write("cd Brownson \n")
         #fout.write("make \n")
@@ -332,6 +336,7 @@ def main():
     group.add_option('--ChanThr'   ,help='Cluster channel threshold', dest='chanthr',  action='store', default='1000')
     group.add_option('--ClusThr'   ,help='Cluster channel threshold', dest='clusthr',  action='store', default='1000')
 
+    group.add_option('-p','--pileup',help='set pileup', dest='pu',action='store',default='NoPU')
     group.add_option('-a','--ageing',help='set ageing',dest='ageing',action='store',default='NoAgeing')
     parser.add_option_group(group)
 
@@ -354,6 +359,7 @@ def main():
     mClusThr = None
     mChanThr = None
     mAgeing  = None
+    mPileUp  = None
     mQueue   = None
     mJobsInTask=None
  
@@ -380,6 +386,7 @@ def main():
         mClusThr    = ConfigSectionMap(config,"PixelConfiguration")['clusthr']   
         mChanThr    = ConfigSectionMap(config,"PixelConfiguration")['chanthr']               
         mAgeing     = ConfigSectionMap(config,"PixelConfiguration")['ageing']    
+        mPileUp   = ConfigSectionMap(config,"SampleConfiguration")['pileup']
         mNOfEvents  = ConfigSectionMap(config,"JobConfiguration")['numberofevents']
         mJobsInTask = ConfigSectionMap(config,"JobConfiguration")['numberofjobs']
         mQueue      = ConfigSectionMap(config,"JobConfiguration")['queue']
@@ -403,6 +410,7 @@ def main():
         mClusThr    = opts.clusthr
         mChanThr    = opts.chanthr
         mAgeing     = opts.ageing
+        mPileUp     = opts.pu
         mNOfEvents  = opts.numberofevents
         mJobsInTask = opts.jobsInTask
         mQueue      = opts.queue
@@ -440,6 +448,7 @@ def main():
     print "- L0 Thickness               : ",mL0L1Thick,mL2L3Thick
     print "- BPIX Digitizer Threshold   : ",mBPixThr
     print "- Ageing Scenario            : ",mAgeing
+    print "- PileUp Scenario            : ",mPileUp
     print "- Total events to run        : ",int(mNOfEvents)*int(mJobsInTask)     
 
     nEvents=int(mNOfEvents)
