@@ -386,7 +386,7 @@ def main():
         mClusThr    = ConfigSectionMap(config,"PixelConfiguration")['clusthr']   
         mChanThr    = ConfigSectionMap(config,"PixelConfiguration")['chanthr']               
         mAgeing     = ConfigSectionMap(config,"PixelConfiguration")['ageing']    
-        mPileUp   = ConfigSectionMap(config,"SampleConfiguration")['pileup']
+        mPileUp   = ConfigSectionMap(config,"PixelConfiguration")['pileup']
         mNOfEvents  = ConfigSectionMap(config,"JobConfiguration")['numberofevents']
         mJobsInTask = ConfigSectionMap(config,"JobConfiguration")['numberofjobs']
         mQueue      = ConfigSectionMap(config,"JobConfiguration")['queue']
@@ -457,7 +457,7 @@ def main():
 
     for theseed in range(1,int(mJobsInTask)+1):
 
-        ajob=Job(theseed, nEvents, mAgeing, mRocRows_l0l1, mRocCols_l0l1, mRocRows_l2l3, mRocCols_l2l3, mPixElePerADC, mPixMaxADC, mChanThr, mSeedThr, mClusThr, mBPixThr, mL0L1Thick, mL2L3Thick, theseed, opts.localmode,mQueue,opts.jobname)
+        ajob=Job(theseed, nEvents, mPileUp, mAgeing, mRocRows_l0l1, mRocCols_l0l1, mRocRows_l2l3, mRocCols_l2l3, mPixElePerADC, mPixMaxADC, mChanThr, mSeedThr, mClusThr, mBPixThr, mL0L1Thick, mL2L3Thick, theseed, opts.localmode,mQueue,opts.jobname)
         ajob.createTheLSFFile()        
 
         out_dir = ajob.out_dir # save for later usage
