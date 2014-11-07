@@ -273,7 +273,9 @@ class Job:
         fout.write("# Run CMSSW for GEN-NTUPLE steps \n")
         fout.write("cd "+os.path.join("AuxCode","SLHCSimPhase2","test")+"\n")
         fout.write("edmConfigDump ${PKG_DIR}/MinBias_TuneZ2star_14TeV_pythia6_SiPixelOccupancy.py >> pset_dumped.py \n")
-        fout.write("cmsRun ${PKG_DIR}/OneNuM_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py  maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} BPixThr=${bpixthr} PUScenario=${puscenario} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
+#        fout.write("cmsRun ${PKG_DIR}/OneNuM_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py  maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} BPixThr=${bpixthr} PUScenario=${puscenario} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
+        fout.write("cmsRun ${PKG_DIR}/TenMuE_0_200_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} BPixThr=${bpixthr} PUScenario=${puscenario} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
+
         fout.write("ls -lh . \n")
         fout.write("cmsStage -f ${PKG_DIR}/OneNuM_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py  ${OUT_DIR}/OneNuM_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py  \n")
         fout.write("cmsStage -f pset_dumped.py ${OUT_DIR}/pset_dumped.py \n")

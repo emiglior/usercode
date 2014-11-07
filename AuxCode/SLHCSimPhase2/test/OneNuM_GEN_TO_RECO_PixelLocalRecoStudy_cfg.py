@@ -196,7 +196,7 @@ process.FEVTDEBUGoutput = cms.OutputModule("PoolOutputModule",
     fileName = cms.untracked.string(outrootfile),
     dataset = cms.untracked.PSet(
         filterName = cms.untracked.string(''),
-        dataTier = cms.untracked.string('GEN-SIM-DIGI-RAW-RECO')
+        dataTier = cms.untracked.string('GEN-SIM-RECO')
     ),
     SelectEvents = cms.untracked.PSet(
         SelectEvents = cms.vstring('generation_step')

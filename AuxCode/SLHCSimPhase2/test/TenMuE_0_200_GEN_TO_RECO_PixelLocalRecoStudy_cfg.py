@@ -15,11 +15,48 @@ options.register('maxEvents',
                  VarParsing.VarParsing.varType.int,
                  "Number of events to process (-1 for all)")
 
+options.register('PUScenario',
+                 "NoPU", # default value
+                 VarParsing.VarParsing.multiplicity.singleton, # singleton or list
+                 VarParsing.VarParsing.varType.string,         # string, int, or float
+                 "PU scenario (NoPileUp is default)")
+
 options.register('BPixThr',
                  2000,
                  VarParsing.VarParsing.multiplicity.singleton,
                  VarParsing.VarParsing.varType.int,
                  "BPix Clusterizer Threshold (2000 e- is default)")
+
+options.register('PixElePerADC',
+                 135,
+                 VarParsing.VarParsing.multiplicity.singleton,
+                 VarParsing.VarParsing.varType.float,
+                 "Pixel Digitizer e per ADC (135 e- is default)")
+
+options.register('PixMaxADC',
+                 255,
+                 VarParsing.VarParsing.multiplicity.singleton,
+                 VarParsing.VarParsing.varType.int,
+                 "Pixel Digitizer ADC max (255 / 8 bit is default)")
+
+options.register('ChannelThreshold',
+                 1000,
+                 VarParsing.VarParsing.multiplicity.singleton,
+                 VarParsing.VarParsing.varType.int,
+                 "Pixel Clusterizer channel threshold (1000 e- is default)")
+
+options.register('SeedThreshold',
+                 1000,
+                 VarParsing.VarParsing.multiplicity.singleton,
+                 VarParsing.VarParsing.varType.int,
+                 "Pixel Clusterizer seed threshold (1000 e- is default)")
+
+options.register('ClusterThreshold',
+                 4000,
+                 VarParsing.VarParsing.multiplicity.singleton,
+                 VarParsing.VarParsing.varType.float,
+                 "Pixel Clusterizer cluster threshold (4000 e- is default)")
+
 
 options.register('AgeingScenario',
                  "NoAgeing", # default value
@@ -44,9 +81,57 @@ process.load('Configuration.StandardSequences.Services_cff')
 process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
 process.load('FWCore.MessageService.MessageLogger_cfi')
 process.load('Configuration.EventContent.EventContent_cff')
-process.load('SimGeneral.MixingModule.mixNoPU_cfi')
-process.load('Configuration.Geometry.GeometryExtended2017Reco_cff')
-process.load('Configuration.Geometry.GeometryExtended2017_cff')
+
+#
+
+# import of configurations for PU
+if options.PUScenario!="NoPU":
+    # Used to be
+    # process.load('SimGeneral.MixingModule.mix_E8TeV_AVE_16_BX_25ns_cfi')
+    process.load('SimGeneral.MixingModule.mix_POISSON_average_cfi')
+    process.mix.input.fileNames = cms.untracked.vstring(['root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc17_patch1/Extended2023Muon/Thick_L0L1_0.285/step1_MinBias_TuneZ2star_14TeV_pythia6_3kEvts.root'])
+    process.mix.bunchspace = cms.int32(25)
+    process.mix.minBunch = cms.int32(-12)
+    process.mix.maxBunch = cms.int32(3)
+
+    if "140" in options.PUScenario:        
+        process.mix.input.nbPileupEvents.averageNumber = cms.double(140.000000)
+        print "PU = 140"
+    elif "10" in options.PUScenario:
+        process.mix.input.nbPileupEvents.averageNumber = cms.double(10.000000)
+    elif "20" in options.PUScenario:
+        process.mix.input.nbPileupEvents.averageNumber = cms.double(20.000000)  
+    elif "25" in options.PUScenario:
+        process.mix.input.nbPileupEvents.averageNumber = cms.double(25.000000)
+    elif "35" in options.PUScenario:
+        process.mix.input.nbPileupEvents.averageNumber = cms.double(35.000000)
+    elif "40" in options.PUScenario:
+        process.mix.input.nbPileupEvents.averageNumber = cms.double(40.000000)
+    elif "50" in options.PUScenario:
+        process.mix.input.nbPileupEvents.averageNumber = cms.double(50.000000)
+    elif "70" in options.PUScenario:
+        process.mix.input.nbPileupEvents.averageNumber = cms.double(70.000000)
+    elif "75" in options.PUScenario:
+        process.mix.input.nbPileupEvents.averageNumber = cms.double(75.000000)
+    elif "100" in options.PUScenario:
+        process.mix.input.nbPileupEvents.averageNumber = cms.double(100.000000)
+    elif "125" in options.PUScenario:
+        process.mix.input.nbPileupEvents.averageNumber = cms.double(125.000000)
+    elif "150" in options.PUScenario:
+        process.mix.input.nbPileupEvents.averageNumber = cms.double(150.000000)
+    elif "175" in options.PUScenario:
+        process.mix.input.nbPileupEvents.averageNumber = cms.double(175.000000)
+    elif "200" in options.PUScenario:
+        process.mix.input.nbPileupEvents.averageNumber = cms.double(200.000000)
+    else:
+        print "Unrecognized PU scenario, using default (=NoPU)"
+        process.load('SimGeneral.MixingModule.mixNoPU_cfi')
+       
+else:
+    process.load('SimGeneral.MixingModule.mixNoPU_cfi')
+
+process.load('Configuration.Geometry.GeometryExtended2023MuonReco_cff')
+process.load('Configuration.Geometry.GeometryExtended2023Muon_cff')
 process.load('Configuration.StandardSequences.MagneticField_38T_PostLS1_cff')
 process.load('Configuration.StandardSequences.Generator_cff')
 # for gaussian smeared vertex
@@ -100,7 +185,7 @@ process.configurationMetadata = cms.untracked.PSet(
 # Output definition
 
 outrootfile='file:TenMuE_0_200_cff_py_GEN_SIM_RECO_age_'+str(options.AgeingScenario)+'_BPixThr_'+str(options.BPixThr)+'_'+str(options.maxEvents)+'_evts_seed_'+str(options.MySeed)+'.root'
-outntuplefile='stdgrechitfullph1g_ntuple_age_'+str(options.AgeingScenario)+'_BPixThr_'+str(options.BPixThr)+'_'+str(options.maxEvents)+'_evts_seed_'+str(options.MySeed)+'.root'
+outntuplefile='OccupancyPlotTest_TenMuE_ntuple_age_'+str(options.AgeingScenario)+'_BPixThr_'+str(options.BPixThr)+'_'+str(options.maxEvents)+'_evts_seed_'+str(options.MySeed)+'.root'
 print 'output file name:', outrootfile, outntuplefile
 
 process.FEVTDEBUGoutput = cms.OutputModule("PoolOutputModule",
@@ -117,13 +202,78 @@ process.FEVTDEBUGoutput = cms.OutputModule("PoolOutputModule",
     )
 )
 
-# Additional output definition
+###### begin of the ntuplizer fragment 
+# based on http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/UserCode/Brownson/SLHCUpgradeSimulations/test/resolutionPlotter/
+process.ReadLocalMeasurement = cms.EDAnalyzer("StdPixelHitNtuplizer",
+   src = cms.InputTag("siPixelRecHits"),
+   ### if using simple (non-iterative) or old (as in 1_8_4) tracking
+   trackProducer = cms.InputTag("generalTracks"),
+   OutputFile = cms.string(outntuplefile),
+   ### for using track hit association
+   associatePixel = cms.bool(True),
+   associateStrip = cms.bool(False),
+   associateRecoTracks = cms.bool(False),
+   ROUList = cms.vstring('g4SimHitsTrackerHitsPixelBarrelLowTof',
+                         'g4SimHitsTrackerHitsPixelBarrelHighTof',
+                         'g4SimHitsTrackerHitsPixelEndcapLowTof',
+                         'g4SimHitsTrackerHitsPixelEndcapHighTof')
+)
+# since cmsDriver generates a "Schedule" the ntuplizer needs to be defined as "Path"
+process.make_ntuple = cms.Path(process.ReadLocalMeasurement)
+###### end of ntuplizer fragment
+
+
+###### begin occupancy plots fragment
+# based on http://cmslxr.fnal.gov/lxr/source/DPGAnalysis/SiStripTools/test/OccupancyPlotsTest_phase2_cfg.py?v=CMSSW_6_2_0_SLHC17
+from DPGAnalysis.SiStripTools.occupancyplotsselections_phase2_cff import *
+
+process.spclusmultprod = cms.EDProducer("SiPixelClusterMultiplicityProducer",
+                                        clusterdigiCollection = cms.InputTag("siPixelClusters"),
+                                        wantedSubDets = cms.VPSet()
+                                        )
+process.spclusmultprod.wantedSubDets.extend(OccupancyPlotsPixelWantedSubDets)
+
+process.spclusoccuprod = cms.EDProducer("SiPixelClusterMultiplicityProducer",
+                                        clusterdigiCollection = cms.InputTag("siPixelClusters"),
+                                        withClusterSize = cms.untracked.bool(True),
+                                        wantedSubDets = cms.VPSet()
+                                        )
+process.spclusoccuprod.wantedSubDets.extend(OccupancyPlotsPixelWantedSubDets)
+
+process.seqMultProd = cms.Sequence( process.spclusmultprod + process.spclusoccuprod )
+
+process.load("DPGAnalysis.SiStripTools.occupancyplots_cfi")
+process.occupancyplots.file = cms.untracked.FileInPath('SLHCUpgradeSimulations/Geometry/data/PhaseII/Pixel10D/PixelSkimmedGeometry.txt')
+
+process.pixeloccupancyplots = process.occupancyplots.clone()
+process.pixeloccupancyplots.wantedSubDets = cms.VPSet()
+process.pixeloccupancyplots.wantedSubDets.extend(OccupancyPlotsPixelWantedSubDets)
+process.pixeloccupancyplots.multiplicityMaps = cms.VInputTag(cms.InputTag("spclusmultprod"))
+process.pixeloccupancyplots.occupancyMaps = cms.VInputTag(cms.InputTag("spclusoccuprod"))
+
+# process.siStripQualityESProducer.ListOfRecordToMerge=cms.VPSet(
+# 	#    cms.PSet( record = cms.string("SiStripDetVOffRcd"),    tag    = cms.string("") ),
+# 	cms.PSet( record = cms.string("SiStripDetCablingRcd"), tag    = cms.string("") ),
+# 	cms.PSet( record = cms.string("RunInfoRcd"),           tag    = cms.string("") ),
+# 	cms.PSet( record = cms.string("SiStripBadChannelRcd"), tag    = cms.string("") ),
+# 	cms.PSet( record = cms.string("SiStripBadFiberRcd"),   tag    = cms.string("") ),
+# 	cms.PSet( record = cms.string("SiStripBadModuleRcd"),  tag    = cms.string("") )
+# 	)
+ 
+process.SiStripDetInfoFileReader = cms.Service("SiStripDetInfoFileReader")
+process.seqAnalyzers = cms.Path(process.pixeloccupancyplots) 
+process.seqProducers = cms.Path(process.seqMultProd)
+###### end of occupancy plots
+
+process.TFileService = cms.Service('TFileService',
+                                   fileName = cms.string(outntuplefile)
+                                   )
 
 # Other statements
-process.mix.digitizers = cms.PSet(process.theDigitizersValid)
 process.genstepfilter.triggerConditions=cms.vstring("generation_step")
+process.mix.digitizers = cms.PSet(process.theDigitizersValid)
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:upgrade2017', '')
+process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:upgradePLS3', '')
 
 process.generator = cms.EDProducer("FlatRandomEGunProducer",
     PGunParameters = cms.PSet(
@@ -158,31 +308,9 @@ process.endjob_step = cms.EndPath(process.endOfProcess)
 process.FEVTDEBUGoutput_step = cms.EndPath(process.FEVTDEBUGoutput)
 
 ######################################################################################
-### This fragment is meant to produce ntuples for the calibration of the pixel CPE ###
-# http://cmssw.cvs.cern.ch/cgi-bin/cmssw.cgi/UserCode/Brownson/SLHCUpgradeSimulations/test/resolutionPlotter/
-process.ReadLocalMeasurement = cms.EDAnalyzer("NewStdHitNtuplizer",
-   src = cms.InputTag("siPixelRecHits"),
-   stereoRecHits = cms.InputTag("siStripMatchedRecHits","stereoRecHit"),
-   rphiRecHits = cms.InputTag("siStripMatchedRecHits","rphiRecHit"),
-   matchedRecHits = cms.InputTag("siStripMatchedRecHits","matchedRecHit"),
-   ### if using simple (non-iterative) or old (as in 1_8_4) tracking
-   trackProducer = cms.InputTag("generalTracks"),
-   OutputFile = cms.string(outntuplefile),
-   ### for using track hit association
-   associatePixel = cms.bool(True),
-   associateStrip = cms.bool(False),
-   associateRecoTracks = cms.bool(False),
-   ROUList = cms.vstring('g4SimHitsTrackerHitsPixelBarrelLowTof',
-                         'g4SimHitsTrackerHitsPixelBarrelHighTof',
-                         'g4SimHitsTrackerHitsPixelEndcapLowTof',
-                         'g4SimHitsTrackerHitsPixelEndcapHighTof')
-)
-# since cmsDriver generates a "Schedule" the ntuplizer needs to be defined as "Path"
-process.make_ntuple = cms.Path(process.ReadLocalMeasurement)
-######################################################################################
 
 # Schedule definition
-process.schedule = cms.Schedule(process.generation_step,process.genfiltersummary_step,process.simulation_step,process.digitisation_step,process.L1simulation_step,process.digi2raw_step,process.raw2digi_step,process.L1Reco_step,process.reconstruction_step,process.make_ntuple,process.endjob_step,process.FEVTDEBUGoutput_step)
+process.schedule = cms.Schedule(process.generation_step,process.genfiltersummary_step,process.simulation_step,process.digitisation_step,process.L1simulation_step,process.digi2raw_step,process.raw2digi_step,process.L1Reco_step,process.reconstruction_step,process.seqProducers,process.seqAnalyzers,process.make_ntuple,process.endjob_step,process.FEVTDEBUGoutput_step)
 # filter all path with the production filter sequence
 for path in process.paths:
 	getattr(process,path)._seq = process.generator * getattr(process,path)._seq 
@@ -190,10 +318,10 @@ for path in process.paths:
 # customisation of the process.
 
 # Automatic addition of the customisation function from SLHCUpgradeSimulations.Configuration.combinedCustoms
-from SLHCUpgradeSimulations.Configuration.combinedCustoms import cust_2017 
+from SLHCUpgradeSimulations.Configuration.combinedCustoms import cust_2023Muon 
 
-#call to customisation function cust_2017 imported from SLHCUpgradeSimulations.Configuration.combinedCustoms
-process = cust_2017(process)
+#call to customisation function cust_2023Muon imported from SLHCUpgradeSimulations.Configuration.combinedCustoms
+process = cust_2023Muon(process)
 
 ###################################################################################################
 # N.B. This lines were add from the step3 (DIGI-RAW)
@@ -207,6 +335,9 @@ from SimGeneral.MixingModule.fullMixCustomize_cff import setCrossingFrameOn
 
 #call to customisation function setCrossingFrameOn imported from SimGeneral.MixingModule.fullMixCustomize_cff
 process = setCrossingFrameOn(process)
+
+# 620_SLHC17_patch1 Extended2023 MuonGEM added to digitizer
+process.mix.mixObjects.mixSH.crossingFrames.extend(['MuonGEMHits', 'MuonME0Hits'])
 
 if options.AgeingScenario!="NoAgeing":
     # Automatic addition of the customisation function from SLHCUpgradeSimulations.Configuration.aging
@@ -232,19 +363,17 @@ if options.AgeingScenario!="NoAgeing":
         process = customise_aging_1000(process)
     elif options.AgeingScenario=="3000":    
         process = customise_aging_3000(process)
-    # Uncomment next block to add a new ageing scenario
-    # elif options.AgeingScenario=="AgeingOne":          
-    #         process = customise_aging_zero(process)
-    #         process.mix.digitizers.pixel.thePixelPseudoRadDamage_BPix1 = cms.double(1.0)
-    #         process.mix.digitizers.pixel.thePixelPseudoRadDamage_BPix2 = cms.double(1.0)
-    #         process.mix.digitizers.pixel.thePixelPseudoRadDamage_BPix3 = cms.double(1.0)
-    #         process.mix.digitizers.pixel.thePixelPseudoRadDamage_BPix4 = cms.double(1.0)
     else:
         print "Unrecognized Ageing scenario, using default (=NoAgeing)"
 
 # customize the CPE errors
 from AuxCode.SLHCSimPhase2.PixelCPE_tables_cff import *
 process.PixelCPEGenericESProducer.PixelCPEList = PixelCPE_dict['pixelCPE_100x150_upgrade']
+
+## Superseeded by process = setCrossingFrameOn(process)
+# customize to make crossingFrames available (needed for turning on g4SimHits in the ROUList)
+#from AuxCode.SLHCSimPhase2.crossingFrameCustoms import *
+#customiseCrossingFrame(process)
 
 # Uncomment next two lines to change pixel DIGI threshold
 process.mix.digitizers.pixel.ThresholdInElectrons_BPix = cms.double(options.BPixThr)
@@ -258,5 +387,31 @@ process.mix.digitizers.pixel.AddNoise = cms.bool(False)
 process.mix.digitizers.pixel.AddThresholdSmearing = cms.bool(False)
 process.mix.digitizers.pixel.AddNoisyPixels = cms.bool(False)
 
+
+#process.mix.digitizers.pixel.FluctuateCharge = cms.untracked.bool(False)
+
+
+# from   SimTracker/SiPixelDigitizer/plugins/SiPixelDigitizerAlgorithm.cc
+# // ADC calibration 1adc count(135e.
+# // Corresponds to 2adc/kev, 270[e/kev]/135[e/adc](2[adc/kev]
+# // Be carefull, this parameter is also used in SiPixelDet.cc to
+# // calculate the noise in adc counts from noise in electrons.
+# // Both defaults should be the same.
+# theElectronPerADC(conf.getParameter<double>("ElectronPerAdc")),
+# // ADC saturation value, 255(8bit adc.
+# //theAdcFullScale(conf.getUntrackedParameter<int>("AdcFullScale",255)),
+# theAdcFullScale(conf.getParameter<int>("AdcFullScale")),
+# theAdcFullScaleStack(conf.exists("AdcFullScaleStack")?conf.getParameter<int>("AdcFullScaleStack"):255), <- this is for phase2 PS modules 
+
+# CAREFUL: gain is encoded in
+#http://cmslxr.fnal.gov/lxr/source/RecoLocalTracker/SiPixelClusterizer/src/PixelThresholdClusterizer.cc?v=%EF%BB%BFCMSSW_6_2_0_SLHC15#260
+process.mix.digitizers.pixel.AdcFullScale = cms.int32(options.PixMaxADC)        # phase1 default 255 (8 bit)
+process.mix.digitizers.pixel.ElectronPerAdc = cms.double(options.PixElePerADC)  # phase1 default 135 (255*135=34425)
+
+# Customise clusterizer
+process.siPixelClusters.ChannelThreshold = cms.int32(options.ChannelThreshold)  # phase1 default 1000e
+process.siPixelClusters.SeedThreshold = cms.int32(options.SeedThreshold)        # phase1 default 1000e
+process.siPixelClusters.ClusterThreshold = cms.double(options.ClusterThreshold) # phase1 default 4000e
+process.siPixelClusters.ElectronPerAdc = cms.double(options.PixElePerADC)
 # End of customisation functions
 
