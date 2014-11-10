@@ -66,7 +66,7 @@ class Job:
     """Main class to create and submit LSF jobs"""
 ###########################################################################
 
-    def __init__(self, job_id, maxevents, pu, ageing, pixelrocrows_l0l1, pixelroccols_l0l1, pixelrocrows_l2l3, pixelroccols_l2l3, pixeleperadc, pixmaxadc, chanthr, seedthr, clusthr, bpixthr, bpixl0l1thickness, bpixl2l3thickness, myseed, islocal, queue,task_name):
+    def __init__(self, job_id, maxevents, pu, ageing, pixelrocrows_l0l1, pixelroccols_l0l1, pixelrocrows_l2l3, pixelroccols_l2l3, pixeleperadc, pixmaxadc, chanthr, seedthr, clusthr, bpixthr, bpixl0l1thickness, bpixl2l3thickness, myseed, islocal, queue, task_name):
 ############################################################################################################################
         
         # store the job-ID (since it is created in a for loop)
@@ -277,15 +277,14 @@ class Job:
         fout.write("cmsRun ${PKG_DIR}/TenMuE_0_200_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} BPixThr=${bpixthr} PUScenario=${puscenario} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
 
         fout.write("ls -lh . \n")
-        fout.write("cmsStage -f ${PKG_DIR}/OneNuM_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py  ${OUT_DIR}/OneNuM_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py  \n")
         fout.write("cmsStage -f pset_dumped.py ${OUT_DIR}/pset_dumped.py \n")
         #fout.write("cd Brownson \n")
         #fout.write("make \n")
         #fout.write("ln -fs ../stdgrechitfullph1g_ntuple.root . \n")
         #fout.write("./res \n")        
         fout.write(" # retrieve the outputs \n")
-        fout.write("for RootOutputFile in $(ls *root |grep Occup); do cmsStage -f  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
-        fout.write("for RootOutputFile in $(ls *root |grep Ten) \n")
+        fout.write("for RootOutputFile in $(ls *root |grep ntuple); do cmsStage -f  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
+        #fout.write("for RootOutputFile in $(ls *root |grep Ten) \n")
         fout.write("do \n")
         fout.write("events=`edmEventSize -v $RootOutputFile | grep Events | awk '{print $4}'` \n")
         fout.write("echo $RootOutputFile $events >> "+os.path.join(LAUNCH_BASE,"src","AuxCode","SLHCSimPhase2","test","eventsCount_"+ self.task_basename +".txt")+" \n")
@@ -473,28 +472,32 @@ def main():
         print "- Output will be saved in   :",out_dir
     print "********************************************************"
 
-    # #############################################
-    # # prepare the script for the harvesting step
-    # #############################################
+    #############################################
+    # prepare the script for the harvesting step
+    #############################################
 
-    # harvestingname = LSF_DIR + "/jobs/PixelCPENtuple_"+opts.jobname+"_PixelRocRows"+mRocRows+"_PixelROCCols_"+mRocCols+"_BPixThr"+mBPixThr+"_L0Thick"+mL0Thick+".sh"
-    # fout=open(harvestingname,"w")
+    link_name=opts.jobname+"_PixelROCRows_"+mRocRows_l0l1+"_"+mRocRows_l2l3\
+                          +"_PixelROCCols_"+mRocCols_l0l1+"_"+mRocCols_l2l3\
+                          +"_Thick_"+mL0L1Thick+"_"+mL2L3Thick+"_BPixThr_"+mBPixThr
 
-    # fout.write("#!/bin/bash \n")
-    # fout.write("OUT_DIR="+out_dir+" \n")
-    # fout.write("cd "+os.path.join(LAUNCH_BASE,"src","AuxCode","SLHCSimPhase2","test")+"\n")
-    # fout.write("eval `scram r -sh` \n")
-    # fout.write("mkdir -p /tmp/$USER/"+link_name+" \n")
-    # fout.write("for inputfile in `cmsLs "+out_dir+" |grep seed | grep root`; do \n")
-    # fout.write("   namebase=`echo $inputfile |awk '{split($0,b,\"/\"); print b[15]}'` \n")
-    # fout.write("   cmsStage -f $OUT_DIR/$namebase /tmp/$USER/"+link_name+" \n")
-    # fout.write("# Uncomment next line to clean up EOS space \n")
-    # fout.write("#  cmsRm $OUT_DIR/$namebase \n")
-    # fout.write("done \n")
-    # fout.write("cd /tmp/$USER/"+link_name+" \n")
-    # fout.write("hadd /tmp/$USER/stdgrechitfullph1g_ntuple_"+link_name+".root /tmp/$USER/"+link_name+"/stdgrechitfullph1g_ntuple_*.root \n")
-    # fout.write("cmsStage -f /tmp/$USER/stdgrechitfullph1g_ntuple_"+link_name+".root $OUT_DIR \n")
-    # os.system("chmod u+x "+harvestingname)
+    harvestingname = LSF_DIR + "/jobs/PixelLocalRecoNtuple_"+link_name +".sh"
+    fout=open(harvestingname,"w")
+
+    fout.write("#!/bin/bash \n")
+    fout.write("OUT_DIR="+out_dir+" \n")
+    fout.write("cd "+os.path.join(LAUNCH_BASE,"src","AuxCode","SLHCSimPhase2","test")+"\n")
+    fout.write("eval `scram r -sh` \n")
+    fout.write("mkdir -p /tmp/$USER/"+link_name+" \n")
+    fout.write("for inputfile in `cmsLs "+out_dir+" |grep seed | grep root`; do \n")
+    fout.write("   namebase=`echo $inputfile |awk '{split($0,b,\"/\"); print b[15]}'` \n")
+    fout.write("   cmsStage -f $OUT_DIR/$namebase /tmp/$USER/"+link_name+" \n")
+    fout.write("# Uncomment next line to clean up EOS space \n")
+    fout.write("#  cmsRm $OUT_DIR/$namebase \n")
+    fout.write("done \n")
+    fout.write("cd /tmp/$USER/"+link_name+" \n")
+    fout.write("hadd /tmp/$USER/pixellocalreco_ntuple_"+link_name+".root /tmp/$USER/"+link_name+"/*_ntuple_*.root \n")
+    fout.write("cmsStage -f /tmp/$USER/pixellocalreco_ntuple_"+link_name+".root $OUT_DIR \n")
+    os.system("chmod u+x "+harvestingname)
     
 if __name__ == "__main__":        
     main()
