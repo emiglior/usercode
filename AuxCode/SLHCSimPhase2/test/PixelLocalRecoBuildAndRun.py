@@ -489,7 +489,7 @@ def main():
     fout.write("eval `scram r -sh` \n")
     fout.write("mkdir -p /tmp/$USER/"+link_name+" \n")
     fout.write("for inputfile in `cmsLs "+out_dir+" |grep seed | grep root`; do \n")
-    fout.write("   namebase=`echo $inputfile |awk '{split($0,b,\"/\"); print b[15]}'` \n")
+    fout.write("   namebase=`echo $inputfile |awk '{split($0,b,\"/\"); print b[21]}'` \n")
     fout.write("   cmsStage -f $OUT_DIR/$namebase /tmp/$USER/"+link_name+" \n")
     fout.write("# Uncomment next line to clean up EOS space \n")
     fout.write("#  cmsRm $OUT_DIR/$namebase \n")
