@@ -284,7 +284,7 @@ class Job:
         #fout.write("./res \n")        
         fout.write(" # retrieve the outputs \n")
         fout.write("for RootOutputFile in $(ls *root |grep ntuple); do cmsStage -f  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
-        #fout.write("for RootOutputFile in $(ls *root |grep Ten) \n")
+        fout.write("for RootOutputFile in $(ls *root); \n")
         fout.write("do \n")
         fout.write("events=`edmEventSize -v $RootOutputFile | grep Events | awk '{print $4}'` \n")
         fout.write("echo $RootOutputFile $events >> "+os.path.join(LAUNCH_BASE,"src","AuxCode","SLHCSimPhase2","test","eventsCount_"+ self.task_basename +".txt")+" \n")
