@@ -184,9 +184,8 @@ process.configurationMetadata = cms.untracked.PSet(
 )
 
 # Output definition
-
-outrootfile='file:OneNuM_0_200_cff_py_GEN_SIM_RECO_age_'+str(options.AgeingScenario)+'_BPixThr_'+str(options.BPixThr)+'_'+str(options.maxEvents)+'_evts_seed_'+str(options.MySeed)+'.root'
-outntuplefile='OccupancyPlotTest_OneNuM_ntuple_age_'+str(options.AgeingScenario)+'_BPixThr_'+str(options.BPixThr)+'_'+str(options.maxEvents)+'_evts_seed_'+str(options.MySeed)+'.root'
+outrootfile='file:MinBias_cff_py_GEN_SIM_RECO_age_'+str(options.AgeingScenario)+'_BPixThr_'+str(options.BPixThr)+'_'+str(options.maxEvents)+'_evts_seed_'+str(options.MySeed)+'.root'
+outntuplefile='OccupancyPlotsTest_MinBias_ntuple_age_'+str(options.AgeingScenario)+'_BPixThr_'+str(options.BPixThr)+'_'+str(options.maxEvents)+'_evts_seed_'+str(options.MySeed)+'.root'
 print 'output file name:', outrootfile, outntuplefile
 
 process.FEVTDEBUGoutput = cms.OutputModule("PoolOutputModule",
@@ -276,22 +275,49 @@ process.mix.digitizers = cms.PSet(process.theDigitizersValid)
 from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:upgradePLS3', '')
 
-process.generator = cms.EDProducer("FlatRandomEGunProducer",
-    PGunParameters = cms.PSet(
-        PartID = cms.vint32(-14),
-	#PartID = cms.vint32(-13),
-        MaxEta = cms.double(2.7),
-        MaxPhi = cms.double(3.14159265359),
-        MinEta = cms.double(-2.7),
-        MinE = cms.double(0.0),
-        MinPhi = cms.double(-3.14159265359),
-        MaxE = cms.double(200.0),
-	MinPt = cms.double(0.9)
-    ),
-    Verbosity = cms.untracked.int32(0),
-    psethack = cms.string('One nu_mu e 0 to 200'),
-    AddAntiParticle = cms.bool(False),				   
-    firstRun = cms.untracked.uint32(1)
+process.generator = cms.EDFilter("Pythia6GeneratorFilter",
+    pythiaPylistVerbosity = cms.untracked.int32(1),
+    filterEfficiency = cms.untracked.double(1.0),
+    pythiaHepMCVerbosity = cms.untracked.bool(False),
+    comEnergy = cms.double(14000.0),
+    crossSection = cms.untracked.double(79150000000),
+    maxEventsToPrint = cms.untracked.int32(0),
+    PythiaParameters = cms.PSet(
+        pythiaUESettings = cms.vstring('MSTU(21)=1     ! Check on possible errors during program execution', 
+            'MSTJ(22)=2     ! Decay those unstable particles', 
+            'PARJ(71)=10 .  ! for which ctau  10 mm', 
+            'MSTP(33)=0     ! no K factors in hard cross sections', 
+            'MSTP(2)=1      ! which order running alphaS', 
+            'MSTP(51)=10042 ! structure function chosen (external PDF CTEQ6L1)', 
+            'MSTP(52)=2     ! work with LHAPDF', 
+            'PARP(82)=1.921 ! pt cutoff for multiparton interactions', 
+            'PARP(89)=1800. ! sqrts for which PARP82 is set', 
+            'PARP(90)=0.227 ! Multiple interactions: rescaling power', 
+            'MSTP(95)=6     ! CR (color reconnection parameters)', 
+            'PARP(77)=1.016 ! CR', 
+            'PARP(78)=0.538 ! CR', 
+            'PARP(80)=0.1   ! Prob. colored parton from BBR', 
+            'PARP(83)=0.356 ! Multiple interactions: matter distribution parameter', 
+            'PARP(84)=0.651 ! Multiple interactions: matter distribution parameter', 
+            'PARP(62)=1.025 ! ISR cutoff', 
+            'MSTP(91)=1     ! Gaussian primordial kT', 
+            'PARP(93)=10.0  ! primordial kT-max', 
+            'MSTP(81)=21    ! multiple parton interactions 1 is Pythia default', 
+            'MSTP(82)=4     ! Defines the multi-parton model'),
+        processParameters = cms.vstring('MSEL=0         ! User defined processes', 
+            'MSUB(11)=1     ! Min bias process', 
+            'MSUB(12)=1     ! Min bias process', 
+            'MSUB(13)=1     ! Min bias process', 
+            'MSUB(28)=1     ! Min bias process', 
+            'MSUB(53)=1     ! Min bias process', 
+            'MSUB(68)=1     ! Min bias process', 
+            'MSUB(92)=1     ! Min bias process, single diffractive', 
+            'MSUB(93)=1     ! Min bias process, single diffractive', 
+            'MSUB(94)=1     ! Min bias process, double diffractive', 
+            'MSUB(95)=1     ! Min bias process'),
+        parameterSets = cms.vstring('pythiaUESettings', 
+            'processParameters')
+    )
 )
 
 

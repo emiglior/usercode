@@ -103,7 +103,8 @@ class Job:
         self.islocal=islocal
         self.launch_dir=LAUNCH_BASE
 
-        self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/phase2/out62XSLHC17patch1nn/OccupancyStudy/TestThresholds",\
+#        self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/phase2/out62XSLHC17patch1nn/TestBricked",\
+        self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/phase2/out62XSLHC17patch1nn/DataCompression",\
                                       "PixelROCRows_"+pixelrocrows_l0l1+"_"+pixelrocrows_l2l3,\
                                       "PixelROCCols_"+pixelroccols_l0l1+"_"+pixelroccols_l2l3,\
                                       "BPIXThick_"+bpixl0l1thickness+"_"+bpixl2l3thickness,\
@@ -239,10 +240,8 @@ class Job:
         fout.write("git cms-checkdeps -a \n")
 
         fout.write("# compile \n")
-        #if(self.islocal):
-            #fout.write("cp "+self.launch_dir+"/src/AuxCode/SLHCSimPhase2/plugins/StdPixelHitNtuplizer.cc ./AuxCode/SLHCSimPhase2/plugins/StdPixelHitNtuplizer.cc \n")
-            #fout.write("cp  -vr "+self.launch_dir+"/src/RecoLocalTracker/SiPixelClusterizer ./RecoLocalTracker \n")
-            #fout.write("ls -l ./RecoLocalTracker/SiPixelClusterizer/src \n")           
+        if(self.islocal):
+            fout.write("cp "+self.launch_dir+"/src/AuxCode/SLHCSimPhase2/plugins/StdPixelHitNtuplizer.cc ./AuxCode/SLHCSimPhase2/plugins/StdPixelHitNtuplizer.cc \n")
  
         fout.write("scram b -j 8 \n") 
         fout.write("eval `scram r -sh` \n")
@@ -255,8 +254,6 @@ class Job:
         fout.write("# Run CMSSW to complete the recipe for changing the size of the pixels \n")
 
         # recipe for phase II tracking
-        fout.write("# cmsRun SLHCUpgradeSimulations/Geometry/test/writeFile_phase2BE_cfg.py \n")
-        fout.write("# mv PixelSkimmedGeometry_phase2BE.txt ${CMSSW_BASE}/src/SLHCUpgradeSimulations/Geometry/data/PhaseII/Pixel10D/PixelSkimmedGeometry.txt \n")        
         fout.write("cmsRun AuxCode/SLHCSimPhase2/test/writeFile_phase2Pixel10D_cfg.py \n")
         fout.write("mv PixelSkimmedGeometry_phase2Pixel10D.txt ${CMSSW_BASE}/src/SLHCUpgradeSimulations/Geometry/data/PhaseII/Pixel10D/PixelSkimmedGeometry.txt \n")
 
@@ -272,12 +269,12 @@ class Job:
         
         fout.write("# Run CMSSW for GEN-NTUPLE steps \n")
         fout.write("cd "+os.path.join("AuxCode","SLHCSimPhase2","test")+"\n")
-        fout.write("edmConfigDump ${PKG_DIR}/MinBias_TuneZ2star_14TeV_pythia6_SiPixelOccupancy.py >> pset_dumped.py \n")
+#        fout.write("edmConfigDump ${PKG_DIR}/OneNuM_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py >> pset_dumped.py \n")
 #        fout.write("cmsRun ${PKG_DIR}/OneNuM_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py  maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} BPixThr=${bpixthr} PUScenario=${puscenario} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
         fout.write("cmsRun ${PKG_DIR}/TenMuE_0_200_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} BPixThr=${bpixthr} PUScenario=${puscenario} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
 
         fout.write("ls -lh . \n")
-        fout.write("cmsStage -f pset_dumped.py ${OUT_DIR}/pset_dumped.py \n")
+#        fout.write("cmsStage -f pset_dumped.py ${OUT_DIR}/pset_dumped.py \n")
         #fout.write("cd Brownson \n")
         #fout.write("make \n")
         #fout.write("ln -fs ../stdgrechitfullph1g_ntuple.root . \n")
@@ -337,7 +334,7 @@ def main():
     group.add_option('--ChanThr'   ,help='Cluster channel threshold', dest='chanthr',  action='store', default='1000')
     group.add_option('--ClusThr'   ,help='Cluster channel threshold', dest='clusthr',  action='store', default='1000')
 
-    group.add_option('-p','--pileup',help='set pileup', dest='pu',action='store',default='NoPU')
+    group.add_option('-p','--pileup',help='set pileup',dest='pu',    action='store',default='NoPU')
     group.add_option('-a','--ageing',help='set ageing',dest='ageing',action='store',default='NoAgeing')
     parser.add_option_group(group)
 
@@ -387,7 +384,7 @@ def main():
         mClusThr    = ConfigSectionMap(config,"PixelConfiguration")['clusthr']   
         mChanThr    = ConfigSectionMap(config,"PixelConfiguration")['chanthr']               
         mAgeing     = ConfigSectionMap(config,"PixelConfiguration")['ageing']    
-        mPileUp   = ConfigSectionMap(config,"PixelConfiguration")['pileup']
+        mPileUp     = ConfigSectionMap(config,"PixelConfiguration")['pileup']
         mNOfEvents  = ConfigSectionMap(config,"JobConfiguration")['numberofevents']
         mJobsInTask = ConfigSectionMap(config,"JobConfiguration")['numberofjobs']
         mQueue      = ConfigSectionMap(config,"JobConfiguration")['queue']

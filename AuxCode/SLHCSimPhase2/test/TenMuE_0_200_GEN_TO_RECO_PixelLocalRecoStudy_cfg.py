@@ -89,7 +89,9 @@ if options.PUScenario!="NoPU":
     # Used to be
     # process.load('SimGeneral.MixingModule.mix_E8TeV_AVE_16_BX_25ns_cfi')
     process.load('SimGeneral.MixingModule.mix_POISSON_average_cfi')
-    process.mix.input.fileNames = cms.untracked.vstring(['root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc17_patch1/Extended2023Muon/Thick_L0L1_0.285/step1_MinBias_TuneZ2star_14TeV_pythia6_3kEvts.root'])
+#    process.mix.input.fileNames = cms.untracked.vstring(['root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc17_patch1/Extended2023Muon/GEN-SIM/Thick_BPIX_0.285_FPIX_0.285/step1_MinBias_TuneZ2star_14TeV_pythia6_51kEvts.root'])
+    process.mix.input.fileNames = cms.untracked.vstring(['root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc17_patch1/Extended2023Muon/GEN-SIM/Thick_BPIX_0.150_FPIX_0.285/step1_MinBias_TuneZ2star_14TeV_pythia6_50kEvts.root'])
+#    process.mix.input.fileNames = cms.untracked.vstring(['root://eoscms//eos/cms/store/caf/user/emiglior/SLHCSimPhase2/620_slhc17_patch1/Extended2023Muon/GEN-SIM/Thick_BPIX_0.100_FPIX_0.285/step1_MinBias_TuneZ2star_14TeV_pythia6_51kEvts.root']) 
     process.mix.bunchspace = cms.int32(25)
     process.mix.minBunch = cms.int32(-12)
     process.mix.maxBunch = cms.int32(3)
@@ -415,3 +417,4 @@ process.siPixelClusters.ClusterThreshold = cms.double(options.ClusterThreshold) 
 process.siPixelClusters.ElectronPerAdc = cms.double(options.PixElePerADC)
 # End of customisation functions
 
+#print process.dumpPython()

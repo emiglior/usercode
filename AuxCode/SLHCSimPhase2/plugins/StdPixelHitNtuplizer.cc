@@ -92,7 +92,10 @@ protected:
 		   const int num_simhit,
 		   std::vector<PSimHit>::const_iterator closest_simhit,
 		   const GeomDet* PixGeom);
- 
+  std::pair<float, float> computeAnglesFromDetPosition(const SiPixelCluster & cl, 
+						       const PixelTopology  & top, 
+						       const GeomDetUnit    & det ) const; 
+
 private:
   edm::ParameterSet conf_;
   edm::InputTag src_;
@@ -138,6 +141,10 @@ private:
     int nColsInDet;
     float pitchx;
     float pitchy;
+    float thickness;
+
+    // local angles from det position
+    float cotAlphaFromDet, cotBetaFromDet;    
 
     // digis
     int fDgN;  
@@ -220,11 +227,15 @@ void StdPixelHitNtuplizer::beginJob()
   pixeltree_->Branch("tz",	&recHit_.tz		 ,"tz/F");	   
   pixeltree_->Branch("theta",	&recHit_.theta		 ,"theta/F" );	   
   pixeltree_->Branch("phi",	&recHit_.phi		 ,"phi/F"    );		   
-  pixeltree_->Branch("DgN",	&recHit_.fDgN		 ,"DgN/I"    );	
   pixeltree_->Branch("nRowsInDet", &recHit_.nRowsInDet	 ,"nRowsInDet/I");	
   pixeltree_->Branch("nColsInDet", &recHit_.nColsInDet	 ,"nColsInDet/I");
   pixeltree_->Branch("pitchx",     &recHit_.pitchx	 ,"pitchx/F");
   pixeltree_->Branch("pitchy",     &recHit_.pitchy	 ,"pitchy/F");	   
+  pixeltree_->Branch("thickness",  &recHit_.thickness	 ,"thickness/F");	   
+  pixeltree_->Branch("cotAlphaFromDet",	&recHit_.cotAlphaFromDet  ,"cotAlphaFromDet/F");	   
+  pixeltree_->Branch("cotBetaFromDet",	&recHit_.cotBetaFromDet	  ,"cotBetaFraomDet/F");	   
+
+  pixeltree_->Branch("DgN",	&recHit_.fDgN		 ,"DgN/I"    );	
   pixeltree_->Branch("DgRow",	 recHit_.fDgRow		 ,"DgRow[DgN]/I"  );	   
   pixeltree_->Branch("DgCol",	 recHit_.fDgCol		 ,"DgCol[DgN]/I"   ); 
   pixeltree_->Branch("DgDetId",	 recHit_.fDgDetId	 ,"DgDetId[DgN]/I" );  
@@ -269,13 +280,17 @@ void StdPixelHitNtuplizer::beginJob()
   pixeltreeOnTrack_->Branch("nRowsInDet", &recHit_.nRowsInDet	 ,"nRowsInDet/I");	
   pixeltreeOnTrack_->Branch("nColsInDet", &recHit_.nColsInDet	 ,"nColsInDet/I");
   pixeltreeOnTrack_->Branch("pitchx",     &recHit_.pitchx	 ,"pitchx/F");
-  pixeltreeOnTrack_->Branch("pitchy",     &recHit_.pitchy	 ,"pitchy/F");	  	   
+  pixeltreeOnTrack_->Branch("pitchy",     &recHit_.pitchy	 ,"pitchy/F");	  	  
+  pixeltreeOnTrack_->Branch("thickness",  &recHit_.thickness	 ,"thickness/F");	   
+  pixeltreeOnTrack_->Branch("cotAlphaFromDet",	&recHit_.cotAlphaFromDet  ,"cotAlphaFromDet/F");	   
+  pixeltreeOnTrack_->Branch("cotBetaFromDet",	&recHit_.cotBetaFromDet	  ,"cotBetaFraomDet/F");	   
+
   pixeltreeOnTrack_->Branch("DgN",	&recHit_.fDgN		 ,"DgN/I"    );		   
   pixeltreeOnTrack_->Branch("DgRow",	 recHit_.fDgRow		 ,"DgRow[DgN]/I"  );	   
   pixeltreeOnTrack_->Branch("DgCol",	 recHit_.fDgCol		 ,"DgCol[DgN]/I"   ); 
   pixeltreeOnTrack_->Branch("DgDetId",	 recHit_.fDgDetId	 ,"DgDetId[DgN]/I" );  
   pixeltreeOnTrack_->Branch("DgAdc",	 recHit_.fDgAdc		 ,"DgAdc[DgN]/F"   ); 
-  pixeltreeOnTrack_->Branch("DgCharge", recHit_.fDgCharge	 ,"DgCharge[DgN]/F");  
+  pixeltreeOnTrack_->Branch("DgCharge",  recHit_.fDgCharge	 ,"DgCharge[DgN]/F");  
 }
  
 // Functions that gets called by framework every event
@@ -553,6 +568,7 @@ void StdPixelHitNtuplizer::fillPRecHit(const int detid_db, const int subid,
   recHit_.nColsInDet =  topol->ncolumns();
   recHit_.pitchx     =	topol->pitch().first;      
   recHit_.pitchy     =	topol->pitch().second;        
+  recHit_.thickness  =	theGeomDet->surface().bounds().thickness();      
 
   MeasurementPoint mp = topol->measurementPosition(LocalPoint(recHit_.x, recHit_.y));
   recHit_.row = mp.x();
@@ -567,23 +583,30 @@ void StdPixelHitNtuplizer::fillPRecHit(const int detid_db, const int subid,
   //  }
 
   if ( Cluster.isNonnull() ) { 
-            // -- Get digis of this cluster
-      const std::vector<SiPixelCluster::Pixel>& pixvector = Cluster->pixels();
-      //      std::cout << "  Found " << pixvector.size() << " pixels for this cluster " << std::endl;
-      for (unsigned int i = 0; i < pixvector.size(); ++i) {
-	if (recHit_.fDgN > DGPERCLMAX - 1) break;
-	SiPixelCluster::Pixel holdpix = pixvector[i];
-	
-	recHit_.fDgRow[recHit_.fDgN]    = holdpix.x;
-	recHit_.fDgCol[recHit_.fDgN]    = holdpix.y;
-	//	std::cout << "holdpix " << holdpix.x << " " <<  holdpix.y << std::endl;
-	recHit_.fDgDetId[recHit_.fDgN]  = detid_db;
-	recHit_.fDgAdc[recHit_.fDgN]    = -99.;
-	recHit_.fDgCharge[recHit_.fDgN] = holdpix.adc/1000.;	
-	++recHit_.fDgN;
-	
-      }      
-    } // if ( Cluster.isNonnull() )
+
+    // compute local angles from det position
+    std::pair<float, float> local_angles = computeAnglesFromDetPosition(*Cluster, *topol, *theGeomDet);
+    recHit_.cotAlphaFromDet = local_angles.first;
+    recHit_.cotBetaFromDet = local_angles.second;
+
+
+    // -- Get digis of this cluster
+    const std::vector<SiPixelCluster::Pixel>& pixvector = Cluster->pixels();
+    //      std::cout << "  Found " << pixvector.size() << " pixels for this cluster " << std::endl;
+    for (unsigned int i = 0; i < pixvector.size(); ++i) {
+      if (recHit_.fDgN > DGPERCLMAX - 1) break;
+      SiPixelCluster::Pixel holdpix = pixvector[i];
+      
+      recHit_.fDgRow[recHit_.fDgN]    = holdpix.x;
+      recHit_.fDgCol[recHit_.fDgN]    = holdpix.y;
+      //	std::cout << "holdpix " << holdpix.x << " " <<  holdpix.y << std::endl;
+      recHit_.fDgDetId[recHit_.fDgN]  = detid_db;
+      recHit_.fDgAdc[recHit_.fDgN]    = -99.;
+      recHit_.fDgCharge[recHit_.fDgN] = holdpix.adc/1000.;	
+      ++recHit_.fDgN;
+      
+    }      
+  } // if ( Cluster.isNonnull() )
   else 
     {
       std::cout << "Pixel rechits with no associated cluster ?!?!?!!!!!!!!!!!!!!!!!!!!!!! " << std::endl;
@@ -680,29 +703,34 @@ void StdPixelHitNtuplizer::fillPRecHit(const int detid_db, const int subid,
   recHit_.nColsInDet =  topol->ncolumns();
   recHit_.pitchx     =	topol->pitch().first;      
   recHit_.pitchy     =	topol->pitch().second;        
+  recHit_.thickness  =	theGeomDet->surface().bounds().thickness();      
 
   // if ( subid == 1 ) {
   //     std::cout << "on track only: BPIX Layer "<< layer_num << " RectangularPixelTopology " << "nrows " << topol->nrows() << ", ncols " << topol->ncolumns() << ", pitchx " << topol->pitch().first << ", pitchy " << topol->pitch().second << std::endl;
   //   }
 
   if ( Cluster.isNonnull() ) { 
-            // -- Get digis of this cluster
-      const std::vector<SiPixelCluster::Pixel>& pixvector = Cluster->pixels();
-      //      std::cout << "  Found " << pixvector.size() << " pixels for this cluster " << std::endl;
-      for (unsigned int i = 0; i < pixvector.size(); ++i) {
-	if (recHit_.fDgN > DGPERCLMAX - 1) break;
-	SiPixelCluster::Pixel holdpix = pixvector[i];
-	
-	recHit_.fDgRow[recHit_.fDgN]    = holdpix.x;
-	recHit_.fDgCol[recHit_.fDgN]    = holdpix.y;
-	//	std::cout << "holdpix " << holdpix.x << " " <<  holdpix.y << std::endl;
-	recHit_.fDgDetId[recHit_.fDgN]  = detid_db;
-	recHit_.fDgAdc[recHit_.fDgN]    = -99.;
-	recHit_.fDgCharge[recHit_.fDgN] = holdpix.adc/1000.;	
-	++recHit_.fDgN;
-	
-      }      
-    } // if ( Cluster.isNonnull() )
+    // compute local angles from det position
+    std::pair<float, float> local_angles = computeAnglesFromDetPosition(*Cluster, *topol, *theGeomDet);
+    recHit_.cotAlphaFromDet = local_angles.first;
+    recHit_.cotBetaFromDet = local_angles.second;
+
+    // -- Get digis of this cluster
+    const std::vector<SiPixelCluster::Pixel>& pixvector = Cluster->pixels();
+    //      std::cout << "  Found " << pixvector.size() << " pixels for this cluster " << std::endl;
+    for (unsigned int i = 0; i < pixvector.size(); ++i) {
+      if (recHit_.fDgN > DGPERCLMAX - 1) break;
+      SiPixelCluster::Pixel holdpix = pixvector[i];
+      
+      recHit_.fDgRow[recHit_.fDgN]    = holdpix.x;
+      recHit_.fDgCol[recHit_.fDgN]    = holdpix.y;
+      //	std::cout << "holdpix " << holdpix.x << " " <<  holdpix.y << std::endl;
+      recHit_.fDgDetId[recHit_.fDgN]  = detid_db;
+      recHit_.fDgAdc[recHit_.fDgN]    = -99.;
+      recHit_.fDgCharge[recHit_.fDgN] = holdpix.adc/1000.;	
+      ++recHit_.fDgN;      
+    }      
+  } // if ( Cluster.isNonnull() )
   else 
     {
       std::cout << "Pixel rechits with no associated cluster ?!?!?!!!!!!!!!!!!!!!!!!!!!!! " << std::endl;
@@ -802,6 +830,87 @@ void StdPixelHitNtuplizer::RecHit::init()
   fDgN = 0; 
 
 }
+
+std::pair<float, float> StdPixelHitNtuplizer::computeAnglesFromDetPosition(const SiPixelCluster & cl, 
+									   const PixelTopology  & theTopol, 
+									   const GeomDetUnit    & theDet ) const
+ {
+   // EM check performed outside
+   // //--- This is a new det unit, so cache it
+   // PixelGeomDetUnit * theDet = dynamic_cast<const PixelGeomDetUnit*>( &det );
+   // if ( ! theDet ) 
+   //   {
+   //     throw cms::Exception("StdPixelHitNtuplizer::computeAngleFromDetPosition")
+   //   << " Wrong pointer to pixel detector !!!" << endl;
+     
+   //   }
+ 
+   // get cluster center of gravity (of charge)
+   float xcenter = cl.x();
+   float ycenter = cl.y();
+   
+   // get the cluster position in local coordinates (cm)
+ 
+   // ggiurgiu@jhu.edu 12/09/2010 : This function is called without track info, therefore there are no track 
+   // angles to provide here. Call the default localPosition (without track info)
+   LocalPoint lp = theTopol.localPosition( MeasurementPoint(xcenter, ycenter) );
+ 
+   // get the cluster position in global coordinates (cm)
+   GlobalPoint gp = theDet.surface().toGlobal( lp );
+   float gp_mod = sqrt( gp.x()*gp.x() + gp.y()*gp.y() + gp.z()*gp.z() );
+ 
+   // normalize
+   float gpx = gp.x()/gp_mod;
+   float gpy = gp.y()/gp_mod;
+   float gpz = gp.z()/gp_mod;
+ 
+   // make a global vector out of the global point; this vector will point from the 
+   // origin of the detector to the cluster
+   GlobalVector gv(gpx, gpy, gpz);
+ 
+   // make local unit vector along local X axis
+   const Local3DVector lvx(1.0, 0.0, 0.0);
+ 
+   // get the unit X vector in global coordinates/
+   GlobalVector gvx = theDet.surface().toGlobal( lvx );
+ 
+   // make local unit vector along local Y axis
+   const Local3DVector lvy(0.0, 1.0, 0.0);
+ 
+   // get the unit Y vector in global coordinates
+   GlobalVector gvy = theDet.surface().toGlobal( lvy );
+    
+   // make local unit vector along local Z axis
+   const Local3DVector lvz(0.0, 0.0, 1.0);
+ 
+   // get the unit Z vector in global coordinates
+   GlobalVector gvz = theDet.surface().toGlobal( lvz );
+     
+   // calculate the components of gv (the unit vector pointing to the cluster) 
+   // in the local coordinate system given by the basis {gvx, gvy, gvz}
+   // note that both gv and the basis {gvx, gvy, gvz} are given in global coordinates
+   float gv_dot_gvx = gv.x()*gvx.x() + gv.y()*gvx.y() + gv.z()*gvx.z();
+   float gv_dot_gvy = gv.x()*gvy.x() + gv.y()*gvy.y() + gv.z()*gvy.z();
+   float gv_dot_gvz = gv.x()*gvz.x() + gv.y()*gvz.y() + gv.z()*gvz.z();
+ 
+ 
+   /* all the above is equivalent to  
+      const Local3DPoint origin =   theDet->surface().toLocal(GlobalPoint(0,0,0)); // can be computed once...
+      auto gvx = lp.x()-origin.x();
+      auto gvy = lp.y()-origin.y();
+      auto gvz = -origin.z();
+   *  normalization not required as only ratio used... 
+   */
+ 
+ 
+   // calculate angles
+   float cotalpha_ = gv_dot_gvx / gv_dot_gvz;
+   float cotbeta_  = gv_dot_gvy / gv_dot_gvz;
+
+   return std::make_pair(cotalpha_, cotbeta_);
+
+ }
+ 
  
  //define this as a plug-in
  DEFINE_FWK_MODULE(StdPixelHitNtuplizer);
