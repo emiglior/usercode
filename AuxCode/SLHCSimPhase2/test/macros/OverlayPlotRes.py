@@ -3,6 +3,21 @@
 from xml.dom.minidom import parse
 from optparse import OptionParser
 import ROOT
+import math
+
+##########################
+def drawTicks(h1_in, line):
+##########################
+# Draw "ticks" in eta correponding to the borders of the pixels
+    yL = 8100.
+    zL = 150.
+    ROC_cols = 128
+    for iL in xrange(ROC_cols):
+        eta = math.asinh((iL*yL/ROC_cols)/zL)
+        if eta<h1_in.GetXaxis().GetXmax():
+            line.append(ROOT.TLine(eta, 5., eta, 25.))
+            line[iL].Draw("same")
+
 
 ################################################
 def getModifiedTH1Fs(canvas, file, color, marker):
@@ -65,8 +80,8 @@ class Sample:
             self.the_marker_style = ROOT.kFullTriangleUp
         elif marker_style == 'ROOT.kFullTriangleDown':
             self.the_marker_style = ROOT.kFullTriangleDown
-        elif marker_style == 'ROOT.kFullCircle':
-            self.the_marker_style = ROOT.kFullCircle
+        elif marker_style == 'ROOT.kOpenSquare':
+            self.the_marker_style = ROOT.kOpenSquare
 
 
 #####################
@@ -183,6 +198,7 @@ def main():
     cRMSVsEta.SetGridy()
     
     first = True
+    line_ticks = [] 
     for aSample in Samples:
         if aSample.is_rphi:
             h1array = getModifiedTH1Fs('cResVsEta_1', aSample.the_root_file, aSample.the_color, aSample.the_marker_style)
@@ -205,7 +221,10 @@ def main():
                 h1.GetYaxis().SetTitleOffset(1.)
                 h1.GetYaxis().SetTitle('RMS [#mum]')
                 h1.GetYaxis().CenterTitle(ROOT.kFALSE)
-                legRMS.AddEntry(0,'CMSSW 620 SLHC17_patch1','')                 
+                legRMS.AddEntry(0,'CMSSW 620 SLHC17_patch1','')     
+
+                if not aSample.is_rphi:
+                    drawTicks(h1, line_ticks)
             else:
                 h1.Draw("CPsame")
 
