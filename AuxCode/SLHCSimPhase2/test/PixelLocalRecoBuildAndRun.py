@@ -103,8 +103,9 @@ class Job:
         self.islocal=islocal
         self.launch_dir=LAUNCH_BASE
 
-#        self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/phase2/out62XSLHC17patch1nn/TestBricked",\
-        self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/phase2/out62XSLHC17patch1nn/DataCompression",\
+#        self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/phase2/out62XSLHC17patch1/32bit/TestBricked",\
+#        self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/phase2/out62XSLHC17patch1nn/DataCompression",\
+        self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/phase2/out62XSLHC17patch1/32bit/OccupancyStudy",\
                                       "PixelROCRows_"+pixelrocrows_l0l1+"_"+pixelrocrows_l2l3,\
                                       "PixelROCCols_"+pixelroccols_l0l1+"_"+pixelroccols_l2l3,\
                                       "BPIXThick_"+bpixl0l1thickness+"_"+bpixl2l3thickness,\
@@ -223,10 +224,11 @@ class Job:
         fout.write("git cms-addpkg RecoLocalTracker/SiPixelRecHits \n")
         fout.write("git cms-addpkg RecoLocalTracker/SiPixelClusterizer \n")
         fout.write("git cms-addpkg DPGAnalysis/SiStripTools \n")
+        fout.write("git cms-addpkg DataFormats/SiPixelCluster \n")
         fout.write("echo \"After git cms-addpkg\" \n")
         fout.write("pwd \n")
         fout.write("ls -l . \n")
-        fout.write("git pull https://github.com/mmusich/cmssw ChangePitch_on620_SLHC17_patch1 \n")
+        fout.write("git pull https://github.com/mmusich/cmssw ChangePitch_on620_SLHC17_patch1_32bit \n")
         fout.write("### 1 ended  \n")
 
         fout.write("git clone -b 620_slhc17_patch1_phase2 git://github.com/emiglior/usercode.git \n")
@@ -243,7 +245,7 @@ class Job:
         if(self.islocal):
             fout.write("cp "+self.launch_dir+"/src/AuxCode/SLHCSimPhase2/plugins/StdPixelHitNtuplizer.cc ./AuxCode/SLHCSimPhase2/plugins/StdPixelHitNtuplizer.cc \n")
  
-        fout.write("scram b -j 8 \n") 
+        fout.write("scram b -j 8 USER_CXXFLAGS=\"-DPHASE2\" \n")
         fout.write("eval `scram r -sh` \n")
 
         # implement in the LSF script E.Brownson's recipe for changing the size of the pixels / part #2
