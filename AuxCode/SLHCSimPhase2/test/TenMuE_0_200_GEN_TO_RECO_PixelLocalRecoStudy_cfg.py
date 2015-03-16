@@ -211,6 +211,8 @@ process.ReadLocalMeasurement = cms.EDAnalyzer("StdPixelHitNtuplizer",
    ### if using simple (non-iterative) or old (as in 1_8_4) tracking
    trackProducer = cms.InputTag("generalTracks"),
    OutputFile = cms.string(outntuplefile),
+   #verbose = cms.untracked.bool(True),
+   #picky   = cms.untracked.bool(False),                                           
    ### for using track hit association
    associatePixel = cms.bool(True),
    associateStrip = cms.bool(False),
@@ -310,6 +312,10 @@ process.endjob_step = cms.EndPath(process.endOfProcess)
 process.FEVTDEBUGoutput_step = cms.EndPath(process.FEVTDEBUGoutput)
 
 ######################################################################################
+# Customization to leave out the global reconstruction
+######################################################################################
+from AuxCode.SLHCSimPhase2.TkLocalRecoCustoms import customise_localreco
+process = customise_localreco(process)
 
 # Schedule definition
 process.schedule = cms.Schedule(process.generation_step,process.genfiltersummary_step,process.simulation_step,process.digitisation_step,process.L1simulation_step,process.digi2raw_step,process.raw2digi_step,process.L1Reco_step,process.reconstruction_step,process.seqProducers,process.seqAnalyzers,process.make_ntuple,process.endjob_step,process.FEVTDEBUGoutput_step)
@@ -388,7 +394,6 @@ process.mix.digitizers.pixel.AddPixelInefficiencyFromPython = cms.bool(False)
 process.mix.digitizers.pixel.AddNoise = cms.bool(False)	
 process.mix.digitizers.pixel.AddThresholdSmearing = cms.bool(False)
 process.mix.digitizers.pixel.AddNoisyPixels = cms.bool(False)
-
 
 #process.mix.digitizers.pixel.FluctuateCharge = cms.untracked.bool(False)
 
