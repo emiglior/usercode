@@ -99,6 +99,8 @@ protected:
 private:
   edm::ParameterSet conf_;
   edm::InputTag src_;
+  bool verbose_;
+  bool picky_;
  
   static const int DGPERCLMAX = 100;  
      
@@ -165,6 +167,8 @@ private:
 StdPixelHitNtuplizer::StdPixelHitNtuplizer(edm::ParameterSet const& conf) : 
   conf_(conf), 
   src_( conf.getParameter<edm::InputTag>( "src" ) ),
+  verbose_( conf.getUntrackedParameter<bool>("verbose",false)),
+  picky_(conf.getUntrackedParameter<bool>("picky",false)),
   pixeltree_(0),
   pixeltreeOnTrack_(0)
 {
@@ -404,120 +408,122 @@ void StdPixelHitNtuplizer::analyze(const edm::Event& e, const edm::EventSetup& e
   } // end of loop test on recHitColl size
  
   // Now loop over recotracks
- 
+
   edm::Handle<View<reco::Track> >  trackCollection;
   edm::InputTag trackProducer;
   trackProducer = conf_.getParameter<edm::InputTag>("trackProducer");
-  e.getByLabel(trackProducer, trackCollection);
- 
-  /*
-    std::cout << " num of reco::Tracks with "
-    << trackProducer.process()<<":"
-    << trackProducer.label()<<":"
-    << trackProducer.instance()
-    << ": " << trackCollection->size() << "\n";
-  */
-  int rT = 0;
-  for(View<reco::Track>::size_type i=0; i<trackCollection->size(); ++i){
-    ++rT;
-    RefToBase<reco::Track> track(trackCollection, i);
-    int iT = 0;
-    //std::cout << " num of hits for track " << rT << " = " << track->recHitsSize() << std::endl;
-    for(trackingRecHit_iterator ih=track->recHitsBegin(); ih != track->recHitsEnd(); ++ih) {
-      ++iT;
-      //std::cout<<" analyzing hit n. "<<iT<<std::endl;
-      TrackingRecHit * hit = (*ih)->clone();
-      const DetId& detId =  hit->geographicalId();
-      const GeomDet* geomDet( theGeometry->idToDet(detId) );
+  try {e.getByLabel(trackProducer, trackCollection);}
+  catch (cms::Exception& ex){ 
+    if(verbose_){
+      LogWarning("StdPixelHitNtuplizer") << "Track Collection" << trackProducer << "not found"; 
+    } else {;}
+  }
 
-      const SiPixelRecHit *pixhit = dynamic_cast<const SiPixelRecHit*>(hit);
-         
-      if(pixhit){
-	if(pixhit->isValid() ) {
+  if (!trackCollection.isValid()){
+    if(picky_){
+      throw cms::Exception("ProductNotValid") << "TrackCollection product not valid";
+    } else {;}
+  } else {
+    int rT = 0;
+    for(View<reco::Track>::size_type i=0; i<trackCollection->size(); ++i){
+      ++rT;
+      RefToBase<reco::Track> track(trackCollection, i);
+      int iT = 0;
+      //std::cout << " num of hits for track " << rT << " = " << track->recHitsSize() << std::endl;
+      for(trackingRecHit_iterator ih=track->recHitsBegin(); ih != track->recHitsEnd(); ++ih) {
+	++iT;
+	//std::cout<<" analyzing hit n. "<<iT<<std::endl;
+	TrackingRecHit * hit = (*ih)->clone();
+	const DetId& detId =  hit->geographicalId();
+	const GeomDet* geomDet( theGeometry->idToDet(detId) );
 	
-	  // get matched simhit
-	  matched.clear();
-	  matched = associate.associateHit(*pixhit);
-	  	  
-	  if ( !matched.empty() ) {
-	    float closest = 9999.9;
-	    std::vector<PSimHit>::const_iterator closestit = matched.begin();
-	    LocalPoint lp = pixhit->localPosition();
-	    float rechit_x = lp.x();
-	    float rechit_y = lp.y();
-
-	    //loop over simhits and find closest	   	    
-	    for (std::vector<PSimHit>::const_iterator m = matched.begin(); m<matched.end(); m++) 
-	      {
-		float sim_x1 = (*m).entryPoint().x();
-		float sim_x2 = (*m).exitPoint().x();
-		float sim_xpos = 0.5*(sim_x1+sim_x2);
-		float sim_y1 = (*m).entryPoint().y();
-		float sim_y2 = (*m).exitPoint().y();
-		float sim_ypos = 0.5*(sim_y1+sim_y2);
-		
-		float x_res = sim_xpos - rechit_x;
-		float y_res = sim_ypos - rechit_y;
-		float dist = sqrt(x_res*x_res + y_res*y_res);
-		if ( dist < closest ) {
-		  closest = dist;
-		  closestit = m;
-		}
-	      } // end of simhit loop
-	    closest_simhit = closestit;
-	  } // end matched emtpy
-	  
-	  int num_simhit = matched.size();
-	  
-	  int layer_num = -99,ladder_num=-99,module_num=-99,disk_num=-99,blade_num=-99,panel_num=-99,side_num=-99;
-	  
-	  unsigned int subid = detId.subdetId();
-	  int detid_db = detId.rawId();
-	  if ( ( subid == PixelSubdetector::PixelBarrel ) || ( subid == PixelSubdetector::PixelEndcap ) ) {
-	    // 1 = PXB, 2 = PXF
-	    if ( subid ==  PixelSubdetector::PixelBarrel ) {
-	      layer_num   = tTopo->pxbLayer(detId.rawId());
-	      ladder_num  = tTopo->pxbLadder(detId.rawId());
-	      module_num  = tTopo->pxbModule(detId.rawId());
-	      //std::cout <<"\ndetId = "<<subid<<" : "<<tTopo->pxbLayer(detId.rawId())<<" , "<<tTopo->pxbLadder(detId.rawId())<<" , "<< tTopo->pxbModule(detId.rawId()) <<std::endl;
-	    } else if ( subid ==  PixelSubdetector::PixelEndcap ) {
-	      module_num  = tTopo->pxfModule(detId());
-	      disk_num    = tTopo->pxfDisk(detId());
-	      blade_num   = tTopo->pxfBlade(detId());
-	      panel_num   = tTopo->pxfPanel(detId());
-	      side_num    = tTopo->pxfSide(detId());
-	    }
+	const SiPixelRecHit *pixhit = dynamic_cast<const SiPixelRecHit*>(hit);
+	
+	if(pixhit){
+	  if(pixhit->isValid() ) {
 	    
-	    recHit_.init();
-	    fillPRecHit(detid_db, subid, layer_num,ladder_num,module_num,disk_num,blade_num,panel_num,side_num, 
-			ih, num_simhit, closest_simhit, geomDet );	 
-	    pixeltreeOnTrack_->Fill();	   
-	    /*
-	      TrackingRecHit * hit = (*ih)->clone();
-	      LocalPoint lp = hit->localPosition();
-	      LocalError le = hit->localPositionError();
-	      //            std::cout << "   lp x,y = " << lp.x() << " " << lp.y() << " lpe xx,xy,yy = "
-	      //                  << le.xx() << " " << le.xy() << " " << le.yy() << std::endl;
-	      std::cout << "Found RecHit in " << detname << " from detid " << detId.rawId()
-	      << " subdet = " << subdetId
-	      << " layer = " << layerNumber
-	      << "global x/y/z/r = "
-	      << geomDet->surface().toGlobal(lp).x() << " " 
-	      << geomDet->surface().toGlobal(lp).y() << " " 
-	      << geomDet->surface().toGlobal(lp).z() << " " 
-	      << geomDet->surface().toGlobal(lp).perp() 
-	      << " err x/y = " << sqrt(le.xx()) << " " << sqrt(le.yy()) << std::endl;
-	    */
-	  } // if ( (subid==1)||(subid==2) ) 
-	} // if SiPixelHit is valid
-      } // if cast is possible to SiPixelHit
-      delete pixhit;
-    } //end of loop on tracking rechits
-  } // end of loop on recotracks
+	    // get matched simhit
+	    matched.clear();
+	    matched = associate.associateHit(*pixhit);
+	    
+	    if ( !matched.empty() ) {
+	      float closest = 9999.9;
+	      std::vector<PSimHit>::const_iterator closestit = matched.begin();
+	      LocalPoint lp = pixhit->localPosition();
+	      float rechit_x = lp.x();
+	      float rechit_y = lp.y();
+	      
+	      //loop over simhits and find closest	   	    
+	      for (std::vector<PSimHit>::const_iterator m = matched.begin(); m<matched.end(); m++) 
+		{
+		  float sim_x1 = (*m).entryPoint().x();
+		  float sim_x2 = (*m).exitPoint().x();
+		  float sim_xpos = 0.5*(sim_x1+sim_x2);
+		  float sim_y1 = (*m).entryPoint().y();
+		  float sim_y2 = (*m).exitPoint().y();
+		  float sim_ypos = 0.5*(sim_y1+sim_y2);
+		  
+		  float x_res = sim_xpos - rechit_x;
+		  float y_res = sim_ypos - rechit_y;
+		  float dist = sqrt(x_res*x_res + y_res*y_res);
+		  if ( dist < closest ) {
+		    closest = dist;
+		    closestit = m;
+		  }
+		} // end of simhit loop
+	      closest_simhit = closestit;
+	    } // end matched emtpy
+	    
+	    int num_simhit = matched.size();
+	    
+	    int layer_num = -99,ladder_num=-99,module_num=-99,disk_num=-99,blade_num=-99,panel_num=-99,side_num=-99;
+	    
+	    unsigned int subid = detId.subdetId();
+	    int detid_db = detId.rawId();
+	    if ( ( subid == PixelSubdetector::PixelBarrel ) || ( subid == PixelSubdetector::PixelEndcap ) ) {
+	      // 1 = PXB, 2 = PXF
+	      if ( subid ==  PixelSubdetector::PixelBarrel ) {
+		layer_num   = tTopo->pxbLayer(detId.rawId());
+		ladder_num  = tTopo->pxbLadder(detId.rawId());
+		module_num  = tTopo->pxbModule(detId.rawId());
+		//std::cout <<"\ndetId = "<<subid<<" : "<<tTopo->pxbLayer(detId.rawId())<<" , "<<tTopo->pxbLadder(detId.rawId())<<" , "<< tTopo->pxbModule(detId.rawId()) <<std::endl;
+	      } else if ( subid ==  PixelSubdetector::PixelEndcap ) {
+		module_num  = tTopo->pxfModule(detId());
+		disk_num    = tTopo->pxfDisk(detId());
+		blade_num   = tTopo->pxfBlade(detId());
+		panel_num   = tTopo->pxfPanel(detId());
+		side_num    = tTopo->pxfSide(detId());
+	      }
+	      
+	      recHit_.init();
+	      fillPRecHit(detid_db, subid, layer_num,ladder_num,module_num,disk_num,blade_num,panel_num,side_num, 
+			  ih, num_simhit, closest_simhit, geomDet );	 
+	      pixeltreeOnTrack_->Fill();	   
+	      /*
+		TrackingRecHit * hit = (*ih)->clone();
+		LocalPoint lp = hit->localPosition();
+		LocalError le = hit->localPositionError();
+		//            std::cout << "   lp x,y = " << lp.x() << " " << lp.y() << " lpe xx,xy,yy = "
+		//                  << le.xx() << " " << le.xy() << " " << le.yy() << std::endl;
+		std::cout << "Found RecHit in " << detname << " from detid " << detId.rawId()
+		<< " subdet = " << subdetId
+		<< " layer = " << layerNumber
+		<< "global x/y/z/r = "
+		<< geomDet->surface().toGlobal(lp).x() << " " 
+		<< geomDet->surface().toGlobal(lp).y() << " " 
+		<< geomDet->surface().toGlobal(lp).z() << " " 
+		<< geomDet->surface().toGlobal(lp).perp() 
+		<< " err x/y = " << sqrt(le.xx()) << " " << sqrt(le.yy()) << std::endl;
+	      */
+	    } // if ( (subid==1)||(subid==2) ) 
+	  } // if SiPixelHit is valid
+	} // if cast is possible to SiPixelHit
+	delete pixhit;
+      } //end of loop on tracking rechits
+    } // end of loop on recotracks
+  } // else track collection is valid
 } // end analyze function
  
-
-
 // Function for filling in all the rechits
 // I know it is lazy to pass everything, but I'm doing it anyway. -EB
 void StdPixelHitNtuplizer::fillPRecHit(const int detid_db, const int subid, 
