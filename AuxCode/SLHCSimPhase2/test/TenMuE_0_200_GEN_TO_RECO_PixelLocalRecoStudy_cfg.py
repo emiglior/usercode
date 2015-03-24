@@ -96,38 +96,15 @@ if options.PUScenario!="NoPU":
     process.mix.minBunch = cms.int32(-12)
     process.mix.maxBunch = cms.int32(3)
 
-    if "140" in options.PUScenario:        
-        process.mix.input.nbPileupEvents.averageNumber = cms.double(140.000000)
-        print "PU = 140"
-    elif "10" in options.PUScenario:
-        process.mix.input.nbPileupEvents.averageNumber = cms.double(10.000000)
-    elif "20" in options.PUScenario:
-        process.mix.input.nbPileupEvents.averageNumber = cms.double(20.000000)  
-    elif "25" in options.PUScenario:
-        process.mix.input.nbPileupEvents.averageNumber = cms.double(25.000000)
-    elif "35" in options.PUScenario:
-        process.mix.input.nbPileupEvents.averageNumber = cms.double(35.000000)
-    elif "40" in options.PUScenario:
-        process.mix.input.nbPileupEvents.averageNumber = cms.double(40.000000)
-    elif "50" in options.PUScenario:
-        process.mix.input.nbPileupEvents.averageNumber = cms.double(50.000000)
-    elif "70" in options.PUScenario:
-        process.mix.input.nbPileupEvents.averageNumber = cms.double(70.000000)
-    elif "75" in options.PUScenario:
-        process.mix.input.nbPileupEvents.averageNumber = cms.double(75.000000)
-    elif "100" in options.PUScenario:
-        process.mix.input.nbPileupEvents.averageNumber = cms.double(100.000000)
-    elif "125" in options.PUScenario:
-        process.mix.input.nbPileupEvents.averageNumber = cms.double(125.000000)
-    elif "150" in options.PUScenario:
-        process.mix.input.nbPileupEvents.averageNumber = cms.double(150.000000)
-    elif "175" in options.PUScenario:
-        process.mix.input.nbPileupEvents.averageNumber = cms.double(175.000000)
-    elif "200" in options.PUScenario:
-        process.mix.input.nbPileupEvents.averageNumber = cms.double(200.000000)
-    else:
+    try:
+        float(options.PUScenario)
+        process.mix.input.nbPileupEvents.averageNumber = cms.double(float(options.PUScenario))
+        print "PU =",float(options.PUScenario)
+        
+    except ValueError:
+        print options.PUScenario," not a float"
         print "Unrecognized PU scenario, using default (=NoPU)"
-        process.load('SimGeneral.MixingModule.mixNoPU_cfi')
+        process.load('SimGeneral.MixingModule.mixNoPU_cfi')   
        
 else:
     process.load('SimGeneral.MixingModule.mixNoPU_cfi')
@@ -211,6 +188,8 @@ process.ReadLocalMeasurement = cms.EDAnalyzer("StdPixelHitNtuplizer",
    ### if using simple (non-iterative) or old (as in 1_8_4) tracking
    trackProducer = cms.InputTag("generalTracks"),
    OutputFile = cms.string(outntuplefile),
+   #verbose = cms.untracked.bool(True),
+   #picky   = cms.untracked.bool(False),                                           
    ### for using track hit association
    associatePixel = cms.bool(True),
    associateStrip = cms.bool(False),
@@ -310,6 +289,10 @@ process.endjob_step = cms.EndPath(process.endOfProcess)
 process.FEVTDEBUGoutput_step = cms.EndPath(process.FEVTDEBUGoutput)
 
 ######################################################################################
+# Customization to leave out the global reconstruction
+######################################################################################
+from AuxCode.SLHCSimPhase2.TkLocalRecoCustoms import customise_localreco
+process = customise_localreco(process)
 
 # Schedule definition
 process.schedule = cms.Schedule(process.generation_step,process.genfiltersummary_step,process.simulation_step,process.digitisation_step,process.L1simulation_step,process.digi2raw_step,process.raw2digi_step,process.L1Reco_step,process.reconstruction_step,process.seqProducers,process.seqAnalyzers,process.make_ntuple,process.endjob_step,process.FEVTDEBUGoutput_step)
@@ -388,7 +371,6 @@ process.mix.digitizers.pixel.AddPixelInefficiencyFromPython = cms.bool(False)
 process.mix.digitizers.pixel.AddNoise = cms.bool(False)	
 process.mix.digitizers.pixel.AddThresholdSmearing = cms.bool(False)
 process.mix.digitizers.pixel.AddNoisyPixels = cms.bool(False)
-
 
 #process.mix.digitizers.pixel.FluctuateCharge = cms.untracked.bool(False)
 

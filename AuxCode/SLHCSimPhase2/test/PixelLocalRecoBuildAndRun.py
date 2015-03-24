@@ -103,19 +103,54 @@ class Job:
         self.islocal=islocal
         self.launch_dir=LAUNCH_BASE
 
-#        self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/phase2/out62XSLHC17patch1/32bit/TestBricked",\
-#        self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/phase2/out62XSLHC17patch1nn/DataCompression",\
-        self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/phase2/out62XSLHC17patch1/32bit/OccupancyStudy",\
+        ### assignment of the output folder
+
+        local_out_dir=os.path.join(self.launch_dir,"src/results/SLHCSimPhase2/phase2/out62XSLHC17patch1/32bit/OccupancyStudy",\
                                       "PixelROCRows_"+pixelrocrows_l0l1+"_"+pixelrocrows_l2l3,\
                                       "PixelROCCols_"+pixelroccols_l0l1+"_"+pixelroccols_l2l3,\
                                       "BPIXThick_"+bpixl0l1thickness+"_"+bpixl2l3thickness,\
                                       "BPixThr_"+bpixthr,"eToADC_"+pixeleperadc,"MaxADC_"+pixmaxadc,\
                                       "ChanThr_"+chanthr,"SeedThr_"+seedthr,"ClusThr_"+clusthr,\
                                       "PU_"+self.pu)
-
+        
+        # self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/phase2/out62XSLHC17patch1/32bit/TestBricked",\
+        # self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/phase2/out62XSLHC17patch1nn/DataCompression",\
+        eos_out_dir=os.path.join("/store/user",USER,"SLHCSimPhase2/phase2/out62XSLHC17patch1/32bit/OccupancyStudy",\
+                                      "PixelROCRows_"+pixelrocrows_l0l1+"_"+pixelrocrows_l2l3,\
+                                      "PixelROCCols_"+pixelroccols_l0l1+"_"+pixelroccols_l2l3,\
+                                      "BPIXThick_"+bpixl0l1thickness+"_"+bpixl2l3thickness,\
+                                      "BPixThr_"+bpixthr,"eToADC_"+pixeleperadc,"MaxADC_"+pixmaxadc,\
+                                      "ChanThr_"+chanthr,"SeedThr_"+seedthr,"ClusThr_"+clusthr,\
+                                      "PU_"+self.pu,"PUScan")
+        
+        self.out_dir = local_out_dir
+        
         if(self.job_id==1):
-            mkdir_eos(self.out_dir)
-
+            
+            p = subprocess.Popen(["which","cmsLs"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            (out, err) = p.communicate()
+          
+            if("cmsLs" in out):
+               
+                p1 = subprocess.Popen(["cmsLs",os.path.join("/store/user/",USER)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                (out1, err1) = p1.communicate()
+                
+                if("No such file or directory" not in out1):
+                    print "=====> On lxplus and EOS folder exists! Creating EOS folder"
+                    self.out_dir=eos_out_dir
+                    mkdir_eos(self.out_dir)
+                else:
+                    print "=====>", out1
+                    print "On lxplus but EOS folder doesn't exist!"
+                    if(os.path.exists(self.out_dir)):
+                        print "Local folder already exists. Skipping"
+                    else:
+                        print "Local folder does not exist yet. Creating"
+                        os.makedirs(self.out_dir)
+            else:
+                print "=====> Not on lxplus! Creating local Folder"
+                os.makedirs(self.out_dir) 
+            
         self.task_basename = self.task_name + "_pixelCPE_age" + self.ageing + "_pu" + self.pu + "_PixelROCRows" + self.pixelrocrows_l0l1 + "_" +  self.pixelrocrows_l2l3 +\
             "_PixelROCCols" + self.pixelroccols_l0l1 + "_" +  self.pixelroccols_l2l3 +\
             "_BPIXThick" + self.bpixl0l1thickness + "_" + self.bpixl2l3thickness +\
@@ -244,6 +279,7 @@ class Job:
         fout.write("# compile \n")
         if(self.islocal):
             fout.write("cp "+self.launch_dir+"/src/AuxCode/SLHCSimPhase2/plugins/StdPixelHitNtuplizer.cc ./AuxCode/SLHCSimPhase2/plugins/StdPixelHitNtuplizer.cc \n")
+            fout.write("cp "+self.launch_dir+"/src/AuxCode/SLHCSimPhase2/python/TkLocalRecoCustoms.py ./AuxCode/SLHCSimPhase2/python/TkLocalRecoCustoms.py \n")
  
         fout.write("scram b -j 8 USER_CXXFLAGS=\"-DPHASE2\" \n")
         fout.write("eval `scram r -sh` \n")
@@ -273,10 +309,11 @@ class Job:
         fout.write("cd "+os.path.join("AuxCode","SLHCSimPhase2","test")+"\n")
 #        fout.write("edmConfigDump ${PKG_DIR}/OneNuM_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py >> pset_dumped.py \n")
 #        fout.write("cmsRun ${PKG_DIR}/OneNuM_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py  maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} BPixThr=${bpixthr} PUScenario=${puscenario} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
-        fout.write("cmsRun ${PKG_DIR}/TenMuE_0_200_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} BPixThr=${bpixthr} PUScenario=${puscenario} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
+#        fout.write("cmsRun ${PKG_DIR}/TenMuE_0_200_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} BPixThr=${bpixthr} PUScenario=${puscenario} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
+        fout.write("cmsRun ${PKG_DIR}/TTtoAnything_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} BPixThr=${bpixthr} PUScenario=${puscenario} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
 
         fout.write("ls -lh . \n")
-#        fout.write("cmsStage -f pset_dumped.py ${OUT_DIR}/pset_dumped.py \n")
+        #fout.write("cmsStage -f pset_dumped.py ${OUT_DIR}/pset_dumped.py \n")
         #fout.write("cd Brownson \n")
         #fout.write("make \n")
         #fout.write("ln -fs ../stdgrechitfullph1g_ntuple.root . \n")
@@ -467,8 +504,9 @@ def main():
             del ajob
 
         jobIndex+=1       
-            
-        print "- Output will be saved in   :",out_dir
+        
+        if (jobIndex==1):
+            print "- Output will be saved in   :",out_dir
     print "********************************************************"
 
     #############################################
@@ -488,7 +526,7 @@ def main():
     fout.write("eval `scram r -sh` \n")
     fout.write("mkdir -p /tmp/$USER/"+link_name+" \n")
     fout.write("for inputfile in `cmsLs "+out_dir+" |grep seed | grep root`; do \n")
-    fout.write("   namebase=`echo $inputfile |awk '{split($0,b,\"/\"); print b[21]}'` \n")
+    fout.write("   namebase=`echo $inputfile |awk '{split($0,b,\"/\"); print b[22]}'` \n")
     fout.write("   cmsStage -f $OUT_DIR/$namebase /tmp/$USER/"+link_name+" \n")
     fout.write("# Uncomment next line to clean up EOS space \n")
     fout.write("#  cmsRm $OUT_DIR/$namebase \n")
