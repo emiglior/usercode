@@ -41,7 +41,14 @@ def set_global_var():
     LOG_DIR = os.path.join(os.getcwd(),"log")
     SCRAM_ARCH = "slc6_amd64_gcc472"
     CMSSW_VER="CMSSW_6_2_0_SLHC17_patch1"
+  
     
+###### method to define if EOS exists or NOT ########## #############
+
+def set_has_eos(mytruth):
+    global HAS_EOS
+    HAS_EOS = mytruth
+
 ###### method to create recursively directories on EOS  #############
     
 def mkdir_eos(out_path):
@@ -102,29 +109,25 @@ class Job:
         self.myseed=myseed
         self.islocal=islocal
         self.launch_dir=LAUNCH_BASE
-
+           
         ### assignment of the output folder
 
         local_out_dir=os.path.join(self.launch_dir,"src/results/SLHCSimPhase2/phase2/out62XSLHC17patch1/32bit/OccupancyStudy",\
-                                      "PixelROCRows_"+pixelrocrows_l0l1+"_"+pixelrocrows_l2l3,\
-                                      "PixelROCCols_"+pixelroccols_l0l1+"_"+pixelroccols_l2l3,\
-                                      "BPIXThick_"+bpixl0l1thickness+"_"+bpixl2l3thickness,\
-                                      "BPixThr_"+bpixthr,"eToADC_"+pixeleperadc,"MaxADC_"+pixmaxadc,\
-                                      "ChanThr_"+chanthr,"SeedThr_"+seedthr,"ClusThr_"+clusthr,\
-                                      "PU_"+self.pu)
+                                       "PixelROCRows_"+pixelrocrows_l0l1+"_"+pixelrocrows_l2l3,\
+                                       "PixelROCCols_"+pixelroccols_l0l1+"_"+pixelroccols_l2l3,\
+                                       "BPIXThick_"+bpixl0l1thickness+"_"+bpixl2l3thickness,\
+                                       "BPixThr_"+bpixthr,"eToADC_"+pixeleperadc,"MaxADC_"+pixmaxadc,\
+                                       "ChanThr_"+chanthr,"SeedThr_"+seedthr,"ClusThr_"+clusthr,\
+                                       "PU_"+self.pu)
         
-        # self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/phase2/out62XSLHC17patch1/32bit/TestBricked",\
-        # self.out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/phase2/out62XSLHC17patch1nn/DataCompression",\
         eos_out_dir=os.path.join("/store/user",USER,"SLHCSimPhase2/phase2/out62XSLHC17patch1/32bit/OccupancyStudy",\
-                                      "PixelROCRows_"+pixelrocrows_l0l1+"_"+pixelrocrows_l2l3,\
-                                      "PixelROCCols_"+pixelroccols_l0l1+"_"+pixelroccols_l2l3,\
-                                      "BPIXThick_"+bpixl0l1thickness+"_"+bpixl2l3thickness,\
-                                      "BPixThr_"+bpixthr,"eToADC_"+pixeleperadc,"MaxADC_"+pixmaxadc,\
-                                      "ChanThr_"+chanthr,"SeedThr_"+seedthr,"ClusThr_"+clusthr,\
-                                      "PU_"+self.pu,"PUScan")
-        
-        self.out_dir = local_out_dir
-        
+                                     "PixelROCRows_"+pixelrocrows_l0l1+"_"+pixelrocrows_l2l3,\
+                                     "PixelROCCols_"+pixelroccols_l0l1+"_"+pixelroccols_l2l3,\
+                                     "BPIXThick_"+bpixl0l1thickness+"_"+bpixl2l3thickness,\
+                                     "BPixThr_"+bpixthr,"eToADC_"+pixeleperadc,"MaxADC_"+pixmaxadc,\
+                                     "ChanThr_"+chanthr,"SeedThr_"+seedthr,"ClusThr_"+clusthr,\
+                                     "PU_"+self.pu,"PUScan")
+
         if(self.job_id==1):
             
             p = subprocess.Popen(["which","cmsLs"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -139,9 +142,13 @@ class Job:
                     print "=====> On lxplus and EOS folder exists! Creating EOS folder"
                     self.out_dir=eos_out_dir
                     mkdir_eos(self.out_dir)
+                    set_has_eos(True)
+                    #print "setting true:",HAS_EOS
                 else:
                     print "=====>", out1
                     print "On lxplus but EOS folder doesn't exist!"
+                    set_has_eos(False)
+                    self.out_dir=local_out_dir
                     if(os.path.exists(self.out_dir)):
                         print "Local folder already exists. Skipping"
                     else:
@@ -149,8 +156,19 @@ class Job:
                         os.makedirs(self.out_dir)
             else:
                 print "=====> Not on lxplus! Creating local Folder"
+                set_has_eos(False)
+                self.out_dir=local_out_dir
                 os.makedirs(self.out_dir) 
             
+        else:
+            if(HAS_EOS):
+                self.out_dir = eos_out_dir
+            else:
+                self.out_dir = local_out_dir
+
+        #### just for debug        
+        #print self.job_id,HAS_EOS
+
         self.task_basename = self.task_name + "_pixelCPE_age" + self.ageing + "_pu" + self.pu + "_PixelROCRows" + self.pixelrocrows_l0l1 + "_" +  self.pixelrocrows_l2l3 +\
             "_PixelROCCols" + self.pixelroccols_l0l1 + "_" +  self.pixelroccols_l2l3 +\
             "_BPIXThick" + self.bpixl0l1thickness + "_" + self.bpixl2l3thickness +\
@@ -309,9 +327,9 @@ class Job:
         fout.write("cd "+os.path.join("AuxCode","SLHCSimPhase2","test")+"\n")
 #        fout.write("edmConfigDump ${PKG_DIR}/OneNuM_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py >> pset_dumped.py \n")
 #        fout.write("cmsRun ${PKG_DIR}/OneNuM_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py  maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} BPixThr=${bpixthr} PUScenario=${puscenario} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
-#        fout.write("cmsRun ${PKG_DIR}/TenMuE_0_200_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} BPixThr=${bpixthr} PUScenario=${puscenario} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
-        fout.write("cmsRun ${PKG_DIR}/TTtoAnything_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} BPixThr=${bpixthr} PUScenario=${puscenario} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
-
+        fout.write("cmsRun ${PKG_DIR}/TenMuE_0_200_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} BPixThr=${bpixthr} PUScenario=${puscenario} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
+#        fout.write("cmsRun ${PKG_DIR}/TTtoAnything_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} BPixThr=${bpixthr} PUScenario=${puscenario} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
+      
         fout.write("ls -lh . \n")
         #fout.write("cmsStage -f pset_dumped.py ${OUT_DIR}/pset_dumped.py \n")
         #fout.write("cd Brownson \n")
@@ -498,15 +516,16 @@ def main():
         ajob.createTheLSFFile()        
 
         out_dir = ajob.out_dir # save for later usage
-    
+        
+        if (jobIndex==1):
+            print "- Output will be saved in   :",out_dir
+
         if opts.submit:
             ajob.submit()
             del ajob
 
         jobIndex+=1       
         
-        if (jobIndex==1):
-            print "- Output will be saved in   :",out_dir
     print "********************************************************"
 
     #############################################
