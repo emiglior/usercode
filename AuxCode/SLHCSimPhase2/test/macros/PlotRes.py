@@ -1,6 +1,8 @@
 #!/usr/bin/env python
+
 import sys
 import ROOT
+import array
 import math
 
 from optparse import OptionParser
@@ -31,6 +33,8 @@ def declare_struct():
     Float_t         yy;\
     Float_t         row;\
     Float_t         col;\
+    Float_t         hrow;\
+    Float_t         hcol;\
     Float_t         gx;\
     Float_t         gy;\
     Float_t         gz;\
@@ -45,6 +49,13 @@ def declare_struct():
     Int_t           nsimhit;\
     Int_t           spreadx;\
     Int_t           spready;\
+    Int_t           nRowsInDet;\
+    Int_t           nColsInDet;\
+    Float_t         pitchx;\
+    Float_t         pitchy;\
+    Float_t         thickness;\
+    Float_t         cotAlphaFromDet;\
+    Float_t         cotBetaFromDet;\
     Float_t         hx;\
     Float_t         hy;\
     Float_t         tx;\
@@ -52,6 +63,12 @@ def declare_struct():
     Float_t         tz;\
     Float_t         theta;\
     Float_t         phi;\
+    Int_t           DgN;\
+    Int_t           DgRow[100];\
+    Int_t           DgCol[100];\
+    Int_t           DgDetId[100];\
+    Float_t         DgAdc[100];\
+    Float_t         DgCharge[100];\
     };" )
 
 
@@ -73,9 +90,6 @@ def main():
     parser.add_option("-e", "--entries",
                       action="store", type="int", dest="entries", default=-1,
                       help="number of entries")
-    parser.add_option("-t", "--thickness",
-                      action="store", type="float", dest="thickness", default=285,
-                      help="thickness in um")
     parser.add_option("-L", "--layer",
                       action="store", type="int", dest="layer", default=-1,
                       help="Pixel Layer")
@@ -97,10 +111,10 @@ def main():
         
     output_root_filename = "PlotResHistos"
     if options.ontrack == False: 
-        input_tree = input_root_file.Get("PixelNtuple")
+        input_tree = input_root_file.Get("ReadLocalMeasurement/PixelNtuple")      
         output_root_filename += "_All"
     else:
-        input_tree = input_root_file.Get("Pixel2Ntuple")            
+        input_tree = input_root_file.Get("ReadLocalMeasurement/Pixel2Ntuple")      
         output_root_filename += "_OnTrack"
 
     if options.gaussfit == False: 
@@ -120,8 +134,7 @@ def main():
     evt = evt_t()
     pixel_recHit = pixel_recHit_t()
     input_tree.SetBranchAddress("evt",ROOT.AddressOf(evt,"run"))        
-    input_tree.SetBranchAddress("pixel_recHit",ROOT.AddressOf(pixel_recHit,"pdgid"))
-    
+
     output_root_file = ROOT.TFile(output_root_filename,"RECREATE")
 
     ### HIT POSITIONS
@@ -129,9 +142,9 @@ def main():
     output_root_file.cd("hitmapsAndCharge") 
 
     ### hit maps
-    h2_rzhitmapSubId1 = ROOT.TH2F("h2_rzhitmapSubId1","rzhitmap_subid1; recHit z [cm]; recHit r [cm]",200,-300.,300.,150,0.,150.)
-    h2_rzhitmapSubId2 = ROOT.TH2F("h2_rzhitmapSubId2","rzhitmap_subid2; recHit z [cm]; recHit r [cm]",200,-300.,300.,150,0.,150.)    
-    h2_rzhitmapSelected = ROOT.TH2F("h2_rzhitmapSelected","rzhitmap; recHit z [cm]; recHit r [cm]",100,-50.,50.,100,2.5,5.)
+    h2_rzhitmapSubId1 = ROOT.TH2F("h2_rzhitmapSubId1","rzhitmap_subid1; recHit z [cm]; recHit r [cm]",400,-300.,300.,150,0.,150.)
+    h2_rzhitmapSubId2 = ROOT.TH2F("h2_rzhitmapSubId2","rzhitmap_subid2; recHit z [cm]; recHit r [cm]",400,-300.,300.,150,0.,150.)    
+    h2_rzhitmapSelected = ROOT.TH2F("h2_rzhitmapSelected","rzhitmap; recHit z [cm]; recHit r [cm]",400,-300.,300.,200,0.,20.)
 
     ### simhit and rechit local positions
     h1_localX_witdh1_simHit = ROOT.TH1F("h1_localX_witdh1_simHit","h1_localX_witdh1_simHit",2000,-10000,+10000)
@@ -165,7 +178,7 @@ def main():
 #    hsPhi = HistoStruct("Phi"    ,48, -3.15 ,+3.15, "#phi", output_root_file, options.gaussfit)
 #    hsX   = HistoStruct("LocalX" ,18, -8100.,+8100., "x", output_root_file, options.gaussfit)
 #    hsZeta = HistoStruct("Zeta",50, 0.,25., "|z|"   , output_root_file, options.gaussfit)
-#    hsCotgBeta  = HistoStruct("CotgBeta" ,20,0.,4., "|cotg(#beta)|", output_root_file, options.gaussfit)
+    hsCotgBeta  = HistoStruct("CotgBeta" ,20,0.,4., "|cotg(#beta)|", output_root_file, options.gaussfit)
 
     all_entries = input_tree.GetEntries()
     if options.entries != -1:
@@ -179,14 +192,75 @@ def main():
         if this_entry % 200000 == 0:
             print "Loop #1 Procesing Event: ", this_entry
 
+# To access the events in a tree no variables need to be assigned to the different branches. Instead the leaves are available as properties of the tree, returning the values of the present event. 
+        pixel_recHit.pdgid      = input_tree.pdgid
+        pixel_recHit.process    = input_tree.process
+        pixel_recHit.q          = input_tree.q
+        pixel_recHit.x          = input_tree.x
+        pixel_recHit.y          = input_tree.y
+        pixel_recHit.xx         = input_tree.xx
+        pixel_recHit.xy         = input_tree.xy
+        pixel_recHit.yy         = input_tree.yy
+        pixel_recHit.row        = input_tree.row
+        pixel_recHit.col        = input_tree.col
+        pixel_recHit.hrow       = input_tree.hrow
+        pixel_recHit.hcol       = input_tree.hcol
+        pixel_recHit.gx         = input_tree.gx
+        pixel_recHit.gy         = input_tree.gy
+        pixel_recHit.gz         = input_tree.gz
+        pixel_recHit.subid      = input_tree.subid
+        pixel_recHit.module     = input_tree.module
+        pixel_recHit.layer      = input_tree.layer
+        pixel_recHit.ladder     = input_tree.ladder
+        pixel_recHit.disk       = input_tree.disk
+        pixel_recHit.blade      = input_tree.blade
+        pixel_recHit.panel      = input_tree.panel
+        pixel_recHit.side       = input_tree.side
+        pixel_recHit.nsimhit    = input_tree.nsimhit
+        pixel_recHit.spreadx    = input_tree.spreadx
+        pixel_recHit.spready    = input_tree.spready
+        pixel_recHit.pitchx     = input_tree.pitchx
+        pixel_recHit.pitchy     = input_tree.pitchy
+        pixel_recHit.thickness  = input_tree.thickness
+        pixel_recHit.cotAlphaFromDet = input_tree.cotAlphaFromDet
+        pixel_recHit.cotBetaFromDet  = input_tree.cotBetaFromDet
+        pixel_recHit.nColsInDet = input_tree.nColsInDet
+        pixel_recHit.nRowsInDet = input_tree.nRowsInDet
+        pixel_recHit.hx         = input_tree.hx
+        pixel_recHit.hy         = input_tree.hy
+        pixel_recHit.tx         = input_tree.tx
+        pixel_recHit.ty         = input_tree.ty
+        pixel_recHit.tz         = input_tree.tz
+        pixel_recHit.theta      = input_tree.theta
+        pixel_recHit.phi        = input_tree.phi
+        pixel_recHit.DgN        = input_tree.DgN
+
+        pixel_recHit.DgRow = array.array('i',[0]*100)
+        pixel_recHit.DgCol = array.array('i',[0]*100)
+        pixel_recHit.DgDetId = array.array('i',[0]*100)
+        pixel_recHit.DgAdc = array.array('f',[0]*100)
+        pixel_recHit.DgCharge = array.array('f',[0]*100)
+
+        for iDg in range(pixel_recHit.DgN):
+            pixel_recHit.DgRow[iDg] = input_tree.DgRow[iDg]
+            pixel_recHit.DgCol[iDg] = input_tree.DgCol[iDg]
+            pixel_recHit.DgDetId[iDg] = input_tree.DgDetId[iDg]
+            pixel_recHit.DgAdc[iDg] = input_tree.DgAdc[iDg]
+            pixel_recHit.DgCharge[iDg] =input_tree.DgCharge[iDg]
+
+       
+        # phase2 : BPIX subid==1&&layer<5
+        #          FPIX subid==2&&disk<11  
+
+
         # global position of the rechit
         # NB sin(theta) = tv3.Perp()/tv3.Mag()
         tv3 = ROOT.TVector3(pixel_recHit.gx, pixel_recHit.gy, pixel_recHit.gz)
     
         # hitmap for sanity check (phase1 subid=1/2 -> BPIX/FPIX, phase2 subid=1/2 barrel/endcap)
-        if (pixel_recHit.subid==1):
+        if (pixel_recHit.subid==1 and pixel_recHit.layer<5):
             h2_rzhitmapSubId1.Fill(tv3.z(),tv3.Perp())
-        elif (pixel_recHit.subid==2): 
+        elif (pixel_recHit.subid==2 and pixel_recHit.disk<11):
             h2_rzhitmapSubId2.Fill(tv3.z(),tv3.Perp())
 
         # Select one BPIX layer or FPIX disk
@@ -241,7 +315,7 @@ def main():
 #            hsPhi.FillFirstLoop(tv3.Phi(), pixel_recHit)
 #            hsX.FillFirstLoop(pixel_recHit.x*CmToUm, pixel_recHit)
 #            hsZeta.FillFirstLoop(math.fabs(tv3.z()), pixel_recHit)
-#            hsCotgBeta.FillFirstLoop(math.fabs(pixel_recHit.ty/math.sqrt(1.-pixel_recHit.ty*pixel_recHit.ty)), pixel_recHit)
+            hsCotgBeta.FillFirstLoop(math.fabs(pixel_recHit.ty/math.sqrt(1.-pixel_recHit.ty*pixel_recHit.ty)), pixel_recHit)
 
     ### Compute the Q averaged in the central eta-bin
     output_root_file.cd("hitmapsAndCharge") 
@@ -256,6 +330,67 @@ def main():
 
         if this_entry % 200000 == 0:
             print "Loop #2 Procesing Event: ", this_entry
+
+# To access the events in a tree no variables need to be assigned to the different branches. Instead the leaves are available as properties of the tree, returning the values of the present event. 
+        pixel_recHit.pdgid      = input_tree.pdgid
+        pixel_recHit.process    = input_tree.process
+        pixel_recHit.q          = input_tree.q
+        pixel_recHit.x          = input_tree.x
+        pixel_recHit.y          = input_tree.y
+        pixel_recHit.xx         = input_tree.xx
+        pixel_recHit.xy         = input_tree.xy
+        pixel_recHit.yy         = input_tree.yy
+        pixel_recHit.row        = input_tree.row
+        pixel_recHit.col        = input_tree.col
+        pixel_recHit.hrow       = input_tree.hrow
+        pixel_recHit.hcol       = input_tree.hcol
+        pixel_recHit.gx         = input_tree.gx
+        pixel_recHit.gy         = input_tree.gy
+        pixel_recHit.gz         = input_tree.gz
+        pixel_recHit.subid      = input_tree.subid
+        pixel_recHit.module     = input_tree.module
+        pixel_recHit.layer      = input_tree.layer
+        pixel_recHit.ladder     = input_tree.ladder
+        pixel_recHit.disk       = input_tree.disk
+        pixel_recHit.blade      = input_tree.blade
+        pixel_recHit.panel      = input_tree.panel
+        pixel_recHit.side       = input_tree.side
+        pixel_recHit.nsimhit    = input_tree.nsimhit
+        pixel_recHit.spreadx    = input_tree.spreadx
+        pixel_recHit.spready    = input_tree.spready
+        pixel_recHit.pitchx     = input_tree.pitchx
+        pixel_recHit.pitchy     = input_tree.pitchy
+        pixel_recHit.thickness  = input_tree.thickness
+        pixel_recHit.cotAlphaFromDet = input_tree.cotAlphaFromDet
+        pixel_recHit.cotBetaFromDet  = input_tree.cotBetaFromDet
+        pixel_recHit.nColsInDet = input_tree.nColsInDet
+        pixel_recHit.nRowsInDet = input_tree.nRowsInDet
+        pixel_recHit.hx         = input_tree.hx
+        pixel_recHit.hy         = input_tree.hy
+        pixel_recHit.tx         = input_tree.tx
+        pixel_recHit.ty         = input_tree.ty
+        pixel_recHit.tz         = input_tree.tz
+        pixel_recHit.theta      = input_tree.theta
+        pixel_recHit.phi        = input_tree.phi
+        pixel_recHit.DgN        = input_tree.DgN
+
+        pixel_recHit.DgRow = array.array('i',[0]*100)
+        pixel_recHit.DgCol = array.array('i',[0]*100)
+        pixel_recHit.DgDetId = array.array('i',[0]*100)
+        pixel_recHit.DgAdc = array.array('f',[0]*100)
+        pixel_recHit.DgCharge = array.array('f',[0]*100)
+
+        for iDg in range(pixel_recHit.DgN):
+            pixel_recHit.DgRow[iDg] = input_tree.DgRow[iDg]
+            pixel_recHit.DgCol[iDg] = input_tree.DgCol[iDg]
+            pixel_recHit.DgDetId[iDg] = input_tree.DgDetId[iDg]
+            pixel_recHit.DgAdc[iDg] = input_tree.DgAdc[iDg]
+            pixel_recHit.DgCharge[iDg] =input_tree.DgCharge[iDg]
+
+       
+        # phase2 : BPIX subid==1&&layer<5
+        #          FPIX subid==2&&disk<11  
+
 
         # Select on BPIX layer or FPIX disk
         if pixel_recHit.subid==options.subid and (pixel_recHit.layer==options.layer or pixel_recHit.disk==options.layer) :
@@ -285,8 +420,7 @@ def main():
 #               hsPhi.FillSecondLoop(tv3.Phi(), pixel_recHit)
 #               hsX.FillSecondLoop(pixel_recHit.x*CmToUm, pixel_recHit)
 #               hsZeta.FillSecondLoop(math.fabs(tv3.z()), pixel_recHit)
-#               hsCotgBeta.FillSecondLoop(math.fabs(1./math.tan(beta)), pixel_recHit)
-#               hsCotgBeta.FillSecondLoop(math.fabs(pixel_recHit.ty/math.sqrt(1-pixel_recHit.ty*pixel_recHit.ty)), pixel_recHit)
+               hsCotgBeta.FillSecondLoop(math.fabs(pixel_recHit.ty/math.sqrt(1-pixel_recHit.ty*pixel_recHit.ty)), pixel_recHit)
 
 
     ########################
@@ -361,12 +495,12 @@ def main():
     
     c1_localXY_roc_hitmap.SaveAs("c1_localXY_roc_hitmap.root")
     
-    hsEta.DrawAllCanvas(Qave, options.thickness*ELossSilicon*ToKe)
+    hsEta.DrawAllCanvas(Qave,  pixel_recHit.thickness*CmToUm*ELossSilicon*ToKe)
 #    hsRho.DrawAllCanvas(Qave, options.thickness*ELossSilicon*ToKe)
 #    hsPhi.DrawAllCanvas(Qave, options.thickness*ELossSilicon*ToKe)
 #    hsX.DrawAllCanvas(Qave, options.thickness*ELossSilicon*ToKe)
 #    hsZeta.DrawAllCanvas(Qave, options.thickness*ELossSilicon*ToKe)
-#    hsCotgBeta.DrawAllCanvas(Qave, options.thickness*ELossSilicon*ToKe)
+    hsCotgBeta.DrawAllCanvas(Qave, pixel_recHit.thickness*CmToUm*ELossSilicon*ToKe)
 
     output_root_file.Write()
     output_root_file.Close()
