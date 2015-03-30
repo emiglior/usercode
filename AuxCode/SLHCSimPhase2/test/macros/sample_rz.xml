@@ -11,6 +11,8 @@
     <X2legend>0.58</X2legend>
     <Y1legend>0.72</Y1legend>
     <Y2legend>0.92</Y2legend>
+    <TVar>Eta</TVar>
+    <XTitle>|#eta|</XTitle>
   </DrawingOptions>
 
 <!--This is the sample list -->

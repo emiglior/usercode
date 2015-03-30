@@ -173,12 +173,13 @@ def main():
     h1_qcorr  = ROOT.TH1F("h1_qcorr","h1_qcorr primaries;Q_{corr} [ke]; recHits",200,0.,400.)
 
     ### histo containers
-    hsEta = HistoStruct("Eta" ,25, 0.,2.5, "|#eta|", output_root_file, options.gaussfit)
+    hsEta = HistoStruct("Eta" ,25, 0.0, 2.5, "|#eta|", output_root_file, options.gaussfit)
 #    hsRho = HistoStruct("Rho" ,30, 3.,18., "#rho", output_root_file, options.gaussfit)
 #    hsPhi = HistoStruct("Phi"    ,48, -3.15 ,+3.15, "#phi", output_root_file, options.gaussfit)
 #    hsX   = HistoStruct("LocalX" ,18, -8100.,+8100., "x", output_root_file, options.gaussfit)
 #    hsZeta = HistoStruct("Zeta",50, 0.,25., "|z|"   , output_root_file, options.gaussfit)
-    hsCotgBeta  = HistoStruct("CotgBeta" ,20,0.,4., "|cotg(#beta)|", output_root_file, options.gaussfit)
+    hsCotgAlpha = HistoStruct("CotgAlpha" ,20,-0.5,0.5, "|cotg(#alpha)|", output_root_file, options.gaussfit)
+    hsCotgBeta  = HistoStruct("CotgBeta"  ,20, 0.0,4.0, "|cotg(#beta)|",  output_root_file, options.gaussfit)
 
     all_entries = input_tree.GetEntries()
     if options.entries != -1:
@@ -315,7 +316,8 @@ def main():
 #            hsPhi.FillFirstLoop(tv3.Phi(), pixel_recHit)
 #            hsX.FillFirstLoop(pixel_recHit.x*CmToUm, pixel_recHit)
 #            hsZeta.FillFirstLoop(math.fabs(tv3.z()), pixel_recHit)
-            hsCotgBeta.FillFirstLoop(math.fabs(pixel_recHit.ty/math.sqrt(1.-pixel_recHit.ty*pixel_recHit.ty)), pixel_recHit)
+            hsCotgAlpha.FillFirstLoop(           pixel_recHit.tx/math.fabs(pixel_recHit.tz), pixel_recHit)
+            hsCotgBeta.FillFirstLoop( math.fabs(pixel_recHit.ty)/math.fabs(pixel_recHit.tz), pixel_recHit)
 
     ### Compute the Q averaged in the central eta-bin
     output_root_file.cd("hitmapsAndCharge") 
@@ -420,7 +422,8 @@ def main():
 #               hsPhi.FillSecondLoop(tv3.Phi(), pixel_recHit)
 #               hsX.FillSecondLoop(pixel_recHit.x*CmToUm, pixel_recHit)
 #               hsZeta.FillSecondLoop(math.fabs(tv3.z()), pixel_recHit)
-               hsCotgBeta.FillSecondLoop(math.fabs(pixel_recHit.ty/math.sqrt(1-pixel_recHit.ty*pixel_recHit.ty)), pixel_recHit)
+               hsCotgAlpha.FillSecondLoop(           pixel_recHit.tx/math.fabs(pixel_recHit.tz), pixel_recHit)
+               hsCotgBeta.FillSecondLoop( math.fabs(pixel_recHit.ty)/math.fabs(pixel_recHit.tz), pixel_recHit)
 
 
     ########################
@@ -500,6 +503,7 @@ def main():
 #    hsPhi.DrawAllCanvas(Qave, options.thickness*ELossSilicon*ToKe)
 #    hsX.DrawAllCanvas(Qave, options.thickness*ELossSilicon*ToKe)
 #    hsZeta.DrawAllCanvas(Qave, options.thickness*ELossSilicon*ToKe)
+    hsCotgAlpha.DrawAllCanvas(Qave, pixel_recHit.thickness*CmToUm*ELossSilicon*ToKe)
     hsCotgBeta.DrawAllCanvas(Qave, pixel_recHit.thickness*CmToUm*ELossSilicon*ToKe)
 
     output_root_file.Write()

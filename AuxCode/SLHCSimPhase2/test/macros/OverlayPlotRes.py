@@ -32,7 +32,7 @@ def getModifiedTH1Fs(canvas, file, color, marker):
 # 
     for ca in cIn.GetListOfPrimitives():
 # Get TGraph from MultiGraph        
-        if ca.InheritsFrom('TH1F') and ca.GetLineStyle() != ROOT.kDotted: 
+        if ca.InheritsFrom('TH1F') and ca.GetLineStyle() == ROOT.kDotted: 
 #        if ca.InheritsFrom('TH1F'):
             ca.SetMarkerStyle(marker)
             ca.SetMarkerColor(color)
@@ -89,7 +89,7 @@ class DrawingOptions:
 #####################
     """ class to map the DrawingOptions elements in the xml file """
 
-    def __init__(self, ymin, ymax, yndiv, x1legend, x2legend, y1legend, y2legend):
+    def __init__(self, ymin, ymax, yndiv, x1legend, x2legend, y1legend, y2legend, Tvar, xtitle):
         self.ymin = ymin
         self.ymax = ymax
         self.yndiv = yndiv
@@ -97,7 +97,8 @@ class DrawingOptions:
         self.x2legend = x2legend
         self.y1legend = y1legend
         self.y2legend = y2legend
-
+        self.Tvar = Tvar
+        self.xtitle = xtitle
 
 ############
 def main():
@@ -153,7 +154,9 @@ def main():
                handleY1legend(options[0].getElementsByTagName("X1legend")[0]), \
                handleX2legend(options[0].getElementsByTagName("X2legend")[0]), \
                handleY1legend(options[0].getElementsByTagName("Y1legend")[0]), \
-               handleY2legend(options[0].getElementsByTagName("Y2legend")[0]) \
+               handleY2legend(options[0].getElementsByTagName("Y2legend")[0]), \
+               handleTVar(options[0].getElementsByTagName("TVar")[0]), \
+               handleXtitle(options[0].getElementsByTagName("XTitle")[0]) \
            )
         return o
 
@@ -178,6 +181,11 @@ def main():
     def handleY2legend(y2legend):
         return float(y2legend.firstChild.nodeValue)
 
+    def handleTVar(Tvar):
+        return Tvar.firstChild.nodeValue
+    
+    def handleXtitle(xtitle):
+        return xtitle.firstChild.nodeValue
 
 ###
 
@@ -192,26 +200,25 @@ def main():
     legRMS.SetTextSize(0.02)
     legRMS.SetBorderSize(0)
 
-    cRMSVsEta = ROOT.TCanvas('cRMSVsEta','cRMSVsEta',800,800)
-    cRMSVsEta.SetLeftMargin(0.15)
-    cRMSVsEta.SetBottomMargin(0.15)
-    cRMSVsEta.SetGridy()
+    cRMSVsT = ROOT.TCanvas('cRMSVs'+drawing_options.Tvar,'cRMSVs'+drawing_options.Tvar,800,800)
+    cRMSVsT.SetLeftMargin(0.15)
+    cRMSVsT.SetBottomMargin(0.15)
+    cRMSVsT.SetGridy()
     
     first = True
     line_ticks = [] 
     for aSample in Samples:
         if aSample.is_rphi:
-            h1array = getModifiedTH1Fs('cResVsEta_1', aSample.the_root_file, aSample.the_color, aSample.the_marker_style)
+            h1array = getModifiedTH1Fs('cResVs'+drawing_options.Tvar+'_1', aSample.the_root_file, aSample.the_color, aSample.the_marker_style)
         else:
-            h1array = getModifiedTH1Fs('cResVsEta_2', aSample.the_root_file, aSample.the_color, aSample.the_marker_style)
-
+            h1array = getModifiedTH1Fs('cResVs'+drawing_options.Tvar+'_2', aSample.the_root_file, aSample.the_color, aSample.the_marker_style)
         for h1 in h1array:            
-            cRMSVsEta.cd()
+            cRMSVsT.cd()
             if first: 
                 first = False 
                 h1.Draw("CP")
                 
-                h1.GetXaxis().SetTitle('|#eta|')
+                h1.GetXaxis().SetTitle(drawing_options.xtitle)
                 h1.GetXaxis().CenterTitle(ROOT.kFALSE)
                 h1.GetXaxis().SetTitleOffset(1.)
 
@@ -223,8 +230,8 @@ def main():
                 h1.GetYaxis().CenterTitle(ROOT.kFALSE)
                 legRMS.AddEntry(0,'CMSSW 620 SLHC17_patch1','')     
 
-                if not aSample.is_rphi:
-                    drawTicks(h1, line_ticks)
+#                if not aSample.is_rphi:
+#                    drawTicks(h1, line_ticks)
             else:
                 h1.Draw("CPsame")
 
@@ -244,9 +251,9 @@ def main():
     legRMS.Draw('same')
 
     if Samples[0].is_rphi:
-        cRMSVsEta.SaveAs('RMS_rphi.pdf')
+        cRMSVsT.SaveAs('RMS_rphi.pdf')
     else:
-        cRMSVsEta.SaveAs('RMS_rz.pdf')
+        cRMSVsT.SaveAs('RMS_rz.pdf')
 
  
 #             tpv1 = ROOT.TPaveText(0.65,0.92,0.95,0.99,"NDC")
