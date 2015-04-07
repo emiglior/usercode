@@ -340,7 +340,7 @@ class Job:
         if(HAS_EOS):
             fout.write("for RootOutputFile in $(ls *root |grep ntuple); do cmsStage -f  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
         else:
-            fout.write("for RootOutputFile in $(ls *root |grep ntuple); do rfcp ${RootOutputFile} ${OUT_DIR}/${RootOutputFile} ; done \n")
+            fout.write("for RootOutputFile in $(ls *root |grep ntuple); do cp ${RootOutputFile} ${OUT_DIR}/${RootOutputFile} ; done \n")
         fout.write("for RootOutputFile in $(ls *root); \n")
         fout.write("do \n")
         fout.write("events=`edmEventSize -v $RootOutputFile | grep Events | awk '{print $4}'` \n")
