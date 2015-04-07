@@ -152,7 +152,7 @@ class Job:
                     if(os.path.exists(self.out_dir)):
                         print "Local folder already exists. Skipping"
                     else:
-                        print "Local folder does not exist yet. Creating"
+                        print "Local folder does not exist yet. Creating it"
                         os.makedirs(self.out_dir)
             else:
                 print "=====> Not on lxplus! Creating local Folder"
@@ -337,7 +337,10 @@ class Job:
         #fout.write("ln -fs ../stdgrechitfullph1g_ntuple.root . \n")
         #fout.write("./res \n")        
         fout.write(" # retrieve the outputs \n")
-        fout.write("for RootOutputFile in $(ls *root |grep ntuple); do cmsStage -f  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
+        if(HAS_EOS):
+            fout.write("for RootOutputFile in $(ls *root |grep ntuple); do cmsStage -f  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
+        else:
+            fout.write("for RootOutputFile in $(ls *root |grep ntuple); do cp ${RootOutputFile} ${OUT_DIR}/${RootOutputFile} ; done \n")
         fout.write("for RootOutputFile in $(ls *root); \n")
         fout.write("do \n")
         fout.write("events=`edmEventSize -v $RootOutputFile | grep Events | awk '{print $4}'` \n")
