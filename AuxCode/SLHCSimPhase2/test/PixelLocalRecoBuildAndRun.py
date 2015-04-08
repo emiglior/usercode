@@ -135,7 +135,7 @@ class Job:
           
             if("cmsLs" in out):
                
-                p1 = subprocess.Popen(["cmsLs",os.path.join("/store/user/","sticazzi")], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                p1 = subprocess.Popen(["cmsLs",os.path.join("/store/user/",USER)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 (out1, err1) = p1.communicate()
                 
                 if("No such file or directory" not in out1):
