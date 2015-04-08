@@ -135,7 +135,7 @@ class Job:
           
             if("cmsLs" in out):
                
-                p1 = subprocess.Popen(["cmsLs",os.path.join("/store/user/",USER)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                p1 = subprocess.Popen(["cmsLs",os.path.join("/store/user/","sticazzi")], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 (out1, err1) = p1.communicate()
                 
                 if("No such file or directory" not in out1):
@@ -145,15 +145,13 @@ class Job:
                     set_has_eos(True)
                     #print "setting true:",HAS_EOS
                 else:
-                    print "=====>", out1
-                    print "On lxplus but EOS folder doesn't exist!"
+                    print "=====> On lxplus but EOS folder doesn't exist!"
                     set_has_eos(False)
                     self.out_dir=local_out_dir
-                    if(os.path.exists(self.out_dir)):
-                        print "Local folder already exists. Skipping"
-                    else:
-                        print "Local folder does not exist yet. Creating it"
-                        os.makedirs(self.out_dir)
+                    try:
+                        (destination) = os.makedirs(self.out_dir,0755)
+                    except OSError:
+                        print "=====> Skipping creation of %s because it exists already."%self.out_dir,"\n \n"                          
             else:
                 print "=====> Not on lxplus! Creating local Folder"
                 set_has_eos(False)
