@@ -288,10 +288,10 @@ class Job:
         fout.write("echo \"After git cms-addpkg\" \n")
         fout.write("pwd \n")
         fout.write("ls -l . \n")
-        fout.write("git pull https://github.com/mmusich/cmssw ChangePitch_on620_SLHC17_patch1 \n")
+        fout.write("git pull https://github.com/mmusich/cmssw ChangePitch_on620_SLHC17_patch1_32bit \n")
         fout.write("### 1 ended  \n")
 
-        fout.write("git clone -b 620_slhc17_patch1_phase2 git://github.com/emiglior/usercode.git \n")
+        fout.write("git clone -b 620_slhc17_patch1_phase2_fwd git://github.com/emiglior/usercode.git \n")
         fout.write("mv usercode/AuxCode .\n")
 
         ###### please make sure to delete this line afterwards!!!!!! #######
@@ -306,8 +306,7 @@ class Job:
             fout.write("cp "+self.launch_dir+"/src/AuxCode/SLHCSimPhase2/plugins/StdPixelHitNtuplizer.cc ./AuxCode/SLHCSimPhase2/plugins/StdPixelHitNtuplizer.cc \n")
             fout.write("cp "+self.launch_dir+"/src/AuxCode/SLHCSimPhase2/python/TkLocalRecoCustoms.py ./AuxCode/SLHCSimPhase2/python/TkLocalRecoCustoms.py \n")
  
-#        fout.write("scram b -j 8 USER_CXXFLAGS=\"-DPHASE2\" \n")
-        fout.write("scram b -j 8 \n")
+        fout.write("scram b -j 8 USER_CXXFLAGS=\"-DPHASE2\" \n")
         fout.write("eval `scram r -sh` \n")
 
         # implement in the LSF script E.Brownson's recipe for changing the size of the pixels / part #2
