@@ -394,7 +394,7 @@ def main():
         #          FPIX subid==2&&disk<11  
 
 
-        # Select on BPIX layer or FPIX disk
+        # Select one BPIX layer or FPIX disk
         if pixel_recHit.subid==options.subid and (pixel_recHit.layer==options.layer or pixel_recHit.disk==options.layer) :
             # global position of the rechit
             # NB sin(theta) = tv3.Perp()/tv3.Mag()

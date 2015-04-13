@@ -92,43 +92,43 @@
     </SpecPar>
     <SpecPar name="PixelROCRowsPar_D1">
       <PartSelector path="//PixelForwardSensor1"/>
-      <Parameter name="PixelROCRows" value="80"/>
+      <Parameter name="PixelROCRows" value="PIXELROCROWS_DISKS"/>
     </SpecPar>
     <SpecPar name="PixelROCRowsPar_D2">
       <PartSelector path="//PixelForwardSensor2"/>
-      <Parameter name="PixelROCRows" value="80"/>
+      <Parameter name="PixelROCRows" value="PIXELROCROWS_DISKS"/>
     </SpecPar>
     <SpecPar name="PixelROCRowsPar_D3">
       <PartSelector path="//PixelForwardSensor3"/>
-      <Parameter name="PixelROCRows" value="80"/>
+      <Parameter name="PixelROCRows" value="PIXELROCROWS_DISKS"/>
     </SpecPar>
     <SpecPar name="PixelROCRowsPar_D4">
       <PartSelector path="//PixelForwardSensor4"/>
-      <Parameter name="PixelROCRows" value="80"/>
+      <Parameter name="PixelROCRows" value="PIXELROCROWS_DISKS"/>
     </SpecPar>
     <SpecPar name="PixelROCRowsPar_D5">
       <PartSelector path="//PixelForwardSensor5"/>
-      <Parameter name="PixelROCRows" value="80"/>
+      <Parameter name="PixelROCRows" value="PIXELROCROWS_DISKS"/>
     </SpecPar>
     <SpecPar name="PixelROCRowsPar_D6">
       <PartSelector path="//PixelForwardSensor6"/>
-      <Parameter name="PixelROCRows" value="80"/>
+      <Parameter name="PixelROCRows" value="PIXELROCROWS_DISKS"/>
     </SpecPar>
     <SpecPar name="PixelROCRowsPar_D7">
       <PartSelector path="//PixelForwardSensor7"/>
-      <Parameter name="PixelROCRows" value="80"/>
+      <Parameter name="PixelROCRows" value="PIXELROCROWS_DISKS"/>
     </SpecPar>
     <SpecPar name="PixelROCRowsPar_D8">
       <PartSelector path="//PixelForwardSensor8"/>
-      <Parameter name="PixelROCRows" value="80"/>
+      <Parameter name="PixelROCRows" value="PIXELROCROWS_DISKS"/>
     </SpecPar>
     <SpecPar name="PixelROCRowsPar_D9">
       <PartSelector path="//PixelForwardSensor9"/>
-      <Parameter name="PixelROCRows" value="80"/>
+      <Parameter name="PixelROCRows" value="PIXELROCROWS_DISKS"/>
     </SpecPar>
     <SpecPar name="PixelROCRowsPar_D10">
       <PartSelector path="//PixelForwardSensor10"/>
-      <Parameter name="PixelROCRows" value="80"/>
+      <Parameter name="PixelROCRows" value="PIXELROCROWS_DISKS"/>
     </SpecPar>
     <SpecPar name="PixelROCColsPar_L0">
       <PartSelector path="//PixelBarrelActiveFull0"/>
@@ -148,43 +148,43 @@
     </SpecPar>
     <SpecPar name="PixelROCColsPar_D1">
       <PartSelector path="//PixelForwardSensor1"/>
-      <Parameter name="PixelROCCols" value="52"/>
+      <Parameter name="PixelROCCols" value="PIXELROCCOLS_DISKS"/>
     </SpecPar>
     <SpecPar name="PixelROCColsPar_D2">
       <PartSelector path="//PixelForwardSensor2"/>
-      <Parameter name="PixelROCCols" value="52"/>
+      <Parameter name="PixelROCCols" value="PIXELROCCOLS_DISKS"/>
     </SpecPar>
     <SpecPar name="PixelROCColsPar_D3">
       <PartSelector path="//PixelForwardSensor3"/>
-      <Parameter name="PixelROCCols" value="52"/>
+      <Parameter name="PixelROCCols" value="PIXELROCCOLS_DISKS"/>
     </SpecPar>
     <SpecPar name="PixelROCColsPar_D4">
       <PartSelector path="//PixelForwardSensor4"/>
-      <Parameter name="PixelROCCols" value="52"/>
+      <Parameter name="PixelROCCols" value="PIXELROCCOLS_DISKS"/>
     </SpecPar>
     <SpecPar name="PixelROCColsPar_D5">
       <PartSelector path="//PixelForwardSensor5"/>
-      <Parameter name="PixelROCCols" value="52"/>
+      <Parameter name="PixelROCCols" value="PIXELROCCOLS_DISKS"/>
     </SpecPar>
     <SpecPar name="PixelROCColsPar_D6">
       <PartSelector path="//PixelForwardSensor6"/>
-      <Parameter name="PixelROCCols" value="52"/>
+      <Parameter name="PixelROCCols" value="PIXELROCCOLS_DISKS"/>
     </SpecPar>
     <SpecPar name="PixelROCColsPar_D7">
       <PartSelector path="//PixelForwardSensor7"/>
-      <Parameter name="PixelROCCols" value="52"/>
+      <Parameter name="PixelROCCols" value="PIXELROCCOLS_DISKS"/>
     </SpecPar>
     <SpecPar name="PixelROCColsPar_D8">
       <PartSelector path="//PixelForwardSensor8"/>
-      <Parameter name="PixelROCCols" value="52"/>
+      <Parameter name="PixelROCCols" value="PIXELROCCOLS_DISKS"/>
     </SpecPar>
     <SpecPar name="PixelROCColsPar_D9">
       <PartSelector path="//PixelForwardSensor9"/>
-      <Parameter name="PixelROCCols" value="52"/>
+      <Parameter name="PixelROCCols" value="PIXELROCCOLS_DISKS"/>
     </SpecPar>
     <SpecPar name="PixelROCColsPar_D10">
       <PartSelector path="//PixelForwardSensor10"/>
-      <Parameter name="PixelROCCols" value="52"/>
+      <Parameter name="PixelROCCols" value="PIXELROCCOLS_DISKS"/>
     </SpecPar>
     <SpecPar name="PixelROC_XPar_L0">
       <PartSelector path="//PixelBarrelActiveFull0"/>

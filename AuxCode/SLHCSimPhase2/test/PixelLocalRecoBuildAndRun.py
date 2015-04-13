@@ -73,7 +73,7 @@ class Job:
     """Main class to create and submit LSF jobs"""
 ###########################################################################
 
-    def __init__(self, job_id, maxevents, pu, ageing, pixelrocrows_l0l1, pixelroccols_l0l1, pixelrocrows_l2l3, pixelroccols_l2l3, pixeleperadc, pixmaxadc, chanthr, seedthr, clusthr, bpixthr, bpixl0l1thickness, bpixl2l3thickness, myseed, islocal, queue, task_name):
+    def __init__(self, job_id, maxevents, pu, ageing, pixelrocrows_l0l1, pixelroccols_l0l1, pixelrocrows_l2l3, pixelroccols_l2l3, pixelrocrows_disks, pixelroccols_disks, pixeleperadc, pixmaxadc, chanthr, seedthr, clusthr, pixdigithr, bpixl0l1thickness, bpixl2l3thickness, diskthickness, myseed, islocal, queue, task_name):
 ############################################################################################################################
         
         # store the job-ID (since it is created in a for loop)
@@ -89,8 +89,10 @@ class Job:
         # parameters of the pixel digitizer 
         self.pixelrocrows_l0l1=pixelrocrows_l0l1
         self.pixelrocrows_l2l3=pixelrocrows_l2l3
+        self.pixelrocrows_disks=pixelrocrows_disks
         self.pixelroccols_l0l1=pixelroccols_l0l1
         self.pixelroccols_l2l3=pixelroccols_l2l3
+        self.pixelroccols_disks=pixelroccols_disks
 
         self.pixeleperadc=pixeleperadc 
         self.pixmaxadc=pixmaxadc
@@ -102,8 +104,9 @@ class Job:
         
         self.bpixl0l1thickness=bpixl0l1thickness
         self.bpixl2l3thickness=bpixl2l3thickness
+        self.diskthickness=diskthickness
 
-        self.bpixthr=bpixthr
+        self.pixdigithr=pixdigithr
         self.ageing=ageing
         self.pu=pu
         self.myseed=myseed
@@ -113,20 +116,22 @@ class Job:
         ### assignment of the output folder
 
         local_out_dir=os.path.join(self.launch_dir,"src/results/SLHCSimPhase2/phase2/out62XSLHC17patch1/32bit/OccupancyStudy",\
-                                       "PixelROCRows_"+pixelrocrows_l0l1+"_"+pixelrocrows_l2l3,\
-                                       "PixelROCCols_"+pixelroccols_l0l1+"_"+pixelroccols_l2l3,\
+                                       "PixelROCRows_"+pixelrocrows_l0l1+"_"+pixelrocrows_l2l3+"_"+pixelrocrows_disks,\
+                                       "PixelROCCols_"+pixelroccols_l0l1+"_"+pixelroccols_l2l3+"_"+pixelroccols_disks,\
                                        "BPIXThick_"+bpixl0l1thickness+"_"+bpixl2l3thickness,\
-                                       "BPixThr_"+bpixthr,"eToADC_"+pixeleperadc,"MaxADC_"+pixmaxadc,\
+                                       "FPIXThick_"+diskthickness,\
+                                       "PixDigiThr_"+pixdigithr,"eToADC_"+pixeleperadc,"MaxADC_"+pixmaxadc,\
                                        "ChanThr_"+chanthr,"SeedThr_"+seedthr,"ClusThr_"+clusthr,\
                                        "PU_"+self.pu)
         
-        eos_out_dir=os.path.join("/store/user",USER,"SLHCSimPhase2/phase2/out62XSLHC17patch1/32bit/OccupancyStudy",\
-                                     "PixelROCRows_"+pixelrocrows_l0l1+"_"+pixelrocrows_l2l3,\
-                                     "PixelROCCols_"+pixelroccols_l0l1+"_"+pixelroccols_l2l3,\
+        eos_out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/phase2/out62XSLHC17patch1/32bit/OccupancyStudy",\
+                                     "PixelROCRows_"+pixelrocrows_l0l1+"_"+pixelrocrows_l2l3+"_"+pixelrocrows_disks,\
+                                     "PixelROCCols_"+pixelroccols_l0l1+"_"+pixelroccols_l2l3+"_"+pixelroccols_disks,\
                                      "BPIXThick_"+bpixl0l1thickness+"_"+bpixl2l3thickness,\
-                                     "BPixThr_"+bpixthr,"eToADC_"+pixeleperadc,"MaxADC_"+pixmaxadc,\
+                                     "FPIXThick_"+diskthickness,\
+                                     "PixDigiThr_"+pixdigithr,"eToADC_"+pixeleperadc,"MaxADC_"+pixmaxadc,\
                                      "ChanThr_"+chanthr,"SeedThr_"+seedthr,"ClusThr_"+clusthr,\
-                                     "PU_"+self.pu,"PUScan")
+                                     "PU_"+self.pu)
 
         if(self.job_id==1):
             
@@ -135,7 +140,7 @@ class Job:
           
             if("cmsLs" in out):
                
-                p1 = subprocess.Popen(["cmsLs",os.path.join("/store/user/",USER)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                p1 = subprocess.Popen(["cmsLs",os.path.join("/store/caf/user/",USER)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 (out1, err1) = p1.communicate()
                 
                 if("No such file or directory" not in out1):
@@ -167,10 +172,12 @@ class Job:
         #### just for debug        
         #print self.job_id,HAS_EOS
 
-        self.task_basename = self.task_name + "_pixelCPE_age" + self.ageing + "_pu" + self.pu + "_PixelROCRows" + self.pixelrocrows_l0l1 + "_" +  self.pixelrocrows_l2l3 +\
-            "_PixelROCCols" + self.pixelroccols_l0l1 + "_" +  self.pixelroccols_l2l3 +\
+        self.task_basename = self.task_name + "_pixelCPE_age" + self.ageing + "_pu" + self.pu +\
+            "_PixelROCRows" + self.pixelrocrows_l0l1 + "_" +  self.pixelrocrows_l2l3 + "_" +  self.pixelrocrows_disks +\
+            "_PixelROCCols" + self.pixelroccols_l0l1 + "_" +  self.pixelroccols_l2l3 + "_" +  self.pixelroccols_disks +\
             "_BPIXThick" + self.bpixl0l1thickness + "_" + self.bpixl2l3thickness +\
-            "_BPixThr" + self.bpixthr + 'eToADC_' + self.pixeleperadc + 'MaxADC_' + self.pixmaxadc + 'ChanThr_'+ self.chanthr + 'SeedThr_' + self.seedthr + "ClusThr_" + self.clusthr 
+            "_FPIXThick_" + self.diskthickness +\
+            "_PixDigiThr" + self.pixdigithr + 'eToADC_' + self.pixeleperadc + 'MaxADC_' + self.pixmaxadc + 'ChanThr_'+ self.chanthr + 'SeedThr_' + self.seedthr + "ClusThr_" + self.clusthr 
 
         self.job_basename  = self.task_basename + "_seed" +str(self.myseed)
 
@@ -216,9 +223,11 @@ class Job:
         fout.write("pixelrocrows_l0l1="+self.pixelrocrows_l0l1+" \n")
         fout.write("pixelroccols_l2l3="+self.pixelroccols_l2l3+" \n")
         fout.write("pixelrocrows_l2l3="+self.pixelrocrows_l2l3+" \n")
+        fout.write("pixelroccols_disks="+self.pixelroccols_disks+" \n")
+        fout.write("pixelrocrows_disks="+self.pixelrocrows_disks+" \n")
         fout.write("ageing="+self.ageing+" \n")
         fout.write("puscenario="+self.pu+" \n")
-        fout.write("bpixthr="+self.bpixthr+" \n")
+        fout.write("pixdigithr="+self.pixdigithr+" \n")
         fout.write("pixeleperadc="+self.pixeleperadc+" \n") 
         fout.write("pixmaxadc="+self.pixmaxadc+" \n")
         fout.write("chanthr="+self.chanthr+" \n")
@@ -275,11 +284,11 @@ class Job:
         fout.write("git cms-addpkg RecoLocalTracker/SiPixelRecHits \n")
         fout.write("git cms-addpkg RecoLocalTracker/SiPixelClusterizer \n")
         fout.write("git cms-addpkg DPGAnalysis/SiStripTools \n")
-        fout.write("git cms-addpkg DataFormats/SiPixelCluster \n")
+#        fout.write("git cms-addpkg DataFormats/SiPixelCluster \n")
         fout.write("echo \"After git cms-addpkg\" \n")
         fout.write("pwd \n")
         fout.write("ls -l . \n")
-        fout.write("git pull https://github.com/mmusich/cmssw ChangePitch_on620_SLHC17_patch1_32bit \n")
+        fout.write("git pull https://github.com/mmusich/cmssw ChangePitch_on620_SLHC17_patch1 \n")
         fout.write("### 1 ended  \n")
 
         fout.write("git clone -b 620_slhc17_patch1_phase2 git://github.com/emiglior/usercode.git \n")
@@ -297,14 +306,15 @@ class Job:
             fout.write("cp "+self.launch_dir+"/src/AuxCode/SLHCSimPhase2/plugins/StdPixelHitNtuplizer.cc ./AuxCode/SLHCSimPhase2/plugins/StdPixelHitNtuplizer.cc \n")
             fout.write("cp "+self.launch_dir+"/src/AuxCode/SLHCSimPhase2/python/TkLocalRecoCustoms.py ./AuxCode/SLHCSimPhase2/python/TkLocalRecoCustoms.py \n")
  
-        fout.write("scram b -j 8 USER_CXXFLAGS=\"-DPHASE2\" \n")
+#        fout.write("scram b -j 8 USER_CXXFLAGS=\"-DPHASE2\" \n")
+        fout.write("scram b -j 8 \n")
         fout.write("eval `scram r -sh` \n")
 
         # implement in the LSF script E.Brownson's recipe for changing the size of the pixels / part #2
         fout.write("# Eric Brownson's recipe to change the size of the pixels \n")
         fout.write("### 2: modify the topology \n")
         fout.write("# trackerStructureTopology_template.xml   -> BPIX is changed \n")
-        fout.write("sed -e \"s%PIXELROCROWS_L0L1%"+self.pixelrocrows_l0l1+"%g\" -e \"s%PIXELROCCOLS_L0L1%"+self.pixelroccols_l0l1+"%g\" -e \"s%PIXELROCROWS_L2L3%"+self.pixelrocrows_l2l3+"%g\" -e \"s%PIXELROCCOLS_L2L3%"+self.pixelroccols_l2l3+"%g\" ${PKG_DIR}/trackerStructureTopology_template.xml > Geometry/TrackerCommonData/data/PhaseII/Pixel10D/trackerStructureTopology.xml \n")
+        fout.write("sed -e \"s%PIXELROCROWS_L0L1%"+self.pixelrocrows_l0l1+"%g\" -e \"s%PIXELROCCOLS_L0L1%"+self.pixelroccols_l0l1+"%g\" -e \"s%PIXELROCROWS_L2L3%"+self.pixelrocrows_l2l3+"%g\" -e \"s%PIXELROCCOLS_L2L3%"+self.pixelroccols_l2l3+"%g\" -e \"s%PIXELROCROWS_DISKS%"+self.pixelrocrows_disks+"%g\" -e \"s%PIXELROCCOLS_DISKS%"+self.pixelroccols_disks+"%g\" ${PKG_DIR}/data/trackerStructureTopology_template.xml > Geometry/TrackerCommonData/data/PhaseII/Pixel10D/trackerStructureTopology.xml \n")
         fout.write("# Run CMSSW to complete the recipe for changing the size of the pixels \n")
 
         # recipe for phase II tracking
@@ -316,17 +326,28 @@ class Job:
 
         # implement the recipe for changing the bpix sensor thickness from A. Tricomi
         fout.write("# A Tricomi's recipe to change the sensors thickness \n")
-        fout.write("sed -e \"s%BPIXLAYER01THICKNESS%"+self.bpixl0l1thickness+"%g\" ${PKG_DIR}/pixbarladderfull0_template.xml > Geometry/TrackerCommonData/data/PhaseI/pixbarladderfull0.xml \n")
-        fout.write("sed -e \"s%BPIXLAYER01THICKNESS%"+self.bpixl0l1thickness+"%g\" ${PKG_DIR}/pixbarladderfull1_template.xml > Geometry/TrackerCommonData/data/PhaseI/pixbarladderfull1.xml \n")
-        fout.write("sed -e \"s%BPIXLAYER23THICKNESS%"+self.bpixl2l3thickness+"%g\" ${PKG_DIR}/pixbarladderfull2_template.xml > Geometry/TrackerCommonData/data/PhaseI/pixbarladderfull2.xml \n")
-        fout.write("sed -e \"s%BPIXLAYER23THICKNESS%"+self.bpixl2l3thickness+"%g\" ${PKG_DIR}/pixbarladderfull3_template.xml > Geometry/TrackerCommonData/data/PhaseI/pixbarladderfull3.xml \n")
+        fout.write("sed -e \"s%BPIXLAYER01THICKNESS%"+self.bpixl0l1thickness+"%g\" ${PKG_DIR}/data/pixbarladderfull0_template.xml > Geometry/TrackerCommonData/data/PhaseI/pixbarladderfull0.xml \n")
+        fout.write("sed -e \"s%BPIXLAYER01THICKNESS%"+self.bpixl0l1thickness+"%g\" ${PKG_DIR}/data/pixbarladderfull1_template.xml > Geometry/TrackerCommonData/data/PhaseI/pixbarladderfull1.xml \n")
+        fout.write("sed -e \"s%BPIXLAYER23THICKNESS%"+self.bpixl2l3thickness+"%g\" ${PKG_DIR}/data/pixbarladderfull2_template.xml > Geometry/TrackerCommonData/data/PhaseI/pixbarladderfull2.xml \n")
+        fout.write("sed -e \"s%BPIXLAYER23THICKNESS%"+self.bpixl2l3thickness+"%g\" ${PKG_DIR}/data/pixbarladderfull3_template.xml > Geometry/TrackerCommonData/data/PhaseI/pixbarladderfull3.xml \n")
+        # implement the recipe for changing the fpix sensor thickness 
+        fout.write("sed -e \"s%FPIXWAFERTHICKNESS%"+self.diskthickness+"%g\" ${PKG_DIR}/data/pixfwdblade1_template.xml > Geometry/TrackerCommonData/data/PhaseII/Pixel10D/pixfwdblade1.xml \n")
+        fout.write("sed -e \"s%FPIXWAFERTHICKNESS%"+self.diskthickness+"%g\" ${PKG_DIR}/data/pixfwdblade2_template.xml > Geometry/TrackerCommonData/data/PhaseII/Pixel10D/pixfwdblade2.xml \n")
+        fout.write("sed -e \"s%FPIXWAFERTHICKNESS%"+self.diskthickness+"%g\" ${PKG_DIR}/data/pixfwdblade3_template.xml > Geometry/TrackerCommonData/data/PhaseII/Pixel10D/pixfwdblade3.xml \n")
+        fout.write("sed -e \"s%FPIXWAFERTHICKNESS%"+self.diskthickness+"%g\" ${PKG_DIR}/data/pixfwdblade4_template.xml > Geometry/TrackerCommonData/data/PhaseII/Pixel10D/pixfwdblade4.xml \n")
+        fout.write("sed -e \"s%FPIXWAFERTHICKNESS%"+self.diskthickness+"%g\" ${PKG_DIR}/data/pixfwdblade5_template.xml > Geometry/TrackerCommonData/data/PhaseII/Pixel10D/pixfwdblade5.xml \n")
+        fout.write("sed -e \"s%FPIXWAFERTHICKNESS%"+self.diskthickness+"%g\" ${PKG_DIR}/data/pixfwdblade6_template.xml > Geometry/TrackerCommonData/data/PhaseII/Pixel10D/pixfwdblade6.xml \n")
+        fout.write("sed -e \"s%FPIXWAFERTHICKNESS%"+self.diskthickness+"%g\" ${PKG_DIR}/data/pixfwdblade7_template.xml > Geometry/TrackerCommonData/data/PhaseII/Pixel10D/pixfwdblade7.xml \n")
+        fout.write("sed -e \"s%FPIXWAFERTHICKNESS%"+self.diskthickness+"%g\" ${PKG_DIR}/data/pixfwdblade8_template.xml > Geometry/TrackerCommonData/data/PhaseII/Pixel10D/pixfwdblade8.xml \n")
+        fout.write("sed -e \"s%FPIXWAFERTHICKNESS%"+self.diskthickness+"%g\" ${PKG_DIR}/data/pixfwdblade9_template.xml > Geometry/TrackerCommonData/data/PhaseII/Pixel10D/pixfwdblade9.xml \n")
+        fout.write("sed -e \"s%FPIXWAFERTHICKNESS%"+self.diskthickness+"%g\" ${PKG_DIR}/data/pixfwdblade10_template.xml > Geometry/TrackerCommonData/data/PhaseII/Pixel10D/pixfwdblade10.xml \n")
         
         fout.write("# Run CMSSW for GEN-NTUPLE steps \n")
         fout.write("cd "+os.path.join("AuxCode","SLHCSimPhase2","test")+"\n")
 #        fout.write("edmConfigDump ${PKG_DIR}/OneNuM_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py >> pset_dumped.py \n")
-#        fout.write("cmsRun ${PKG_DIR}/OneNuM_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py  maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} BPixThr=${bpixthr} PUScenario=${puscenario} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
-        fout.write("cmsRun ${PKG_DIR}/TenMuE_0_200_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} BPixThr=${bpixthr} PUScenario=${puscenario} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
-#        fout.write("cmsRun ${PKG_DIR}/TTtoAnything_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} BPixThr=${bpixthr} PUScenario=${puscenario} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
+#        fout.write("cmsRun ${PKG_DIR}/OneNuM_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py  maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} PixDigiThr=${pixdigithr} PUScenario=${puscenario} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
+        fout.write("cmsRun ${PKG_DIR}/TenMuE_0_200_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} PixDigiThr=${pixdigithr} PUScenario=${puscenario} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
+#        fout.write("cmsRun ${PKG_DIR}/TTtoAnything_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} PixDigiThr=${pixdigithr} PUScenario=${puscenario} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
       
         fout.write("ls -lh . \n")
         #fout.write("cmsStage -f pset_dumped.py ${OUT_DIR}/pset_dumped.py \n")
@@ -380,10 +401,14 @@ def main():
     group.add_option('--Layer01Thick',help='BPix L0L1 sensor thickness', dest='layer01thick', action='store', default='0.285')
 
     group.add_option('--ROCRows23',help='ROC Rows L2L3 (default 80 -> du=100 um)', dest='rocrows_l2l3', action='store', default='80')
-    group.add_option('--ROCCols23',help='ROC Cols L2L3(default 52 -> dv=150 um)', dest='roccols_l2l3', action='store', default='52')
+    group.add_option('--ROCCols23',help='ROC Cols L2L3 (default 52 -> dv=150 um)', dest='roccols_l2l3', action='store', default='52')
     group.add_option('--Layer23Thick',help='BPix L2L3 sensor thickness', dest='layer23thick', action='store', default='0.285')
 
-    group.add_option('-T','--BPixThr',help='BPix Threshold', dest='bpixthr', action='store', default='2000')
+    group.add_option('--ROCRowsDisks',help='ROC Rows Disks (default 80 -> du=100 um)', dest='rocrows_disks', action='store', default='80')
+    group.add_option('--ROCColsDisks',help='ROC Cols Disks (default 52 -> dv=150 um)', dest='roccols_disks', action='store', default='52')
+    group.add_option('--DiskThick',help='FPix disks sensor thickness', dest='diskthick', action='store', default='0.250')
+
+    group.add_option('-T','--PixDigiThr',help='Pixel Digitizer Threshold', dest='pixdigithr', action='store', default='2000')
 
     group.add_option('--PixElePerADC',help='Pix ele per ADC', dest='pixeleperadc', action='store', default='135')
     group.add_option('--PixMaxADC'   ,help='Pix max ADC',     dest='pixmaxadc',  action='store', default='255')
@@ -408,7 +433,11 @@ def main():
     mRocCols_l2l3 = None
     mL2L3Thick = None
 
-    mBPixThr = None
+    mRocRows_disks = None
+    mRocCols_disks = None
+    mDiskThick = None
+
+    mPixDigiThr = None
     mPixElePerADC = None
     mPixMaxADC    = None
     mSeedThr = None
@@ -435,7 +464,10 @@ def main():
         mRocRows_l2l3    = ConfigSectionMap(config,"PixelConfiguration")['rocrows_l2l3']   
         mRocCols_l2l3    = ConfigSectionMap(config,"PixelConfiguration")['roccols_l2l3']   
         mL2L3Thick       = ConfigSectionMap(config,"PixelConfiguration")['layer23thickness']
-        mBPixThr    = ConfigSectionMap(config,"PixelConfiguration")['bpixthr']
+        mRocRows_disks   = ConfigSectionMap(config,"PixelConfiguration")['rocrows_disks']   
+        mRocCols_disks   = ConfigSectionMap(config,"PixelConfiguration")['roccols_disks']   
+        mDiskThick       = ConfigSectionMap(config,"PixelConfiguration")['diskthickness']
+        mPixDigiThr    = ConfigSectionMap(config,"PixelConfiguration")['pixdigithr']
         mPixElePerADC = ConfigSectionMap(config,"PixelConfiguration")['pixeleperadc']
         mPixMaxADC    = ConfigSectionMap(config,"PixelConfiguration")['pixmaxadc']   
         mSeedThr    = ConfigSectionMap(config,"PixelConfiguration")['seedthr']
@@ -459,7 +491,10 @@ def main():
         mRocRows_l2l3    = opts.rocrows_l2l3
         mRocCols_l2l3    = opts.roccols_l2l3
         mL2L3Thick    = opts.layer23thick
-        mBPixThr    = opts.bpixthr
+        mRocRows_disks   = opts.rocrows_disks
+        mRocCols_disks   = opts.roccols_disks
+        mDiskThick    = opts.diskthick
+        mPixDigiThr    = opts.pixdigithr
         mPixElePerADC = opts.pixeleperadc
         mPixMaxADC    = opts.pixmaxadc
         mSeedThr    = opts.seedthr
@@ -499,10 +534,10 @@ def main():
     print "- Clusterizer Channel Thresh : ",mChanThr
     print "- Clusterizer Seed Thresh    : ",mSeedThr
     print "- Clusterizer Cluster Thresh : ",mClusThr
-    print "- ROCRows                    : ",mRocRows_l0l1,mRocRows_l2l3
-    print "- ROCCols                    : ",mRocCols_l0l1,mRocCols_l2l3
-    print "- L0 Thickness               : ",mL0L1Thick,mL2L3Thick
-    print "- BPIX Digitizer Threshold   : ",mBPixThr
+    print "- ROCRows                    : ",mRocRows_l0l1,mRocRows_l2l3,mRocRows_disks
+    print "- ROCCols                    : ",mRocCols_l0l1,mRocCols_l2l3,mRocCols_disks
+    print "- Thickness L0+L1/L2+L3/FPIX : ",mL0L1Thick,mL2L3Thick,mDiskThick
+    print "- PIX Digitizer Threshold    : ",mPixDigiThr
     print "- Ageing Scenario            : ",mAgeing
     print "- PileUp Scenario            : ",mPileUp
     print "- Total events to run        : ",int(mNOfEvents)*int(mJobsInTask)     
@@ -513,12 +548,12 @@ def main():
 
     for theseed in range(1,int(mJobsInTask)+1):
 
-        ajob=Job(theseed, nEvents, mPileUp, mAgeing, mRocRows_l0l1, mRocCols_l0l1, mRocRows_l2l3, mRocCols_l2l3, mPixElePerADC, mPixMaxADC, mChanThr, mSeedThr, mClusThr, mBPixThr, mL0L1Thick, mL2L3Thick, theseed, opts.localmode,mQueue,opts.jobname)
+        ajob=Job(theseed, nEvents, mPileUp, mAgeing, mRocRows_l0l1, mRocCols_l0l1, mRocRows_l2l3, mRocCols_l2l3, mRocRows_disks, mRocCols_disks, mPixElePerADC, mPixMaxADC, mChanThr, mSeedThr, mClusThr, mPixDigiThr, mL0L1Thick, mL2L3Thick, mDiskThick, theseed, opts.localmode,mQueue,opts.jobname)
         ajob.createTheLSFFile()        
 
         out_dir = ajob.out_dir # save for later usage
         
-        if (jobIndex==1):
+        if (jobIndex==0):
             print "- Output will be saved in   :",out_dir
 
         if opts.submit:
@@ -533,9 +568,9 @@ def main():
     # prepare the script for the harvesting step
     #############################################
 
-    link_name=opts.jobname+"_PixelROCRows_"+mRocRows_l0l1+"_"+mRocRows_l2l3\
-                          +"_PixelROCCols_"+mRocCols_l0l1+"_"+mRocCols_l2l3\
-                          +"_Thick_"+mL0L1Thick+"_"+mL2L3Thick+"_BPixThr_"+mBPixThr
+    link_name=opts.jobname+"_PixelROCRows_"+mRocRows_l0l1+"_"+mRocRows_l2l3+"_"+mRocRows_disks\
+                          +"_PixelROCCols_"+mRocCols_l0l1+"_"+mRocCols_l2l3+"_"+mRocCols_disks\
+                          +"_Thick_"+mL0L1Thick+"_"+mL2L3Thick+"_"+mDiskThick+"_PixDigiThr_"+mPixDigiThr
 
     harvestingname = LSF_DIR + "/jobs/PixelLocalRecoNtuple_"+link_name +".sh"
     fout=open(harvestingname,"w")

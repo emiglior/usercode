@@ -20,11 +20,11 @@ options.register('PUScenario',
                  VarParsing.VarParsing.varType.string,         # string, int, or float
                  "PU scenario (NoPileUp is default)")
 
-options.register('BPixThr',
+options.register('PixDigiThr',
                  2000,
                  VarParsing.VarParsing.multiplicity.singleton,
                  VarParsing.VarParsing.varType.int,
-                 "BPix Clusterizer Threshold (2000 e- is default)")
+                 "Pixel Digitizer Threshold (2000 e- is default)")
 
 options.register('PixElePerADC',
                  135,
@@ -98,15 +98,13 @@ if options.PUScenario!="NoPU":
     try:
         float(options.PUScenario)
         process.mix.input.nbPileupEvents.averageNumber = cms.double(float(options.PUScenario))
-        #firstPUEvent = int(options.MySeed * math.fabs(options.maxEvents) * int(options.PUScenario))
-        #print "start sampling from",firstPUEvent
-        #process.mix.input.firstEvent = cms.untracked.uint32(firstPUEvent)
         print "PU =",float(options.PUScenario)
-
+        
     except ValueError:
         print options.PUScenario," not a float"
         print "Unrecognized PU scenario, using default (=NoPU)"
-        process.load('SimGeneral.MixingModule.mixNoPU_cfi')    
+        process.load('SimGeneral.MixingModule.mixNoPU_cfi')   
+       
 else:
     process.load('SimGeneral.MixingModule.mixNoPU_cfi')
 
@@ -153,7 +151,6 @@ process.source = cms.Source("EmptySource",
                             )
 
 process.options = cms.untracked.PSet(
-
 )
 
 # Production Info
@@ -165,8 +162,8 @@ process.configurationMetadata = cms.untracked.PSet(
 
 # Output definition
 
-outrootfile='file:TenMuE_0_200_cff_py_GEN_SIM_RECO_age_'+str(options.AgeingScenario)+'_BPixThr_'+str(options.BPixThr)+'_'+str(options.maxEvents)+'_evts_seed_'+str(options.MySeed)+'.root'
-outntuplefile='OccupancyPlotTest_TenMuE_ntuple_age_'+str(options.AgeingScenario)+'_BPixThr_'+str(options.BPixThr)+'_'+str(options.maxEvents)+'_evts_seed_'+str(options.MySeed)+'.root'
+outrootfile='file:TenMuE_0_200_cff_py_GEN_SIM_RECO_age_'+str(options.AgeingScenario)+'_PixDigiThr_'+str(options.PixDigiThr)+'_'+str(options.maxEvents)+'_evts_seed_'+str(options.MySeed)+'.root'
+outntuplefile='OccupancyPlotTest_TenMuE_ntuple_age_'+str(options.AgeingScenario)+'_PixDigiThr_'+str(options.PixDigiThr)+'_'+str(options.maxEvents)+'_evts_seed_'+str(options.MySeed)+'.root'
 print 'output file name:', outrootfile, outntuplefile
 
 process.FEVTDEBUGoutput = cms.OutputModule("PoolOutputModule",
@@ -263,9 +260,9 @@ process.generator = cms.EDProducer("FlatRandomEGunProducer",
     PGunParameters = cms.PSet(
         PartID = cms.vint32(-13, -13, -13, -13, -13),
 	#PartID = cms.vint32(-13),
-        MaxEta = cms.double(2.7),
+        MaxEta = cms.double(4.0),
         MaxPhi = cms.double(3.14159265359),
-        MinEta = cms.double(-2.7),
+        MinEta = cms.double(-4.0),
         MinE = cms.double(0.0),
         MinPhi = cms.double(-3.14159265359),
         MaxE = cms.double(200.0),
@@ -273,7 +270,7 @@ process.generator = cms.EDProducer("FlatRandomEGunProducer",
     ),
     Verbosity = cms.untracked.int32(0),
     psethack = cms.string('Ten mu e 0 to 200'),
-    AddAntiParticle = cms.bool(True),
+    AddAntiParticle = cms.bool(True),				   
     firstRun = cms.untracked.uint32(1)
 )
 
@@ -363,9 +360,10 @@ process.PixelCPEGenericESProducer.PixelCPEList = PixelCPE_dict['pixelCPE_100x150
 #from AuxCode.SLHCSimPhase2.crossingFrameCustoms import *
 #customiseCrossingFrame(process)
 
-# Uncomment next two lines to change pixel DIGI threshold
-process.mix.digitizers.pixel.ThresholdInElectrons_BPix = cms.double(options.BPixThr)
-process.mix.digitizers.pixel.ThresholdInElectrons_BPix_L1 = cms.double(options.BPixThr)
+# Uncomment next three lines to change pixel DIGI threshold
+process.mix.digitizers.pixel.ThresholdInElectrons_BPix = cms.double(options.PixDigiThr)
+process.mix.digitizers.pixel.ThresholdInElectrons_BPix_L1 = cms.double(options.PixDigiThr)
+process.mix.digitizers.pixel.ThresholdInElectrons_FPix = cms.double(options.PixDigiThr)
 
 # Added line from A. Tricomi to switch off the pixel inefficiencies from python
 process.mix.digitizers.pixel.AddPixelInefficiencyFromPython = cms.bool(False)
