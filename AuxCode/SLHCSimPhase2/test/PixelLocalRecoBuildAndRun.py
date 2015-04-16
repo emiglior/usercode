@@ -284,7 +284,7 @@ class Job:
         fout.write("git cms-addpkg RecoLocalTracker/SiPixelRecHits \n")
         fout.write("git cms-addpkg RecoLocalTracker/SiPixelClusterizer \n")
         fout.write("git cms-addpkg DPGAnalysis/SiStripTools \n")
-#        fout.write("git cms-addpkg DataFormats/SiPixelCluster \n")
+        fout.write("git cms-addpkg DataFormats/SiPixelCluster \n")
         fout.write("echo \"After git cms-addpkg\" \n")
         fout.write("pwd \n")
         fout.write("ls -l . \n")
