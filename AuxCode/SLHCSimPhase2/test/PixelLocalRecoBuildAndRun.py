@@ -73,13 +73,14 @@ class Job:
     """Main class to create and submit LSF jobs"""
 ###########################################################################
 
-    def __init__(self, job_id, maxevents, pu, ageing, pixelrocrows_l0l1, pixelroccols_l0l1, pixelrocrows_l2l3, pixelroccols_l2l3, pixelrocrows_disks, pixelroccols_disks, pixeleperadc, pixmaxadc, chanthr, seedthr, clusthr, pixdigithr, bpixl0l1thickness, bpixl2l3thickness, diskthickness, myseed, islocal, queue, task_name):
+    def __init__(self, job_id, maxevents, pu, ageing, pixelrocrows_l0l1, pixelroccols_l0l1, pixelrocrows_l2l3, pixelroccols_l2l3, pixelrocrows_disks, pixelroccols_disks, pixeleperadc, pixmaxadc, chanthr, seedthr, clusthr, pixdigithr, bpixl0l1thickness, bpixl2l3thickness, diskthickness, myseed, islocal, queue, task_name, is0T):
 ############################################################################################################################
         
         # store the job-ID (since it is created in a for loop)
         self.job_id=job_id
         self.task_name=task_name
         self.queue=queue
+        self.is0T=is0T
         
         # max event used in this job
         self.maxevents=maxevents
@@ -115,7 +116,14 @@ class Job:
            
         ### assignment of the output folder
 
-        local_out_dir=os.path.join(self.launch_dir,"src/results/SLHCSimPhase2/phase2/out62XSLHC17patch1/32bit/OccupancyStudy",\
+        theMagfieldString = None
+        if(self.is0T):
+            theMagfieldString="0TStudy"
+        else:
+            theMagfieldString="38TStudy"
+
+        local_out_dir=os.path.join(self.launch_dir,"src/results/SLHCSimPhase2/phase2/out62XSLHC17patch1/32bit",\
+                                       theMagfieldString,\
                                        "PixelROCRows_"+pixelrocrows_l0l1+"_"+pixelrocrows_l2l3+"_"+pixelrocrows_disks,\
                                        "PixelROCCols_"+pixelroccols_l0l1+"_"+pixelroccols_l2l3+"_"+pixelroccols_disks,\
                                        "BPIXThick_"+bpixl0l1thickness+"_"+bpixl2l3thickness,\
@@ -124,7 +132,8 @@ class Job:
                                        "ChanThr_"+chanthr,"SeedThr_"+seedthr,"ClusThr_"+clusthr,\
                                        "PU_"+self.pu)
         
-        eos_out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/phase2/out62XSLHC17patch1/32bit/OccupancyStudy",\
+        eos_out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/phase2/out62XSLHC17patch1/32bit",\
+                                     theMagfieldString,\
                                      "PixelROCRows_"+pixelrocrows_l0l1+"_"+pixelrocrows_l2l3+"_"+pixelrocrows_disks,\
                                      "PixelROCCols_"+pixelroccols_l0l1+"_"+pixelroccols_l2l3+"_"+pixelroccols_disks,\
                                      "BPIXThick_"+bpixl0l1thickness+"_"+bpixl2l3thickness,\
@@ -343,10 +352,13 @@ class Job:
         
         fout.write("# Run CMSSW for GEN-NTUPLE steps \n")
         fout.write("cd "+os.path.join("AuxCode","SLHCSimPhase2","test")+"\n")
-#        fout.write("edmConfigDump ${PKG_DIR}/OneNuM_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py >> pset_dumped.py \n")
-#        fout.write("cmsRun ${PKG_DIR}/OneNuM_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py  maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} PixDigiThr=${pixdigithr} PUScenario=${puscenario} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
-        fout.write("cmsRun ${PKG_DIR}/TenMuE_0_200_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} PixDigiThr=${pixdigithr} PUScenario=${puscenario} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
-#        fout.write("cmsRun ${PKG_DIR}/TTtoAnything_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} PixDigiThr=${pixdigithr} PUScenario=${puscenario} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
+        # fout.write("edmConfigDump ${PKG_DIR}/OneNuM_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py >> pset_dumped.py \n")
+        # fout.write("cmsRun ${PKG_DIR}/OneNuM_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py  maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} PixDigiThr=${pixdigithr} PUScenario=${puscenario} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
+        #fout.write("cmsRun ${PKG_DIR}/TTtoAnything_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} PixDigiThr=${pixdigithr} PUScenario=${puscenario} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
+        if (self.is0T):
+            fout.write("cmsRun ${PKG_DIR}/TenMuE_0_200_GEN_TO_RECO_0T_MagFiedld_PixelLocalRecoStudy_cfg.py maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} PixDigiThr=${pixdigithr} PUScenario=${puscenario} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
+        else:
+            fout.write("cmsRun ${PKG_DIR}/TenMuE_0_200_GEN_TO_RECO_PixelLocalRecoStudy_cfg.py maxEvents=${maxevents} PixElePerADC=${pixeleperadc} PixMaxADC=${pixmaxadc} PixDigiThr=${pixdigithr} PUScenario=${puscenario} AgeingScenario=${ageing} MySeed=${myseed} ChannelThreshold=${chanthr} SeedThreshold=${seedthr} ClusterThreshold=${clusthr} \n")
       
         fout.write("ls -lh . \n")
         #fout.write("cmsStage -f pset_dumped.py ${OUT_DIR}/pset_dumped.py \n")
@@ -418,6 +430,8 @@ def main():
 
     group.add_option('-p','--pileup',help='set pileup',dest='pu',    action='store',default='NoPU')
     group.add_option('-a','--ageing',help='set ageing',dest='ageing',action='store',default='NoAgeing')
+    group.add_option('--0T','--magfield0T',help='if true use 0T config',dest='is0T',action='store_true',default=False)
+
     parser.add_option_group(group)
 
     parser.add_option('-i','--input',help='set input configuration (overrides default)',dest='inputconfig',action='store',default=None)
@@ -447,6 +461,8 @@ def main():
     mQueue   = None
     mJobsInTask=None
  
+    m0T = opts.is0T
+
     ConfigFile = opts.inputconfig
     
     if ConfigFile is not None:
@@ -526,6 +542,7 @@ def main():
     print "- isLocal version            : ",opts.localmode
     print "- Jobs in Task               : ",mJobsInTask
     print "- Events/Job                 : ",mNOfEvents
+    print "- is0T                       : ",m0T
     print "- Queue                      : ",mQueue
     print "- Jobname                    : ",opts.jobname
     print "- e per ADC                  : ",mPixElePerADC
@@ -547,7 +564,7 @@ def main():
 
     for theseed in range(1,int(mJobsInTask)+1):
 
-        ajob=Job(theseed, nEvents, mPileUp, mAgeing, mRocRows_l0l1, mRocCols_l0l1, mRocRows_l2l3, mRocCols_l2l3, mRocRows_disks, mRocCols_disks, mPixElePerADC, mPixMaxADC, mChanThr, mSeedThr, mClusThr, mPixDigiThr, mL0L1Thick, mL2L3Thick, mDiskThick, theseed, opts.localmode,mQueue,opts.jobname)
+        ajob=Job(theseed, nEvents, mPileUp, mAgeing, mRocRows_l0l1, mRocCols_l0l1, mRocRows_l2l3, mRocCols_l2l3, mRocRows_disks, mRocCols_disks, mPixElePerADC, mPixMaxADC, mChanThr, mSeedThr, mClusThr, mPixDigiThr, mL0L1Thick, mL2L3Thick, mDiskThick, theseed, opts.localmode,mQueue,opts.jobname,m0T)
         ajob.createTheLSFFile()        
 
         out_dir = ajob.out_dir # save for later usage
