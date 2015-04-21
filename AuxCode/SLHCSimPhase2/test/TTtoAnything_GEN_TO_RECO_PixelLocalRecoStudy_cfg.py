@@ -20,7 +20,7 @@ options.register('PUScenario',
                  VarParsing.VarParsing.varType.string,         # string, int, or float
                  "PU scenario (NoPileUp is default)")
 
-options.register('BPixThr',
+options.register('PixDigiThr',
                  2000,
                  VarParsing.VarParsing.multiplicity.singleton,
                  VarParsing.VarParsing.varType.int,
@@ -161,8 +161,8 @@ process.configurationMetadata = cms.untracked.PSet(
 
 # Output definition
 
-outrootfile='file:TTtoAnything_14TeV_pythia6_cff_py_GEN_SIM_RECO_age_'+str(options.AgeingScenario)+'_BPixThr_'+str(options.BPixThr)+'_'+str(options.maxEvents)+'_evts_seed_'+str(options.MySeed)+'.root'
-outntuplefile='OccupancyPlotTest_TTtoAnything_14TeV_ntuple_age_'+str(options.AgeingScenario)+'_BPixThr_'+str(options.BPixThr)+'_'+str(options.maxEvents)+'_evts_seed_'+str(options.MySeed)+'.root'
+outrootfile='file:TTtoAnything_14TeV_pythia6_cff_py_GEN_SIM_RECO_age_'+str(options.AgeingScenario)+'_PixDigiThr_'+str(options.PixDigiThr)+'_'+str(options.maxEvents)+'_evts_seed_'+str(options.MySeed)+'.root'
+outntuplefile='OccupancyPlotTest_TTtoAnything_14TeV_ntuple_age_'+str(options.AgeingScenario)+'_PixDigiThr_'+str(options.PixDigiThr)+'_'+str(options.maxEvents)+'_evts_seed_'+str(options.MySeed)+'.root'
 print 'output file name:', outrootfile, outntuplefile
 
 process.FEVTDEBUGoutput = cms.OutputModule("PoolOutputModule",
@@ -407,8 +407,8 @@ process.PixelCPEGenericESProducer.PixelCPEList = PixelCPE_dict['pixelCPE_100x150
 #customiseCrossingFrame(process)
 
 # Uncomment next two lines to change pixel DIGI threshold
-process.mix.digitizers.pixel.ThresholdInElectrons_BPix = cms.double(options.BPixThr)
-process.mix.digitizers.pixel.ThresholdInElectrons_BPix_L1 = cms.double(options.BPixThr)
+process.mix.digitizers.pixel.ThresholdInElectrons_BPix = cms.double(options.PixDigiThr)
+process.mix.digitizers.pixel.ThresholdInElectrons_BPix_L1 = cms.double(options.PixDigiThr)
 
 # Added line from A. Tricomi to switch off the pixel inefficiencies from python
 process.mix.digitizers.pixel.AddPixelInefficiencyFromPython = cms.bool(False)
