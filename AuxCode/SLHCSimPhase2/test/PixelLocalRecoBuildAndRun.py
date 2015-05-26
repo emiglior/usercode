@@ -7,6 +7,19 @@ import subprocess
 import ConfigParser
 from optparse import OptionParser,OptionGroup
 
+#####################################################################
+def getCommandOutput(command):
+    """This function executes `command` and returns it output.
+    Arguments:
+    - `command`: Shell command to be invoked by this function.
+    """
+    child = os.popen(command)
+    data = child.read()
+    err = child.close()
+    if err:
+        print '%s failed w/ exit code %d' % (command, err)
+    return data
+
 ##### method to parse the input file ################################
 
 def ConfigSectionMap(config, section):
@@ -78,6 +91,7 @@ class Job:
         
         # store the job-ID (since it is created in a for loop)
         self.job_id=job_id
+        self.batch_job_id = None
         self.task_name=task_name
         self.queue=queue
         self.is0T=is0T
@@ -371,11 +385,14 @@ class Job:
             fout.write("for RootOutputFile in $(ls *root |grep ntuple); do cmsStage -f  ${RootOutputFile}  ${OUT_DIR}/${RootOutputFile} ; done \n")
         else:
             fout.write("for RootOutputFile in $(ls *root |grep ntuple); do cp ${RootOutputFile} ${OUT_DIR}/${RootOutputFile} ; done \n")
-        fout.write("for RootOutputFile in $(ls *root); \n")
+        fout.write("totEvents=0 \n")
+        fout.write("for RootOutputFile in $(ls *root |grep -v ntuple); \n")
         fout.write("do \n")
         fout.write("events=`edmEventSize -v $RootOutputFile | grep Events | awk '{print $4}'` \n")
         fout.write("echo $RootOutputFile $events >> "+os.path.join(LAUNCH_BASE,"src","AuxCode","SLHCSimPhase2","test","eventsCount_"+ self.task_basename +".txt")+" \n")
+        fout.write("totEvents=$((totEvents+$events)) \n")
         fout.write("done \n")
+        fout.write("echo $totEvents")
         #fout.write("for EpsOutputFile in $(ls *eps ); do cmsStage -f ${EpsOutputFile}  ${OUT_DIR}/${EpsOutputFile} ; done \n")
         fout.close() 
 
@@ -383,7 +400,13 @@ class Job:
     def submit(self): 
 ############################################
         os.system("chmod u+x " + os.path.join(self.lsf_dir,'jobs',self.output_LSF_name))
-        os.system("bsub < "+os.path.join(self.lsf_dir,'jobs',self.output_LSF_name)) #LXBATCH
+        #os.system("bsub < "+os.path.join(self.lsf_dir,'jobs',self.output_LSF_name)) #LXBATCH
+        self.batch_job_id = getCommandOutput("bsub < "+os.path.join(self.lsf_dir,'jobs',self.output_LSF_name))
+
+############################################
+    def getBatchjobId(self):    
+############################################
+        return self.batch_job_id.split("<")[1].split(">")[0]
 
 #################
 def main():            
@@ -502,24 +525,24 @@ def main():
         
         mRocRows_l0l1    = opts.rocrows_l0l1
         mRocCols_l0l1    = opts.roccols_l0l1
-        mL0L1Thick    = opts.layer01thick
+        mL0L1Thick       = opts.layer01thick
         mRocRows_l2l3    = opts.rocrows_l2l3
         mRocCols_l2l3    = opts.roccols_l2l3
-        mL2L3Thick    = opts.layer23thick
+        mL2L3Thick       = opts.layer23thick
         mRocRows_disks   = opts.rocrows_disks
         mRocCols_disks   = opts.roccols_disks
-        mDiskThick    = opts.diskthick
-        mPixDigiThr    = opts.pixdigithr
-        mPixElePerADC = opts.pixeleperadc
-        mPixMaxADC    = opts.pixmaxadc
-        mSeedThr    = opts.seedthr
-        mClusThr    = opts.clusthr
-        mChanThr    = opts.chanthr
-        mAgeing     = opts.ageing
-        mPileUp     = opts.pu
-        mNOfEvents  = opts.numberofevents
-        mJobsInTask = opts.jobsInTask
-        mQueue      = opts.queue
+        mDiskThick       = opts.diskthick
+        mPixDigiThr      = opts.pixdigithr
+        mPixElePerADC    = opts.pixeleperadc
+        mPixMaxADC       = opts.pixmaxadc
+        mSeedThr         = opts.seedthr           
+        mClusThr         = opts.clusthr           
+        mChanThr         = opts.chanthr           
+        mAgeing          = opts.ageing            
+        mPileUp          = opts.pu                
+        mNOfEvents       = opts.numberofevents    
+        mJobsInTask      = opts.jobsInTask        
+        mQueue           = opts.queue             
      
     # # check that chosen pixel size matches what is currently available in the trackerStructureTopology
     # # https://twiki.cern.ch/twiki/bin/view/CMS/ExamplePhaseI#Changing_the_Pixel_Size
@@ -561,6 +584,7 @@ def main():
     nEvents=int(mNOfEvents)
     
     jobIndex=0
+    batchJobIds = []
 
     for theseed in range(1,int(mJobsInTask)+1):
 
@@ -574,11 +598,14 @@ def main():
 
         if opts.submit:
             ajob.submit()
+            batchJobIds.append(ajob.getBatchjobId())
             del ajob
 
         jobIndex+=1       
         
     print "********************************************************"
+    for theBatchJobId in batchJobIds:
+        print "theBatchJobId is: ",theBatchJobId
 
     #############################################
     # prepare the script for the harvesting step
@@ -592,7 +619,10 @@ def main():
     fout=open(harvestingname,"w")
 
     fout.write("#!/bin/bash \n")
+    fout.write("MAIL = $USER@mail.cern.ch \n")
+    fout.write("echo $HOST | mail -s \"Harvesting job started\" $USER@mail.cern.ch \n")
     fout.write("OUT_DIR="+out_dir+" \n")
+    fout.write("JOB_NAME="+opts.jobname+" \n")
     fout.write("cd "+os.path.join(LAUNCH_BASE,"src","AuxCode","SLHCSimPhase2","test")+"\n")
     fout.write("eval `scram r -sh` \n")
     fout.write("mkdir -p /tmp/$USER/"+link_name+" \n")
@@ -613,8 +643,16 @@ def main():
     fout.write("fi \n")
     fout.write("hadd $FILE /tmp/$USER/"+link_name+"/*seed*.root \n")
     fout.write("cmsStage -f $FILE $OUT_DIR \n")
+    fout.write("echo \"Harvesting for complete; please find output at $OUT_DIR \" | mail -s \"Harvesting for" +opts.jobname +" compled\" $MAIL \n")
     os.system("chmod u+x "+harvestingname)
-    
+
+    conditions = '"' + " && ".join(["ended(" + jobId + ")" for jobId in batchJobIds]) + '"'
+    print conditions
+    lastJobCommand = "bsub -o harvester"+opts.jobname+".tmp -q 1nh -w "+conditions+" "+harvestingname
+    print lastJobCommand
+    lastJobOutput = getCommandOutput(lastJobCommand)
+    print lastJobOutput
+
 if __name__ == "__main__":        
     main()
 
