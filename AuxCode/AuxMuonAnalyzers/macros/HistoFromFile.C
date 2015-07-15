@@ -38,18 +38,6 @@ void LineshapeAnalyser(){
   //Set input files 
   TString filename1=    "../test/input/GenMuonAnalyzerHistos_beforeFSR.root";
   TString filename2=    "../test/input/GenMuonAnalyzerHistos_afterFSR.root";
-  /* ~~~~  useful input strings ~~~~~
-     "../input/mll_.cms.7tev.cut2.v1.dat";
-     "../input/mll_.cms.7tev.cut2.v2.dat";
-     "../input/mll_.cms.7tev.cut2.v3.dat";
-     "../input/mll_.cms.8tev.cut2.v1.dat";
-     "../input/mll_.cms.8tev.cut2.v2.dat";
-     "../input/mll_.cms.8tev.cut2.v3.dat";
-     "../input/mll_.cms.8tev.v1.dat";
-     "../input/mll_.cms.8tev.v2.dat";
-     "../input/mll_.cms.8tev.v3.dat";
-     "../input/mll_.cms.7tev.v2.dat";
-     ~~~~~~~~~~~~~~~~~~~~~~~~~*/
   //Fast rename tool, rename just these lines when you change input files
   TString EnergyFile1="13";       //insert "Sqrt(s)" of the filename1
   TString EnergyFile2="13";       //insert "Sqrt(s)" of the filename2
@@ -73,12 +61,12 @@ void LineshapeAnalyser(){
   //Png files output saves
   TString OutputComparisonPng="../test/output/"+EnergyFile1+"TeV("+VersionFile1+CutFile1+")_vs_ "+EnergyFile2+"Tev("+VersionFile2+CutFile2+")_Comparison.png";
   TString OutputFitPng="../test/output/"+EnergyFile1+"TeV("+VersionFile1+CutFile1+")_vs_ "+EnergyFile2+"Tev("+VersionFile2+CutFile2+")_Fit.png";
-  
- 
+   
     
    /////////////////////////////////RootFit Initialization
   //Variables (name, title, initial value, allowed range)
-  RooRealVar x("x","x",71.1888,111.19) ; //we use this to fit
+  //  RooRealVar x("x","x",71.1888,111.19) ; //we use this to fit
+  RooRealVar x("x","x",81.,101.) ; //we use this to fit
   RooRealVar mean("Mean","mean of BW",91,89,92,"GeV") ;// to set a good start value is very important
   RooRealVar width("Width","width of BW",2.5,1,5,"GeV");
   RooRealVar lambda1("Exp. lambda1","Exponential constant",1,-10,10,"GeV");
@@ -113,9 +101,6 @@ void LineshapeAnalyser(){
 
   ////////////////////////////////End RootFit initialization
   //Histograms
-  //  TH1F *h1 = new TH1F("shape1","",1002,71.1888,111.19);//first file naked histogram
-  // TH1F *h2 = new TH1F("shape2","",1002,71.1888,111.19);//second file naked histogram
-
   TFile f1(filename1);
   TH1F *h1 = (TH1F*)f1.Get("demo/h1_MuMuMass");
   TFile f2(filename2);   
@@ -216,9 +201,9 @@ void LineshapeAnalyser(){
 			Binning(1001,71.1888,111.19 ),
 			DrawOption("PEX0C"));
   //Fit data lineshape 1 and plot on frame
-  Sum_ExpBW.fitTo(DataLineshape1,Range(87.5,100)); //fit in this range
+  Sum_ExpBW.fitTo(DataLineshape1,Range(86.5,96.5)); //fit in this range
   Sum_ExpBW.plotOn(xframe21,LineColor(kBlack),LineWidth(2));
-  Sum_ExpBW.paramOn(xframe21);//,RooArgSet(mean,width,lambda1,fraction),kFALSE,"",2,"NELU",0.73, 0.99,0.55,0) ;//xmin,xmax,ymax
+  Sum_ExpBW.paramOn(xframe21,Layout(0.65));//,RooArgSet(mean,width,lambda1,fraction),kFALSE,"",2,"NELU",0.73, 0.99,0.55,0) ;//xmin,xmax,ymax
   /* here some functions easy to copy and paste 
   //-----------LINEAR + BW
   Sum_LinearBW.fitTo(DataLineshape1);
@@ -259,9 +244,9 @@ void LineshapeAnalyser(){
 			DrawOption("PEX0C"));
 
   //Fit data lineshape 2 and plot on frame
-  Sum_ExpBW.fitTo(DataLineshape2,Range(86.5,100.));
+  Sum_ExpBW.fitTo(DataLineshape2,Range(83.,95.5));
   Sum_ExpBW.plotOn(xframe22,LineColor(kBlack),LineWidth(2));
-  Sum_ExpBW.paramOn(xframe22);//,RooArgSet(mean,width,lambda1,fraction),kFALSE,"",2,"NELU",0.73, 0.99,0.55,0) ;//xmin,xmax,ymax
+  Sum_ExpBW.paramOn(xframe22,Layout(0.65));//,RooArgSet(mean,width,lambda1,fraction),kFALSE,"",2,"NELU",0.73, 0.99,0.55,0) ;//xmin,xmax,ymax
   /* here some functions easy to copy and paste 
   //-----------LINEAR + BW
   Sum_LinearBW.fitTo(DataLineshape2);
