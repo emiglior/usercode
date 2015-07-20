@@ -20,7 +20,7 @@ process.source = cms.Source("PoolSource",
 process.demo = cms.EDAnalyzer('GenMuonAnalyzer',
                               # The resonances are to be specified in this order:
                               # A0, Z0, Y(3S), Y(2S), Y(1S), Psi(2S), J/Psi
-                              resfind = cms.vint32(0, 1, 0, 0, 0, 0, 0),
+                              resfind = cms.vint32(1, 1, 0, 0, 0, 0, 0),
                               genParticlesInputTag = cms.InputTag("prunedGenParticles" ),
                               beforeFSR = cms.untracked.bool(False),
                               debugInfo = cms.untracked.bool(False),
