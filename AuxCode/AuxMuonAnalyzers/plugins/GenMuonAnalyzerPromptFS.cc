@@ -1,9 +1,9 @@
 // -*- C++ -*-
 //
 // Package:    AuxCode/AuxMuonAnalyzers
-// Class:      GenMuonAnalyzer
+// Class:      GenMuonAnalyzerPromptFS
 // 
-/**\class GenMuonAnalyzer GenMuonAnalyzer.cc AuxCode/AuxMuonAnalyzers/plugins/GenMuonAnalyzer.cc
+/**\class GenMuonAnalyzerPromptFS GenMuonAnalyzerPromptFS.cc AuxCode/AuxMuonAnalyzers/plugins/GenMuonAnalyzerPromptFS.cc
 
  Description: [one line class summary]
 
@@ -29,7 +29,6 @@
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
-
 // TFileService and ROOT
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
@@ -44,7 +43,6 @@
 #include "SimDataFormats/GeneratorProducts/interface/GenRunInfoProduct.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
 
-
 //
 #include "MuonAnalysis/MomentumScaleCalibration/interface/Muon.h"
 #include "MuonAnalysis/MomentumScaleCalibration/interface/GenMuonPair.h"
@@ -56,10 +54,10 @@
 typedef reco::Particle::LorentzVector lorentzVector;
 using namespace std;
 
-class GenMuonAnalyzer : public edm::EDAnalyzer {
+class GenMuonAnalyzerPromptFS : public edm::EDAnalyzer {
    public:
-      explicit GenMuonAnalyzer(const edm::ParameterSet&);
-      ~GenMuonAnalyzer();
+      explicit GenMuonAnalyzerPromptFS(const edm::ParameterSet&);
+      ~GenMuonAnalyzerPromptFS();
 
       static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
@@ -90,7 +88,6 @@ class GenMuonAnalyzer : public edm::EDAnalyzer {
   TTree * tree;
   int run_, evtnum_;
   double genweight_;
-  double lheweight_;
 };
 
 //
@@ -104,7 +101,7 @@ class GenMuonAnalyzer : public edm::EDAnalyzer {
 //
 // constructors and destructor
 //
-GenMuonAnalyzer::GenMuonAnalyzer(const edm::ParameterSet& iConfig)
+GenMuonAnalyzerPromptFS::GenMuonAnalyzerPromptFS(const edm::ParameterSet& iConfig)
 
 {
    //now do what ever initialization is needed
@@ -115,7 +112,7 @@ GenMuonAnalyzer::GenMuonAnalyzer(const edm::ParameterSet& iConfig)
 }
 
 
-GenMuonAnalyzer::~GenMuonAnalyzer()
+GenMuonAnalyzerPromptFS::~GenMuonAnalyzerPromptFS()
 {
  
    // do anything here that needs to be done at desctruction time
@@ -129,16 +126,17 @@ GenMuonAnalyzer::~GenMuonAnalyzer()
 //
 
 const reco::Candidate* 
-GenMuonAnalyzer::getStatus1Muon(const reco::Candidate* status3Muon){
+GenMuonAnalyzerPromptFS::getStatus1Muon(const reco::Candidate* status3Muon){
   const reco::Candidate* tempMuon = status3Muon;
-  bool lastCopy = ((reco::GenParticle*)tempMuon)->isLastCopy();        //  int status = tempStatus1Muon->status();
+  //  bool lastCopy = ((reco::GenParticle*)tempMuon)->isLastCopy();           //  int status = tempStatus1Muon->status();
+  bool isPromptFinalState = ((reco::GenParticle*)tempMuon)->isPromptFinalState();        //  int status = tempStatus1Muon->status();
   while(tempMuon == 0 || tempMuon->numberOfDaughters()!=0){
-    if ( lastCopy ) break;                              //    if (status == 1) break;
+    if ( isPromptFinalState ) break;                              //    if (status == 1) break;
     //std::vector<const reco::Candidate*> daughters;
     for (unsigned int i=0; i<tempMuon->numberOfDaughters(); ++i){
       if ( tempMuon->daughter(i)->pdgId()==tempMuon->pdgId() ){
 	tempMuon = tempMuon->daughter(i);
-	lastCopy = ((reco::GenParticle*)tempMuon)->isLastCopy(); 	//	status = tempStatus1Muon->status();
+	isPromptFinalState = ((reco::GenParticle*)tempMuon)->isPromptFinalState(); 	//	status = tempStatus1Muon->status();
 	break;
       }else continue;
     }//for loop
@@ -148,7 +146,7 @@ GenMuonAnalyzer::getStatus1Muon(const reco::Candidate* status3Muon){
 }
 
 const reco::Candidate* 
-GenMuonAnalyzer::getStatus3Muon(const reco::Candidate* status3Muon){
+GenMuonAnalyzerPromptFS::getStatus3Muon(const reco::Candidate* status3Muon){
   const reco::Candidate* tempMuon = status3Muon;
   bool lastCopy = ((reco::GenParticle*)tempMuon)->isLastCopyBeforeFSR();        //  int status = tempStatus1Muon->status();
   while(tempMuon == 0 || tempMuon->numberOfDaughters()!=0){
@@ -169,7 +167,7 @@ GenMuonAnalyzer::getStatus3Muon(const reco::Candidate* status3Muon){
 
 // ------------ method called for each event  ------------
 void
-GenMuonAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
+GenMuonAnalyzerPromptFS::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
 
 
@@ -184,8 +182,8 @@ GenMuonAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
 
   if( !genParticlesHandle.isValid() ) {
     edm::LogInfo("OutputInfo") << " failed to retrieve gen particle collection";
-    edm::LogInfo("OutputInfo") << " GenMuonAnalyzer cannot continue...!";
-    std::cout << " GenMuonAnalyzer cannot continue...!" <<  std::endl;
+    edm::LogInfo("OutputInfo") << " GenMuonAnalyzerPromptFS cannot continue...!";
+    std::cout << " GenMuonAnalyzerPromptFS cannot continue...!" <<  std::endl;
     return;
   }
 
@@ -194,13 +192,7 @@ GenMuonAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
   edm::Handle<GenEventInfoProduct> genEvtInfo;
   iEvent.getByLabel("generator", genEvtInfo);
   double genEvt_weight = genEvtInfo->weight();
-
-  // LHE weight
-  edm::Handle<LHEEventProduct> lheEvent;
-  iEvent.getByLabel("externalLHEProducer",lheEvent);
-  double lheEvt_weight = lheEvent->originalXWGTUP();
-
-  if ( debug_ ) std::cout << "Evt Weight: LHE = " << lheEvt_weight << " GEN = " << genEvt_weight<< std::endl;
+  if ( debug_ ) std::cout << "Evt Weight: " << genEvt_weight<< std::endl;
 
   // loop on generated particles
   GenMuonPair muFromRes;
@@ -247,25 +239,29 @@ GenMuonAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
     } // end if PDG ID=13
   } // end of loop
 
-  if ( nMuP ==1 && nMuN == 1 ) {
+  if ( nMuP == 1 && nMuN == 1 ) {
     lorentzVector lv_MuMu = muFromRes.mu1.fP4 + muFromRes.mu2.fP4;
     //    h1_MuMuMass_SD->Fill(lv_MuMu.mass(),genEvt_weight);
     //    h1_MuMuMass_W->Fill(lv_MuMu.mass(),genEvt_weight);
-    if ( genEvt_weight < 0 ) {
-      h1_MuMuMass_SD->Fill(lv_MuMu.mass(),-1.);
-      h1_MuMuMass_W->Fill(lv_MuMu.mass() ,-1.);
-    } else if ( genEvt_weight > 0 ) {
-      h1_MuMuMass_SD->Fill(lv_MuMu.mass(),+1.);
-      h1_MuMuMass_W->Fill(lv_MuMu.mass() ,+1.);
-    }
 
+    double pTmin = min(muFromRes.mu1.fP4.pt(), muFromRes.mu2.fP4.pt());
+    double absEtaMax = max(fabs(muFromRes.mu1.fP4.eta()), fabs(muFromRes.mu2.fP4.eta())); 
+    // @EM 2015.07.28: Horrible... same cuts as used by SD for the run1 calculation harcoded here....
+    if ( pTmin > 18. && absEtaMax < 2.5 ) {
+      if ( genEvt_weight < 0 ) {
+	h1_MuMuMass_SD->Fill(lv_MuMu.mass(),-1.);
+	h1_MuMuMass_W->Fill(lv_MuMu.mass() ,-1.);
+      } else if ( genEvt_weight > 0 ) {
+	h1_MuMuMass_SD->Fill(lv_MuMu.mass(),+1.);
+	h1_MuMuMass_W->Fill(lv_MuMu.mass() ,+1.);
+      }
+    }
   }
 
 
   evtnum_ = iEvent.id().event();
   run_ = iEvent.id().run();
   genweight_ = genEvt_weight;
-  lheweight_ = lheEvt_weight;
   genMuonPair->copy(muFromRes);
   tree->Fill();
 
@@ -303,16 +299,13 @@ GenMuonAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
 
 // ------------ method called once each job just before starting event loop  ------------
 void 
-GenMuonAnalyzer::beginJob()
+GenMuonAnalyzerPromptFS::beginJob()
 {
   edm::Service<TFileService> fs;
   h1_nMu  = fs->make<TH1F>( "h1_nMu"   , "h1_nMu" , 11,  -0.5, 10.5 );
   h1_nMuP = fs->make<TH1F>( "h1_nMuP"  , "h1_nMuP", 11,  -0.5, 10.5 );
   h1_nMuN = fs->make<TH1F>( "h1_nMuN"  , "h1_nMuN", 11,  -0.5, 10.5 );
   h1_status = fs->make<TH1F>( "h1_status"  , "h1_status", 100,  -0.5, 99.5 );
-
-  //  h1_MuMuMass_SD = fs->make<TH1F>( "h1_MuMuMass_SD", "h1_MuMuMass SDittmaier binning", 1001, 71.1888000,111.190000);
-  //  h1_MuMuMass_W  = fs->make<TH1F>( "h1_MuMuMass_W" , "h1_MuMuMass wide"              , 1701, 57.202    ,125.177);
 
   h1_MuMuMass_SD = fs->make<TH1F>( "h1_MuMuMass_SD", "h1_MuMuMass SDittmaier binning", 1001, 71.170,111.210);
   h1_MuMuMass_W  = fs->make<TH1F>( "h1_MuMuMass_W" , "h1_MuMuMass wide"              , 1701, 57.170,125.210);
@@ -325,7 +318,6 @@ GenMuonAnalyzer::beginJob()
   tree->Branch("run",    &run_   , "run/I");
   tree->Branch("evtnum", &evtnum_, "evtnum/I");
   tree->Branch("genweight", &genweight_, "genweight/D");
-  tree->Branch("lheweight", &lheweight_, "lheweight/D");
   genMuonPair = new GenMuonPair;
   tree->Branch("GenMuons", "GenMuonPair", &genMuonPair);
 
@@ -333,14 +325,14 @@ GenMuonAnalyzer::beginJob()
 
 // ------------ method called once each job just after ending the event loop  ------------
 void 
-GenMuonAnalyzer::endJob() 
+GenMuonAnalyzerPromptFS::endJob() 
 {
 }
 
 // ------------ method called when starting to processes a run  ------------
 /*
 void 
-GenMuonAnalyzer::beginRun(edm::Run const&, edm::EventSetup const&)
+GenMuonAnalyzerPromptFS::beginRun(edm::Run const&, edm::EventSetup const&)
 {
 }
 */
@@ -348,7 +340,7 @@ GenMuonAnalyzer::beginRun(edm::Run const&, edm::EventSetup const&)
 // ------------ method called when ending the processing of a run  ------------
 /*
 void 
-GenMuonAnalyzer::endRun(edm::Run const&, edm::EventSetup const&)
+GenMuonAnalyzerPromptFS::endRun(edm::Run const&, edm::EventSetup const&)
 {
 }
 */
@@ -356,7 +348,7 @@ GenMuonAnalyzer::endRun(edm::Run const&, edm::EventSetup const&)
 // ------------ method called when starting to processes a luminosity block  ------------
 /*
 void 
-GenMuonAnalyzer::beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
+GenMuonAnalyzerPromptFS::beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
 {
 }
 */
@@ -364,14 +356,14 @@ GenMuonAnalyzer::beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSet
 // ------------ method called when ending the processing of a luminosity block  ------------
 /*
 void 
-GenMuonAnalyzer::endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
+GenMuonAnalyzerPromptFS::endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
 {
 }
 */
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 void
-GenMuonAnalyzer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+GenMuonAnalyzerPromptFS::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   //The following says we do not know what parameters are allowed so do no validation
   // Please change this to state exactly what you do use, even if it is no parameters
   edm::ParameterSetDescription desc;
@@ -384,4 +376,4 @@ GenMuonAnalyzer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) 
 
 
 //define this as a plug-in
-DEFINE_FWK_MODULE(GenMuonAnalyzer);
+DEFINE_FWK_MODULE(GenMuonAnalyzerPromptFS);

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 jobId=$1
-jobName=GenMuonAnalyzer_beforeFSR_${jobId}
+jobName=GenMuonAnalyzer_promptFS_afterFSR_${jobId}
 # Setup variables
 
 LSF_DIR=/afs/cern.ch/user/e/emiglior/scratch0/jobs/lsf
@@ -29,7 +29,7 @@ echo '#!/bin/sh ' >> $lsfname
 echo '#BSUB -L /bin/sh'       >> $lsfname
 echo '#BSUB -J ' ${jobName}   >> $lsfname
 echo '#BSUB -oo' ${LOG_DIR}/${jobName}.log >> $lsfname
-echo '#BSUB -q 8nh'      >> $lsfname
+echo '#BSUB -q cmscaf1nd'      >> $lsfname
 echo 'jobId='$jobId      >> $lsfname
 echo 'jobName='$jobName  >> $lsfname
 echo 'logname='$logname  >> $lsfname
@@ -55,7 +55,7 @@ cd AuxCode/AuxMuonAnalyzers/test
 
 echo "Issue cmsRun ..."
 mkdir -p /tmp/emiglior
-cmsRun genmuonanalyzer_beforeFSR_TEMPL_cfg.py jobId=${jobId}
+cmsRun genmuonanalyzer_promptFS_afterFSR_TEMPL_cfg.py jobId=${jobId}
 
 
 echo "Inspecting test directory after cmsRun ..."
