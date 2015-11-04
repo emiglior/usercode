@@ -88,6 +88,7 @@ class GenMuonAnalyzerPromptFS : public edm::EDAnalyzer {
   TTree * tree;
   int run_, evtnum_;
   double genweight_;
+  double lheweight_;
 };
 
 //
@@ -192,7 +193,13 @@ GenMuonAnalyzerPromptFS::analyze(const edm::Event& iEvent, const edm::EventSetup
   edm::Handle<GenEventInfoProduct> genEvtInfo;
   iEvent.getByLabel("generator", genEvtInfo);
   double genEvt_weight = genEvtInfo->weight();
-  if ( debug_ ) std::cout << "Evt Weight: " << genEvt_weight<< std::endl;
+
+  // LHE weight
+  edm::Handle<LHEEventProduct> lheEvent;
+  iEvent.getByLabel("externalLHEProducer",lheEvent);
+  double lheEvt_weight = lheEvent->originalXWGTUP();
+
+  if ( debug_ ) std::cout << "Evt Weight: LHE = " << lheEvt_weight << " GEN = " << genEvt_weight<< std::endl;
 
   // loop on generated particles
   GenMuonPair muFromRes;
@@ -262,6 +269,7 @@ GenMuonAnalyzerPromptFS::analyze(const edm::Event& iEvent, const edm::EventSetup
   evtnum_ = iEvent.id().event();
   run_ = iEvent.id().run();
   genweight_ = genEvt_weight;
+  lheweight_ = lheEvt_weight;
   genMuonPair->copy(muFromRes);
   tree->Fill();
 
@@ -318,6 +326,7 @@ GenMuonAnalyzerPromptFS::beginJob()
   tree->Branch("run",    &run_   , "run/I");
   tree->Branch("evtnum", &evtnum_, "evtnum/I");
   tree->Branch("genweight", &genweight_, "genweight/D");
+  tree->Branch("lheweight", &lheweight_, "lheweight/D");
   genMuonPair = new GenMuonPair;
   tree->Branch("GenMuons", "GenMuonPair", &genMuonPair);
 
