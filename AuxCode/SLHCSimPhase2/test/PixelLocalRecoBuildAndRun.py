@@ -619,7 +619,7 @@ def main():
     fout=open(harvestingname,"w")
 
     fout.write("#!/bin/bash \n")
-    fout.write("MAIL = $USER@mail.cern.ch \n")
+    fout.write("MAIL=$USER@mail.cern.ch \n")
     fout.write("echo $HOST | mail -s \"Harvesting job started\" $USER@mail.cern.ch \n")
     fout.write("OUT_DIR="+out_dir+" \n")
     fout.write("JOB_NAME="+opts.jobname+" \n")
