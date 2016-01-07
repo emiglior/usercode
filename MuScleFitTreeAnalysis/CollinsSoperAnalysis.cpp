@@ -65,8 +65,6 @@ CollinsSoperAnalysis::~CollinsSoperAnalysis(){
   if ( hp_phiCS       != 0 ) delete hp_phiCS       ;                        
   if ( rrv_c          != 0 ) delete rrv_c          ; 
   if ( rds_cosThetaCS != 0 ) delete rds_cosThetaCS ;
-
-  return;
 }
 
 void CollinsSoperAnalysis::analyze(const TLorentzVector & muNeg, const TLorentzVector & muPos, double weight){

@@ -73,8 +73,6 @@ GeneralizedEndPointAnalysis::~GeneralizedEndPointAnalysis(){
   if ( h_cosThetaCS_tail != 0 ) delete h_cosThetaCS_tail;
   if ( h_mLL      != 0 ) delete h_mLL;
   if ( h_mLL_tail != 0 ) delete h_mLL_tail;
-
-  return;
 }
 
 void GeneralizedEndPointAnalysis::analyze(const TLorentzVector & muNeg, const TLorentzVector & muPos, double weight){

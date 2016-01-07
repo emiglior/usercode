@@ -10,6 +10,7 @@ MODULE_SRC=dict.cpp
 MODULE_SRC+=Helpers.cpp
 MODULE_SRC+=CollinsSoperAnalysis.cpp
 MODULE_SRC+=GeneralizedEndPointAnalysis.cpp
+MODULE_SRC+=DkScanAnalysis.cpp
 
 MODULE_LIB=./libModules.so
 MODULE_OBJ=$(MODULE_SRC:.cpp=.o)
