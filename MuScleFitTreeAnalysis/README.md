@@ -6,7 +6,7 @@ Analyzers have a `analyze()` and a `endjob()` methods.
 make all
 ```
 
-* Running the ode
+* Running the code
 ```
 ./main <input_root_tree>
 ```
