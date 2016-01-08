@@ -13,16 +13,9 @@
 using namespace std;
 using namespace RooFit;
 
-// PDG
-static const double mass_Z(91.188);
-
-// analysis is limitied in [-0.5,+0.5] range
-//static const double cosThetaCS_max(0.5);
-
-static const double cosThetaCS_max(1.);
 
 CollinsSoperAnalysis::CollinsSoperAnalysis(TFile * fout, double m1, double m2, const char * append)
-  : mLL_low(m1), mLL_high(m2), AfbVal(0), AfbError(0)  {
+  : mLL_low(m1), mLL_high(m2), AfbValRaw(0), AfbErrorRaw(0), AfbValFit(0), AfbErrorFit(0)  {
  
   nBelowZ=0; nAboveZ=0; 
   if ( fout != 0 ) {
@@ -96,6 +89,15 @@ void CollinsSoperAnalysis::analyze(const TLorentzVector & muNeg, const TLorentzV
 void CollinsSoperAnalysis::endjob(){
 
   cout << "nBelow/nAbove " << nBelowZ << " / " << nAboveZ << endl;
+
+  // compute RAW Afb
+  char cut_title[40];
+  sprintf(cut_title,"%s>0",rrv_c->GetName());
+  double nF = rds_cosThetaCS->sumEntries(cut_title);
+  double nB = rds_cosThetaCS->sumEntries() - nF; 
+  AfbValRaw = (nF-nB)/(nF+nB);
+  AfbErrorRaw= 2./(nF+nB)*sqrt(nF*nB/(nF+nB));
+
   // NB: the parametrization is such that Afb=(F-B)/(F+B)
   // "forward event" -> direction of mu- along the direction of the Z 
   RooRealVar Afb("Afb","Afb variable",0.,-1.,1.);
@@ -106,8 +108,8 @@ void CollinsSoperAnalysis::endjob(){
   RooRealVar Afb_null("Afb_null","Afb_null variable",0.);
   RooGenericPdf rf_pdf_null("pdf_null","pdf_null","3/8*(1+@0*@0)+@1*@0",RooArgSet(*rrv_c, Afb_null));
 
-  AfbVal = Afb.getValV();
-  AfbError = Afb.getError();
+  AfbValFit = Afb.getValV();
+  AfbErrorFit = Afb.getError();
   
   // plot result
   TCanvas * c = new TCanvas("CollinsSopherAnalysis","CollinsSopherAnalysis",600,600);

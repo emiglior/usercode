@@ -14,8 +14,10 @@ public:
   ~CollinsSoperAnalysis();
   void analyze(const TLorentzVector & muNeg, const TLorentzVector & muPos, double weight=1.);
   void endjob();
-  double getAfb() {return AfbVal;}
-  double getAfbError() {return AfbError;}
+  double getAfbRaw() {return AfbValRaw;}
+  double getAfbErrorRaw() {return AfbErrorRaw;}
+  double getAfbFit() {return AfbValFit;}
+  double getAfbErrorFit() {return AfbErrorFit;}
     
 private:
   TDirectory * the_dir;
@@ -26,7 +28,8 @@ private:
 
   double mLL_low, mLL_high;
   int nBelowZ, nAboveZ; 
-  double AfbVal, AfbError;
+  double AfbValRaw, AfbErrorRaw;
+  double AfbValFit, AfbErrorFit;
   
   RooRealVar * rrv_c;  
   RooDataSet * rds_cosThetaCS;

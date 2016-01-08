@@ -1,4 +1,5 @@
 #include "GeneralizedEndPointAnalysis.h"
+#include "Helpers.h"
 
 #include "TH1F.h"
 #include "TCanvas.h"
@@ -12,11 +13,6 @@
 #include <sys/stat.h>
 
 using namespace std;
-
-static const double pt_lep = 100.;
-static const double GeVToTeV = 0.001;
-static const double up_limit = 1./pt_lep;
-static const int binning = 40;
 
 GeneralizedEndPointAnalysis::GeneralizedEndPointAnalysis(TFile * fout, const char * append) :
   HList_pos(0), HList_neg(0), Canvas(0), dk(0), chi2(0), ks(0) {
@@ -38,10 +34,13 @@ GeneralizedEndPointAnalysis::GeneralizedEndPointAnalysis(TFile * fout, const cha
     the_dir->cd();
 
     // --- defining the nr. of delta_k to inject
-    float dk_step = 0.000004; // original
-    for(float f =-0.0002; f<0.0002; f+= dk_step ) 
-      delta_k.push_back(f);  
-
+    // float dk_step = 0.000004; // original
+    // for(float f =-0.0002; f<0.0002; f+= dk_step ) 
+    //   delta_k.push_back(f);
+    
+    for(float f =-0.001; f<0.001; f+= dk_step ) 
+      delta_k.push_back(f);
+    
     n_Dk = delta_k.size();
     dk = new double [n_Dk];
     chi2 = new double[n_Dk];
@@ -115,7 +114,7 @@ void GeneralizedEndPointAnalysis::analyze(const TLorentzVector & muNeg, const TL
     
     // -- positively charged
     k_prime = ( +1./muPos.Pt() + delta_kappa)+delta_k[j];
-    if(k_prime >0){
+    if(k_prime>0){
       ((TH1F*)h_pos_temp)->Fill(k_prime,weight);
     }
     else{
@@ -124,7 +123,7 @@ void GeneralizedEndPointAnalysis::analyze(const TLorentzVector & muNeg, const TL
 
     // -- negatively charged
     k_prime = ( -1./muNeg.Pt() + delta_kappa)+delta_k[j];
-    if(k_prime <0){
+    if(k_prime<0){
       ((TH1F*)h_neg_temp)->Fill(k_prime*(-1),weight); //filling with the negative to have the same histogram range for the chi2 comparison
     }
     else{
@@ -154,6 +153,7 @@ void GeneralizedEndPointAnalysis::endjob(){
     
     // --- normalization 
     ((TH1F*)h_pos_temp)->Sumw2();
+    ((TH1F*)h_neg_temp)->Sumw2();
     ((TH1F*)h_pos_temp)->Scale(((TH1F*)h_neg_temp)->Integral()/((TH1F*)h_pos_temp)->Integral());
 
     nsel2_pos = ((TH1F*)h_pos_temp)->Integral();
@@ -186,7 +186,7 @@ void GeneralizedEndPointAnalysis::endjob(){
     int ndf, igood;
     double p_value = 0;
 
-    // EM 2016.01.07 Chi2Test changed from "WW" to "UU" to avoid a warning from ROOT
+    // EM 2016.01.07 Chi2TestX changed from "WW" to "UU" to avoid a warning from ROOT
     // p_value = ((TH1F*)h_pos_temp)->Chi2TestX(((TH1F*)h_neg_temp),chisq,ndf,igood,"WW,NORM,P");
 
     p_value = ((TH1F*)h_pos_temp)->Chi2TestX(((TH1F*)h_neg_temp),chisq,ndf,igood,"UU,NORM,P");   
@@ -212,8 +212,8 @@ void GeneralizedEndPointAnalysis::endjob(){
     //pad1->SetLogy();
     // -------------------------
     
-    ((TH1F*)h_pos_temp)->Sumw2();
-    ((TH1F*)h_neg_temp)->Sumw2();
+    // ((TH1F*)h_pos_temp)->Sumw2(); // EM 2016.01.08 SumW2 already set
+    // ((TH1F*)h_neg_temp)->Sumw2(); // EM 2016.01.08 SumW2 already set
     ((TH1F*)h_pos_temp)->SetStats(0);
     
     ((TH1F*)h_pos_temp)->SetTitle(""); 
@@ -263,8 +263,8 @@ void GeneralizedEndPointAnalysis::endjob(){
     TH1F *h3 = (TH1F*)h_pos_temp->Clone("h3");
     h3->SetLineColor(kBlack);
     h3->SetMinimum(0.0);  // Define Y ..
-    h3->SetMaximum(2.0); // .. range
-    h3->Sumw2();
+    h3->SetMaximum(2.0);  // .. range
+    //    h3->Sumw2();          // EM 2016.01.08 Sumw2 already set
     h3->SetStats(0);      // No statistics on lower plot
     h3->Divide((TH1F*)h_neg_temp);
     h3->SetMarkerStyle(kFullTriangleUp);
@@ -324,9 +324,10 @@ void GeneralizedEndPointAnalysis::endjob(){
    mg->Add(grChi2);
    mg->Add(grKS);
 
-   mg->Write();
-   grChi2->Write();
-   grKS->Write();
+   // EM 2016.01.08 next Write() statements likely not needed
+   // mg->Write();
+   // grChi2->Write();
+   // grKS->Write();
    
    // --- opening canvas
    //   TCanvas *c1 = new TCanvas("c1","curvature",800,800);
@@ -352,7 +353,7 @@ void GeneralizedEndPointAnalysis::endjob(){
    // legend->AddEntry(hcurv, " full #eta ", "L");
    // legend->Draw("SAME");
       
-   TFitResultPtr r = grChi2->Fit("pol2","RSV","",-0.00005,0.00005);
+   TFitResultPtr r = grChi2->Fit("pol2","RSV","",-10*dk_step,+10*dk_step);
    TF1 *myFunc = grChi2->GetFunction("pol2");
    myFunc->SetLineWidth(1);
    myFunc->SetLineColor(kRed);
@@ -368,11 +369,11 @@ void GeneralizedEndPointAnalysis::endjob(){
    // --- calculating the minimum and its uncertainty (assuming parabolic beahviour in the minimum)
    
    double min = myFunc->GetMinimumX(-0.001,0.001);
-   double chi2plusone = myFunc-> Eval(min)+1;
+   double chi2plusone = myFunc->Eval(min)+1;
    double min_uncert = TMath::Abs(min - (myFunc->GetX(chi2plusone,-0.001,0.001)));
 
    char result_text[200];      
-   sprintf(result_text,"#Delta#kappa = %.3f +/- %.3f c/TeV",min*1000,min_uncert*1000);
+   sprintf(result_text,"#Delta#kappa = %.3f +/- %.3f c/TeV",min/GeVToTeV,min_uncert/GeVToTeV);
    TPaveText *ptext = new TPaveText(.4,.72,.65,.78,"brNDC"); 
    ptext->SetFillColor(kWhite);
    //ptext->SetTextSize(0.04);

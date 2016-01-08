@@ -4,10 +4,7 @@
 #include <cmath>
 #include <iomanip>
 
-
 using namespace std;
-
-static const double GeVToTeV = 0.001;
 
 GeneralizedEndPointAnalysisOld::GeneralizedEndPointAnalysisOld(TFile * fout, const char * append) {
 
@@ -100,8 +97,8 @@ void GeneralizedEndPointAnalysisOld::analyze(const TLorentzVector & muNeg, const
   double cosThetaCS = angles[0];
   h_cosThetaCS->Fill(cosThetaCS, weight);
 
-  // debug end-point events (pT>100 GeV)
-  if ( pt1_gen>100 || pt2_gen>100 ) {
+  // debug end-point events (pT>50 GeV)
+  if ( pt1_gen>pt_lep || pt2_gen>pt_lep ) {
     h_cosThetaCS_tail->Fill(cosThetaCS, weight);    
     h_mLL_tail->Fill(mLL, weight);
     outfile << setprecision(4) << p1_gen << '\t' << pt1_gen << '\t' << eta1_gen << '\t' << p2_gen << '\t' << pt2_gen << '\t' << eta2_gen << endl;

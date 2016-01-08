@@ -1,24 +1,22 @@
 #include "MuonPair.h"
 #include "GenMuonPair.h"
 
+#include "Helpers.h"
+#include "CollinsSoperAnalysis.h"
+// #include "GeneralizedEndPointAnalysisOld.h"
+#include "GeneralizedEndPointAnalysis.h"
+
 #include "LinkDef.h"
 #include "TFile.h"
 #include "TH1F.h"
 #include "TTree.h"
 #include "TLorentzVector.h"
 
-#include "Helpers.h"
-#include "GeneralizedEndPointAnalysisOld.h"
-#include "CollinsSoperAnalysis.h"
-#include "GeneralizedEndPointAnalysis.h"
-
 #include <iostream>
 #include <cmath>
 #include <vector>
 
 using namespace std;
-
-const double AfbFIXED = 0.05;
 
 int main(int argc, char *argv[]){
 
@@ -40,18 +38,17 @@ int main(int argc, char *argv[]){
   const int nbins_mLL(6);
   double bins_mLL[nbins_mLL+1] = {60.,75.,85.,90.,95.,105.,120.};
   TH1F * h1_AfbVsmLL = new TH1F ("h1_AfbVsmLL", ";m(LL) [GeV]; A_{FB}", nbins_mLL, bins_mLL);
-  
-  // CollinsSoperAnalysis * cpa = new CollinsSoperAnalysis(fout,bins_mLL[0],bins_mLL[nbins_mLL],"_all");
-  // vector<CollinsSoperAnalysis*> v_cpa;
-  // for (int i=0; i<nbins_mLL; i++){
-  //   char append[20];
-  //   sprintf(append,"mLL_bin%i",i);
-  //   v_cpa.push_back(new CollinsSoperAnalysis(fout,bins_mLL[i],bins_mLL[i+1],append));
-  // }
 
-  // Generalized EndPoint (old analysis: here mainly for reference)
-  GeneralizedEndPointAnalysisOld * gepaOld = new GeneralizedEndPointAnalysisOld(fout);
-  GeneralizedEndPointAnalysisOld * gepaOldW = new GeneralizedEndPointAnalysisOld(fout,"ReWgt");
+  // cosThetaCS (for reweighting events)
+  TH1F * h1_cosThetaCS_tail = new TH1F("h1_cosThetaCS_tail", "; cos#theta_{CS};",50,-1.,+1.);
+
+  CollinsSoperAnalysis * cpa = new CollinsSoperAnalysis(fout,bins_mLL[0],bins_mLL[nbins_mLL],"_all");
+  vector<CollinsSoperAnalysis*> v_cpa;
+  for (int i=0; i<nbins_mLL; i++){
+    char append[20];
+    sprintf(append,"mLL_bin%i",i);
+    v_cpa.push_back(new CollinsSoperAnalysis(fout,bins_mLL[i],bins_mLL[i+1],append));
+  }
 
   // GeneralizedEndPoint
   GeneralizedEndPointAnalysis * gepa  = new GeneralizedEndPointAnalysis(fout);
@@ -90,16 +87,18 @@ int main(int argc, char *argv[]){
       muNegGen = new TLorentzVector(mupairGenIN_->mu1.fP4.Px(), mupairGenIN_->mu1.fP4.Py(), mupairGenIN_->mu1.fP4.Pz(), mupairGenIN_->mu1.fP4.E());
       muPosGen = new TLorentzVector(mupairGenIN_->mu2.fP4.Px(), mupairGenIN_->mu2.fP4.Py(), mupairGenIN_->mu2.fP4.Pz(), mupairGenIN_->mu2.fP4.E());
 
-      // cpa->analyze(*muNegGen, *muPosGen);
-      // for (int i=0; i<nbins_mLL; i++){
-      // 	v_cpa[i]->analyze(*muNegGen, *muPosGen);
-      // }
-
-      gepaOld->analyze(*muNegGen, *muPosGen);
+      cpa->analyze(*muNegGen, *muPosGen);
+      for (int i=0; i<nbins_mLL; i++){
+      	v_cpa[i]->analyze(*muNegGen, *muPosGen);
+      }
 
       gepa->analyze(*muNegGen, *muPosGen);
+      
+      double * angles = computeCollinsSoperAngles(*muNegGen, *muPosGen);
+      double cosThetaCS = angles[0];
+      if ( muNegGen->Pt()>pt_lep || muPosGen->Pt()>pt_lep ) 
+	h1_cosThetaCS_tail->Fill(cosThetaCS);    
 
-	    
       if ( muNegGen != 0 ) delete muNegGen; 
       if ( muPosGen != 0 ) delete muPosGen;      
     }
@@ -111,12 +110,11 @@ int main(int argc, char *argv[]){
 
     // FIXME
     // retrieve & normalize TH1F of cosThetaCS
-    TH1F * h_norm = (TH1F*)fout->Get("GeneralizedEndPointAnalysisOld/h_cosThetaCS_tail");
+    TH1F * h_norm = (TH1F*)fout->Get("h1_cosThetaCS_tail");
     double norm = h_norm->GetEntries();
     h_norm->Scale(1/norm);
 
-    cout<<"Loop #2 over tree entries ...";
-    
+    cout<<"Loop #2 over tree entries ...";    
     for(int entry=0; entry<nentries;  entry++){ 
 
       treeIN->GetEntry(entry);
@@ -136,7 +134,6 @@ int main(int argc, char *argv[]){
       double weight = h_norm->GetBinContent(h_norm->FindBin(cosThetaCS));//FIXME check normalization
       weight = (3./8.*(1+cosThetaCS*cosThetaCS) + AfbFIXED*cosThetaCS) / weight;
       if ( weight > 0. ) {
-	gepaOldW->analyze(*muNegGen, *muPosGen, weight);
 	gepaW->analyze(*muNegGen, *muPosGen, weight);
       }	else {
 	cout << "NEGATIVE WEIGHT "<< endl;
@@ -153,12 +150,6 @@ int main(int argc, char *argv[]){
   fin->Close();
   if ( fin!=0 ) delete fin;
 
-  gepaOld->endjob();
-  if ( gepaOld != 0 ) delete gepaOld;
-
-  gepaOldW->endjob();
-  if ( gepaOldW != 0 ) delete gepaOldW;
-
   gepa->endjob();
   if ( gepa != 0 ) delete gepa;
 
@@ -166,21 +157,21 @@ int main(int argc, char *argv[]){
   if ( gepaW != 0 ) delete gepaW;
   
   // cpa->endjob();
-  // cout << cpa->getAfb() << " " << cpa->getAfbError() << endl;
+  // cout << cpa->getAfbRaw() << " " << cpa->getAfbErrorRaw() << endl;
   // cout << "Closing file ..." << endl;
   // if ( cpa != 0 ) delete cpa;
 
-  // // summary histos
-  // fout->cd();
-  // for (int i=0; i<nbins_mLL; i++){
-  //   v_cpa[i]->endjob();
-  //   h1_AfbVsmLL->SetBinContent(i+1,v_cpa[i]->getAfb());
-  //   h1_AfbVsmLL->SetBinError(i+1,v_cpa[i]->getAfbError());
-  //   delete v_cpa[i];
-  // }
-  
+  // summary histos
+  for (int i=0; i<nbins_mLL; i++){
+    v_cpa[i]->endjob();
+    h1_AfbVsmLL->SetBinContent(i+1,v_cpa[i]->getAfbRaw());
+    h1_AfbVsmLL->SetBinError(i+1,v_cpa[i]->getAfbErrorRaw());
+    delete v_cpa[i];
+  }
+
   fout->cd();
   h1_AfbVsmLL->Write();
+  h1_cosThetaCS_tail->Write();
   fout->Close();
   if ( fout !=0 ) delete fout;
   
