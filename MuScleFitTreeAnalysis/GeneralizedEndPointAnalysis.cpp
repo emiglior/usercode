@@ -315,7 +315,8 @@ void GeneralizedEndPointAnalysis::endjob(){
     
    } // end of loop on dK
 
-   
+   the_dir->cd();
+  
    TMultiGraph *mg = new TMultiGraph();
    TGraph *grChi2 = new TGraph(n_Dk,dk,chi2);
    TGraph *grKS = new TGraph(n_Dk,dk,ks);
