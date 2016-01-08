@@ -10,7 +10,7 @@ MODULE_SRC=dict.cpp
 MODULE_SRC+=Helpers.cpp
 MODULE_SRC+=CollinsSoperAnalysis.cpp
 MODULE_SRC+=GeneralizedEndPointAnalysis.cpp
-MODULE_SRC+=DkScanAnalysis.cpp
+MODULE_SRC+=GeneralizedEndPointAnalysisOld.cpp
 
 MODULE_LIB=./libModules.so
 MODULE_OBJ=$(MODULE_SRC:.cpp=.o)
@@ -47,7 +47,7 @@ all: $(EXECUTABLE)
 .PHONY: clean cleanest
 
 clean:
-	rm -f $(EXECUTABLE) $(MODULE_OBJ) dict.*
+	rm -f $(EXECUTABLE) $(MAIN_OBJ) $(MODULE_OBJ) dict.*
 
 
 

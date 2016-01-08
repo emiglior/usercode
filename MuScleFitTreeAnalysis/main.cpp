@@ -8,9 +8,9 @@
 #include "TLorentzVector.h"
 
 #include "Helpers.h"
-#include "GeneralizedEndPointAnalysis.h"
+#include "GeneralizedEndPointAnalysisOld.h"
 #include "CollinsSoperAnalysis.h"
-#include "DkScanAnalysis.h"
+#include "GeneralizedEndPointAnalysis.h"
 
 #include <iostream>
 #include <cmath>
@@ -49,12 +49,13 @@ int main(int argc, char *argv[]){
   //   v_cpa.push_back(new CollinsSoperAnalysis(fout,bins_mLL[i],bins_mLL[i+1],append));
   // }
 
-  // Generalized EndPoint
-  GeneralizedEndPointAnalysis * gepa = new GeneralizedEndPointAnalysis(fout);
-  //  GeneralizedEndPointAnalysis * gepaW = new GeneralizedEndPointAnalysis(fout,"ReWgt");
+  // Generalized EndPoint (old analysis: here mainly for reference)
+  GeneralizedEndPointAnalysisOld * gepaOld = new GeneralizedEndPointAnalysisOld(fout);
+  GeneralizedEndPointAnalysisOld * gepaOldW = new GeneralizedEndPointAnalysisOld(fout,"ReWgt");
 
-  // DkScan
-  DkScanAnalysis * dksa = new DkScanAnalysis(fout);
+  // GeneralizedEndPoint
+  GeneralizedEndPointAnalysis * gepa  = new GeneralizedEndPointAnalysis(fout);
+  GeneralizedEndPointAnalysis * gepaW = new GeneralizedEndPointAnalysis(fout,"ReWgt");
     
   // MuonPairs
   GenMuonPair *mupairGenIN_= 0;
@@ -94,9 +95,9 @@ int main(int argc, char *argv[]){
       // 	v_cpa[i]->analyze(*muNegGen, *muPosGen);
       // }
 
-      gepa->analyze(*muNegGen, *muPosGen);
+      gepaOld->analyze(*muNegGen, *muPosGen);
 
-      dksa->analyze(*muNegGen, *muPosGen);
+      gepa->analyze(*muNegGen, *muPosGen);
 
 	    
       if ( muNegGen != 0 ) delete muNegGen; 
@@ -110,7 +111,7 @@ int main(int argc, char *argv[]){
 
     // FIXME
     // retrieve & normalize TH1F of cosThetaCS
-    TH1F * h_norm = (TH1F*)fout->Get("GeneralizedEndPointAnalysis/h_cosThetaCS_tail");
+    TH1F * h_norm = (TH1F*)fout->Get("GeneralizedEndPointAnalysisOld/h_cosThetaCS_tail");
     double norm = h_norm->GetEntries();
     h_norm->Scale(1/norm);
 
@@ -135,7 +136,8 @@ int main(int argc, char *argv[]){
       double weight = h_norm->GetBinContent(h_norm->FindBin(cosThetaCS));//FIXME check normalization
       weight = (3./8.*(1+cosThetaCS*cosThetaCS) + AfbFIXED*cosThetaCS) / weight;
       if ( weight > 0. ) {
-	//	gepaW->analyze(*muNegGen, *muPosGen, weight);
+	gepaOldW->analyze(*muNegGen, *muPosGen, weight);
+	gepaW->analyze(*muNegGen, *muPosGen, weight);
       }	else {
 	cout << "NEGATIVE WEIGHT "<< endl;
       }
@@ -151,14 +153,17 @@ int main(int argc, char *argv[]){
   fin->Close();
   if ( fin!=0 ) delete fin;
 
+  gepaOld->endjob();
+  if ( gepaOld != 0 ) delete gepaOld;
+
+  gepaOldW->endjob();
+  if ( gepaOldW != 0 ) delete gepaOldW;
+
   gepa->endjob();
   if ( gepa != 0 ) delete gepa;
 
-  // gepaW->endjob();
-  // if ( gepaW != 0 ) delete gepaW;
-
-  dksa->endjob();
-  if ( dksa != 0 ) delete dksa;
+  gepaW->endjob();
+  if ( gepaW != 0 ) delete gepaW;
   
   // cpa->endjob();
   // cout << cpa->getAfb() << " " << cpa->getAfbError() << endl;

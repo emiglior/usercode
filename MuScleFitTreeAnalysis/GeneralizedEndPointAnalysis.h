@@ -1,9 +1,9 @@
-#include "TH1F.h"
-#include "TFile.h"
 #include "TLorentzVector.h"
+#include "TFile.h"
 
-#include <iostream>
-#include <fstream>
+#include "TObjArray.h"
+
+#include <vector>
 
 using namespace std;
 
@@ -12,22 +12,19 @@ public:
   GeneralizedEndPointAnalysis(TFile *, const char * append="");
   ~GeneralizedEndPointAnalysis();
   void analyze(const TLorentzVector & muNeg, const TLorentzVector & muPos, double weight=1.);
-  void endjob() {;} 
+  void endjob(); 
     
 private:
   TDirectory * the_dir;
 
-  TH1F * h_pt_neg; 
-  TH1F * h_pt_pos; 
-  TH1F * h_ptinv_neg; 
-  TH1F * h_ptinv_pos; 
-  TH1F * h_cosThetaCS;
-  TH1F * h_cosThetaCS_tail;
-  TH1F * h_mLL;
-  TH1F * h_mLL_tail;
-  
-  ofstream outfile;
+  TObjArray HList_pos, HList_neg, Canvas;
+  vector <float> delta_k;
+
+  vector <float> dk_68;
+  vector <float> dk_95;
+
+  int n_Dk;
+  double *dk, *chi2, *ks;
+
+  char dirname[200];
 };
-
-
-
