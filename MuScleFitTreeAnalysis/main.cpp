@@ -96,7 +96,7 @@ int main(int argc, char *argv[]){
       
       double * angles = computeCollinsSoperAngles(*muNegGen, *muPosGen);
       double cosThetaCS = angles[0];
-      if ( muNegGen->Pt()>pt_lep || muPosGen->Pt()>pt_lep ) 
+      if ( muNegGen->Pt()>global_parameters::pt_lep || muPosGen->Pt()>global_parameters::pt_lep ) 
 	h1_cosThetaCS_tail->Fill(cosThetaCS);    
 
       if ( muNegGen != 0 ) delete muNegGen; 
@@ -132,7 +132,7 @@ int main(int argc, char *argv[]){
       double * angles = computeCollinsSoperAngles(*muNegGen, *muPosGen);
       double cosThetaCS = angles[0];
       double weight = h_norm->GetBinContent(h_norm->FindBin(cosThetaCS));//FIXME check normalization
-      weight = (3./8.*(1+cosThetaCS*cosThetaCS) + AfbFIXED*cosThetaCS) / weight;
+      weight = (3./8.*(1+cosThetaCS*cosThetaCS) + global_parameters::AfbFIXED*cosThetaCS) / weight;
       if ( weight > 0. ) {
 	gepaW->analyze(*muNegGen, *muPosGen, weight);
       }	else {

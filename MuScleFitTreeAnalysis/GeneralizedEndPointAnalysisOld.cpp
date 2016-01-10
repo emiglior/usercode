@@ -83,8 +83,8 @@ void GeneralizedEndPointAnalysisOld::analyze(const TLorentzVector & muNeg, const
   h_pt_pos->Fill(pt2_gen, weight); 
 
   // Get curvatures in c/TeV
-  double k1_gen = -1/(pt1_gen*GeVToTeV);
-  double k2_gen =  1/(pt2_gen*GeVToTeV);      
+  double k1_gen = -1/(pt1_gen*global_parameters::GeVToTeV);
+  double k2_gen =  1/(pt2_gen*global_parameters::GeVToTeV);      
   
   h_ptinv_neg->Fill(fabs(k1_gen), weight); 
   h_ptinv_pos->Fill(fabs(k2_gen), weight); 
@@ -98,7 +98,7 @@ void GeneralizedEndPointAnalysisOld::analyze(const TLorentzVector & muNeg, const
   h_cosThetaCS->Fill(cosThetaCS, weight);
 
   // debug end-point events (pT>50 GeV)
-  if ( pt1_gen>pt_lep || pt2_gen>pt_lep ) {
+  if ( pt1_gen>global_parameters::pt_lep || pt2_gen>global_parameters::pt_lep ) {
     h_cosThetaCS_tail->Fill(cosThetaCS, weight);    
     h_mLL_tail->Fill(mLL, weight);
     outfile << setprecision(4) << p1_gen << '\t' << pt1_gen << '\t' << eta1_gen << '\t' << p2_gen << '\t' << pt2_gen << '\t' << eta2_gen << endl;

@@ -19,9 +19,9 @@ GeneralizedEndPointAnalysis::GeneralizedEndPointAnalysis(TFile * fout, const cha
 
   // create the dir on local filesystem where output canvas are saved
   if (strcmp(append, "") == 0) {
-    sprintf(dirname,"./mc_pt_%i/",(int)pt_lep);
+    sprintf(dirname,"./mc_pt_%i/",(int)global_parameters::pt_lep);
   } else {
-    sprintf(dirname,"./mc_pt_%i_%s/",(int)pt_lep,append);
+    sprintf(dirname,"./mc_pt_%i_%s/",(int)global_parameters::pt_lep,append);
   }
   mkdir(dirname,0775);
   
@@ -34,11 +34,11 @@ GeneralizedEndPointAnalysis::GeneralizedEndPointAnalysis(TFile * fout, const cha
     the_dir->cd();
 
     // --- defining the nr. of delta_k to inject
-    // float dk_step = 0.000004; // original
+    // float global_parameters::dk_step = 0.000004; // original
     // for(float f =-0.0002; f<0.0002; f+= dk_step ) 
     //   delta_k.push_back(f);
     
-    for(float f =-0.001; f<0.001; f+= dk_step ) 
+    for(float f =-0.001; f<0.001; f+= global_parameters::dk_step ) 
       delta_k.push_back(f);
     
     n_Dk = delta_k.size();
@@ -63,8 +63,8 @@ GeneralizedEndPointAnalysis::GeneralizedEndPointAnalysis(TFile * fout, const cha
       sprintf(title_p,"histo %d curvature",i);
       sprintf(name_n,"h_neg_%d",i);
       sprintf(title_n,"histo %d curvature",i);
-      h_pos = new TH1F(name_p,title_p,binning,0.,up_limit); // was 50
-      h_neg = new TH1F(name_n,title_n,binning,0.,up_limit); // revert later to positive values for comparison
+      h_pos = new TH1F(name_p,title_p,global_parameters::binning,0.,global_parameters::up_limit); // was 50
+      h_neg = new TH1F(name_n,title_n,global_parameters::binning,0.,global_parameters::up_limit); // revert later to positive values for comparison
       h_pos->SetTitle("Leading pos muon curvature q/p_{T};#kappa [c/GeV];Entries");
       h_neg->SetTitle("Leading neg muon curvature q/p_{T};#kappa [c/GeV];Entries");
       HList_pos.Add(h_pos);
@@ -353,7 +353,7 @@ void GeneralizedEndPointAnalysis::endjob(){
    // legend->AddEntry(hcurv, " full #eta ", "L");
    // legend->Draw("SAME");
       
-   TFitResultPtr r = grChi2->Fit("pol2","RSV","",-10*dk_step,+10*dk_step);
+   TFitResultPtr r = grChi2->Fit("pol2","RSV","",-10*global_parameters::dk_step,+10*global_parameters::dk_step);
    TF1 *myFunc = grChi2->GetFunction("pol2");
    myFunc->SetLineWidth(1);
    myFunc->SetLineColor(kRed);
@@ -373,7 +373,7 @@ void GeneralizedEndPointAnalysis::endjob(){
    double min_uncert = TMath::Abs(min - (myFunc->GetX(chi2plusone,-0.001,0.001)));
 
    char result_text[200];      
-   sprintf(result_text,"#Delta#kappa = %.3f +/- %.3f c/TeV",min/GeVToTeV,min_uncert/GeVToTeV);
+   sprintf(result_text,"#Delta#kappa = %.3f +/- %.3f c/TeV",min/global_parameters::GeVToTeV,min_uncert/global_parameters::GeVToTeV);
    TPaveText *ptext = new TPaveText(.4,.72,.65,.78,"brNDC"); 
    ptext->SetFillColor(kWhite);
    //ptext->SetTextSize(0.04);

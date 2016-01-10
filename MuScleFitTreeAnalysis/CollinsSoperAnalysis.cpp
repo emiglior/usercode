@@ -39,7 +39,7 @@ CollinsSoperAnalysis::CollinsSoperAnalysis(TFile * fout, double m1, double m2, c
 
     char rf_title[40];
     sprintf(rf_title,"rrv_c%s",append);
-    rrv_c = new RooRealVar(rf_title,"rrv_c",-cosThetaCS_max,+cosThetaCS_max);
+    rrv_c = new RooRealVar(rf_title,"rrv_c",-global_parameters::cosThetaCS_max,+global_parameters::cosThetaCS_max);
     sprintf(rf_title,"cosThetaCS%s",append);
     rds_cosThetaCS = new RooDataSet(rf_title,"cosThetaCS dataset", RooArgSet(*rrv_c));
   }
@@ -64,13 +64,13 @@ void CollinsSoperAnalysis::analyze(const TLorentzVector & muNeg, const TLorentzV
 
   TLorentzVector Q = muNeg+muPos;
   if ( Q.M()<mLL_low || Q.M()>mLL_high ) return;
-  Q.M() < mass_Z ? nBelowZ++ : nAboveZ++;
+  Q.M() < global_parameters::mass_Z ? nBelowZ++ : nAboveZ++;
  
   double * angles = computeCollinsSoperAngles(muNeg, muPos);
   double cosThetaCS = angles[0];
   double phiCS = angles[1];
   
-  if ( fabs(cosThetaCS)>cosThetaCS_max ) return; 
+  if ( fabs(cosThetaCS)>global_parameters::cosThetaCS_max ) return; 
   h1_cosThetaCS->Fill(cosThetaCS, weight);
   hp_cosThetaCS->Fill(cosThetaCS, Q.M(), weight);
 
