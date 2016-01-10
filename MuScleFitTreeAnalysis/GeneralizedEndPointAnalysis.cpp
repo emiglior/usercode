@@ -38,7 +38,7 @@ GeneralizedEndPointAnalysis::GeneralizedEndPointAnalysis(TFile * fout, const cha
     // for(float f =-0.0002; f<0.0002; f+= dk_step ) 
     //   delta_k.push_back(f);
     
-    for(float f =-0.001; f<0.001; f+= global_parameters::dk_step ) 
+    for(float f =-0.001; f<0.001; f+=global_parameters::dk_step ) 
       delta_k.push_back(f);
     
     n_Dk = delta_k.size();
@@ -103,7 +103,7 @@ GeneralizedEndPointAnalysis::~GeneralizedEndPointAnalysis() {
 void GeneralizedEndPointAnalysis::analyze(const TLorentzVector & muNeg, const TLorentzVector & muPos, double weight){
 
   the_dir->cd();
-  float delta_kappa=0.; //-0.0005;//-0.0005;//0.0005;//0.0010;     // injected bias
+  float delta_kappa=0.0001; //-0.0005;//-0.0005;//0.0005;//0.0010;     // injected bias [c/GeV]
   float k_prime;
   
   //-- Injecting  the Dk  
@@ -111,6 +111,11 @@ void GeneralizedEndPointAnalysis::analyze(const TLorentzVector & muNeg, const TL
     
     TObject* h_pos_temp = HList_pos.At(j);
     TObject* h_neg_temp = HList_neg.At(j);
+
+    // EM 2016.01.10
+    // if the injected bias flips the sign of the curvature then skip this muon pair
+    if  (( (+1./muPos.Pt() + delta_kappa) < 0 ) ||
+         ( (-1./muNeg.Pt() + delta_kappa) > 0 ) ) continue;
     
     // -- positively charged
     k_prime = ( +1./muPos.Pt() + delta_kappa)+delta_k[j];

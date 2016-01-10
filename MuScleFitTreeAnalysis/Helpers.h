@@ -13,18 +13,18 @@ namespace global_parameters{
   const double GeVToTeV = 0.001;
   
   // PDG
-  const double mass_Z(91.188);  
+  const double mass_Z = 91.188;  
   
   // analysis is limited in [-cosThetaCS_max,+cosThetaCS_max] range
   // static const double cosThetaCS_max(0.5);
   const double cosThetaCS_max(1.);
   
   // min pT for GeneralizedEndPoint analysis
-  const double pt_lep = 50.;
+  const double pt_lep = 50.; // [GeV/c]
   const double up_limit = 1./pt_lep;
   
   const int binning = 40;
-  const float dk_step = 0.00005; // dk_step = 0.000004; // original
+  const float dk_step = 0.00005; // [c/GeV]
   
   // target Afb
   const double AfbFIXED = 0.05;
