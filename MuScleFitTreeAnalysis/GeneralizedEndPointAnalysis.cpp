@@ -38,7 +38,7 @@ GeneralizedEndPointAnalysis::GeneralizedEndPointAnalysis(TFile * fout, const cha
     // for(float f =-0.0002; f<0.0002; f+= dk_step ) 
     //   delta_k.push_back(f);
     
-    for(float f =-0.001; f<0.001; f+=global_parameters::dk_step ) 
+    for(float f =-1.; f<1.; f+=global_parameters::dk_step )  // range in [c/TeV]
       delta_k.push_back(f);
     
     n_Dk = delta_k.size();
@@ -65,8 +65,8 @@ GeneralizedEndPointAnalysis::GeneralizedEndPointAnalysis(TFile * fout, const cha
       sprintf(title_n,"histo %d curvature",i);
       h_pos = new TH1F(name_p,title_p,global_parameters::binning,0.,global_parameters::up_limit); // was 50
       h_neg = new TH1F(name_n,title_n,global_parameters::binning,0.,global_parameters::up_limit); // revert later to positive values for comparison
-      h_pos->SetTitle("Leading pos muon curvature q/p_{T};#kappa [c/GeV];Entries");
-      h_neg->SetTitle("Leading neg muon curvature q/p_{T};#kappa [c/GeV];Entries");
+      h_pos->SetTitle("Leading pos muon curvature q/p_{T};#kappa [c/TeV];Entries");
+      h_neg->SetTitle("Leading neg muon curvature q/p_{T};#kappa [c/TeV];Entries");
       HList_pos.Add(h_pos);
       HList_neg.Add(h_neg);
       c_temp = new TCanvas(name_can,title_can,800,800);
@@ -103,7 +103,7 @@ GeneralizedEndPointAnalysis::~GeneralizedEndPointAnalysis() {
 void GeneralizedEndPointAnalysis::analyze(const TLorentzVector & muNeg, const TLorentzVector & muPos, double weight){
 
   the_dir->cd();
-  float delta_kappa=0.0001; //-0.0005;//-0.0005;//0.0005;//0.0010;     // injected bias [c/GeV]
+  float delta_kappa=+0.05;     // injected bias [c/TeV]
   float k_prime;
   
   //-- Injecting  the Dk  
@@ -114,11 +114,17 @@ void GeneralizedEndPointAnalysis::analyze(const TLorentzVector & muNeg, const TL
 
     // EM 2016.01.10
     // if the injected bias flips the sign of the curvature then skip this muon pair
-    if  (( (+1./muPos.Pt() + delta_kappa) < 0 ) ||
-         ( (-1./muNeg.Pt() + delta_kappa) > 0 ) ) continue;
-    
+    if  (( (+1./(muPos.Pt()*global_parameters::GeVToTeV) + delta_kappa) < 0 ) ||
+	 ( (-1./(muNeg.Pt()*global_parameters::GeVToTeV) + delta_kappa) > 0 ) ) continue;
+
+    // EM 2016.01.11 not sure if next "continue" should be active or not. To be investigated...
+    // if  (( (+1./(muPos.Pt()*global_parameters::GeVToTeV) + delta_kappa - delta_k[j]) < 0 ) ||
+    // 	 ( (-1./(muNeg.Pt()*global_parameters::GeVToTeV) + delta_kappa - delta_k[j]) > 0 ) ) continue;
+
+    // EM 2016.01.11
+    // define delta_k[j] as "negative" to compensate the "additive" delta_kappa
     // -- positively charged
-    k_prime = ( +1./muPos.Pt() + delta_kappa)+delta_k[j];
+    k_prime = +1./(muPos.Pt()*global_parameters::GeVToTeV) + delta_kappa - delta_k[j]; 
     if(k_prime>0){
       ((TH1F*)h_pos_temp)->Fill(k_prime,weight);
     }
@@ -127,7 +133,7 @@ void GeneralizedEndPointAnalysis::analyze(const TLorentzVector & muNeg, const TL
     }	
 
     // -- negatively charged
-    k_prime = ( -1./muNeg.Pt() + delta_kappa)+delta_k[j];
+    k_prime = -1./(muNeg.Pt()*global_parameters::GeVToTeV) + delta_kappa - delta_k[j];
     if(k_prime<0){
       ((TH1F*)h_neg_temp)->Fill(k_prime*(-1),weight); //filling with the negative to have the same histogram range for the chi2 comparison
     }
@@ -166,7 +172,7 @@ void GeneralizedEndPointAnalysis::endjob(){
 
     cout << "\n";
     cout << "========================================================="<< endl; 
-    cout<< "Printing few informations for the delta_k= "<< delta_k[i] << " c/GeV "<<endl; 
+    cout<< "Printing few informations for the delta_k= "<< delta_k[i] << " c/TeV "<<endl; 
     cout<< "* Histogram for k>0 -- "<<endl;
     ((TH1F*)h_pos_temp)->Print();
     cout<< "*  Histogram for k<0 -- "<<endl;
@@ -364,21 +370,21 @@ void GeneralizedEndPointAnalysis::endjob(){
    myFunc->SetLineColor(kRed);
    
    grChi2->SetMarkerStyle(kFullDotMedium);
-   grChi2->SetTitle("#chi^{2} minimization vs. #Delta#kappa; #Delta#kappa [c/GeV];#chi^{2}");
+   grChi2->SetTitle("#chi^{2} minimization vs. #Delta#kappa; #Delta#kappa [c/TeV];#chi^{2}");
    grKS->SetMarkerStyle(kFullDotMedium);
-   grKS->SetTitle("Kolmogorov test probability vs. #Delta#kappa; #Delta#kappa [c/GeV]; KS prob.");
+   grKS->SetTitle("Kolmogorov test probability vs. #Delta#kappa; #Delta#kappa [c/TeV]; KS prob.");
    
-   mg->SetTitle("#chi^{2} and Kolmogorov test; #Delta#kappa [c/GeV]; #chi^{2} or KS prob.");
+   mg->SetTitle("#chi^{2} and Kolmogorov test; #Delta#kappa [c/TeV]; #chi^{2} or KS prob.");
    
    
    // --- calculating the minimum and its uncertainty (assuming parabolic beahviour in the minimum)
    
-   double min = myFunc->GetMinimumX(-0.001,0.001);
+   double min = myFunc->GetMinimumX(-1.,+1.);
    double chi2plusone = myFunc->Eval(min)+1;
-   double min_uncert = TMath::Abs(min - (myFunc->GetX(chi2plusone,-0.001,0.001)));
+   double min_uncert = TMath::Abs(min - (myFunc->GetX(chi2plusone,-1.,+1.)));
 
    char result_text[200];      
-   sprintf(result_text,"#Delta#kappa = %.3f +/- %.3f c/TeV",min/global_parameters::GeVToTeV,min_uncert/global_parameters::GeVToTeV);
+   sprintf(result_text,"#Delta#kappa = %.3f +/- %.3f c/TeV",min,min_uncert);
    TPaveText *ptext = new TPaveText(.4,.72,.65,.78,"brNDC"); 
    ptext->SetFillColor(kWhite);
    //ptext->SetTextSize(0.04);

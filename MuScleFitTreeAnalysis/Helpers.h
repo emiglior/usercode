@@ -21,10 +21,10 @@ namespace global_parameters{
   
   // min pT for GeneralizedEndPoint analysis
   const double pt_lep = 50.; // [GeV/c]
-  const double up_limit = 1./pt_lep;
+  const double up_limit = 1./(pt_lep*GeVToTeV); // [c/TeV]
   
   const int binning = 40;
-  const float dk_step = 0.00005; // [c/GeV]
+  const float dk_step = 0.05; // [c/TeV]
   
   // target Afb
   const double AfbFIXED = 0.05;
