@@ -244,7 +244,7 @@ void GeneralizedEndPointAnalysis::endjob(){
     char canvas_name_pdf[200];
 
     TPaveText *entries_text = new TPaveText(.7,.12,.85,.25,"brNDC");
-    sprintf(entries_text_dk,"Injected #Delta#kappa = %.3f c/TeV",delta_k[i]*1000);
+    sprintf(entries_text_dk,"Injected #Delta#kappa = %.3f c/TeV",delta_k[i]);
     sprintf(entries_text_pos,"Entries #kappa_{pos} = %.0f",nsel_pos);
     sprintf(entries_text_neg,"Entries #kappa_{neg} = %.0f",nsel_neg);
     entries_text->SetFillColor(kWhite);
