@@ -251,10 +251,12 @@ GenMuonAnalyzerPromptFS::analyze(const edm::Event& iEvent, const edm::EventSetup
     //    h1_MuMuMass_SD->Fill(lv_MuMu.mass(),genEvt_weight);
     //    h1_MuMuMass_W->Fill(lv_MuMu.mass(),genEvt_weight);
 
-    double pTmin = min(muFromRes.mu1.fP4.pt(), muFromRes.mu2.fP4.pt());
-    double absEtaMax = max(fabs(muFromRes.mu1.fP4.eta()), fabs(muFromRes.mu2.fP4.eta())); 
     // @EM 2015.07.28: Horrible... same cuts as used by SD for the run1 calculation harcoded here....
-    if ( pTmin > 18. && absEtaMax < 2.5 ) {
+    //  double pTmin = min(muFromRes.mu1.fP4.pt(), muFromRes.mu2.fP4.pt());
+    //  double absEtaMax = max(fabs(muFromRes.mu1.fP4.eta()), fabs(muFromRes.mu2.fP4.eta())); 
+    //    if ( pTmin > 18. && absEtaMax < 2.5 ) {
+    // @EM 2015.12.15: Horrible...no cuts!
+    if ( true ) {
       if ( genEvt_weight < 0 ) {
 	h1_MuMuMass_SD->Fill(lv_MuMu.mass(),-1.);
 	h1_MuMuMass_W->Fill(lv_MuMu.mass() ,-1.);
@@ -263,15 +265,14 @@ GenMuonAnalyzerPromptFS::analyze(const edm::Event& iEvent, const edm::EventSetup
 	h1_MuMuMass_W->Fill(lv_MuMu.mass() ,+1.);
       }
     }
+    evtnum_ = iEvent.id().event();
+    run_ = iEvent.id().run();
+    genweight_ = genEvt_weight;
+    lheweight_ = lheEvt_weight;
+    genMuonPair->copy(muFromRes);
+    tree->Fill();    
   }
 
-
-  evtnum_ = iEvent.id().event();
-  run_ = iEvent.id().run();
-  genweight_ = genEvt_weight;
-  lheweight_ = lheEvt_weight;
-  genMuonPair->copy(muFromRes);
-  tree->Fill();
 
     // //%
     // if( genps_it->pdgId() == 13 ) {
