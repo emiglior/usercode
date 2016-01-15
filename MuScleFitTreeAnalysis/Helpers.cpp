@@ -6,8 +6,35 @@
 #include "TVector3.h"
 
 #include <cmath>
+#include <algorithm>
+
+#include <iostream>
 
 using namespace std;
+
+vector<double> computeCurvatureVariableBins(const double pT_ini) {
+  // Parametrization of pT resolution based on MuScleFit studies
+  const double q0=2.5e-4/global_parameters::GeVToTeV; // Hit Resoultion
+  const double qk=1e-2;                               // MS
+
+  vector<double> k_bins;
+  
+  double k = 1./pT_ini;
+  double sigma_k;
+  
+  while (k > 0) {
+    sigma_k = q0 + qk*k;
+    k_bins.push_back(k);
+    k -= 3*sigma_k;
+  }
+  k_bins.push_back(0);
+
+  // since its curvature, revert the order
+  reverse(k_bins.begin(),k_bins.end());
+
+  return k_bins;
+}
+
 
 double * computeCollinsSoperAngles(const TLorentzVector & muNeg, const TLorentzVector & muPos){
 // John C. Collins and Davison E. Soper

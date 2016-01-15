@@ -1,21 +1,25 @@
 #include "GeneralizedEndPointAnalysis.h"
 #include "Helpers.h"
 
+#include "TF1.h"
 #include "TH1F.h"
 #include "TCanvas.h"
 #include "TPaveText.h"
 #include "Rtypes.h"
 #include "TGraph.h"
-#include "TMultiGraph.h"
 //#include "TLegend.h"
 #include "TFitResultPtr.h"
 
+#include "TGaxis.h"
+#include "TFrame.h"
+
 #include <sys/stat.h>
+#include <iostream>
 
 using namespace std;
 
 GeneralizedEndPointAnalysis::GeneralizedEndPointAnalysis(TFile * fout, const char * append) :
-  HList_pos(0), HList_neg(0), Canvas(0), dk(0), chi2(0), ks(0) {
+  HList_pos(0), HList_neg(0), HListKS_pos(0), HListKS_neg(0), Canvas(0), dk(0), chi2(0), ks(0) {
 
   // create the dir on local filesystem where output canvas are saved
   if (strcmp(append, "") == 0) {
@@ -38,7 +42,7 @@ GeneralizedEndPointAnalysis::GeneralizedEndPointAnalysis(TFile * fout, const cha
     // for(float f =-0.0002; f<0.0002; f+= dk_step ) 
     //   delta_k.push_back(f);
     
-    for(float f =-1.; f<1.; f+=global_parameters::dk_step )  // range in [c/TeV]
+    for(float f =-0.5; f<0.5; f+=global_parameters::dk_step )  // range in [c/TeV]
       delta_k.push_back(f);
     
     n_Dk = delta_k.size();
@@ -49,9 +53,15 @@ GeneralizedEndPointAnalysis::GeneralizedEndPointAnalysis(TFile * fout, const cha
     // --- creating the array of histograms
     char name_p[10], title_p[30], name_n[10], title_n[30],  name_can[100], title_can[100];
     // create the pointers to the histograms
-    TH1F * h_pos;
-    TH1F * h_neg; 
+    TH1F *h_pos, *h_KSpos;
+    TH1F *h_neg, *h_KSneg; 
     TCanvas * c_temp;
+
+    vector<double> vK_bins = computeCurvatureVariableBins(global_parameters::pt_lep*global_parameters::GeVToTeV);
+    int binning = (int)vK_bins.size()-1;
+    double k_bins[binning+1];
+    copy(vK_bins.begin(), vK_bins.end(), k_bins);
+    
     for (int i = 0; i < n_Dk; i++) {
       if (strcmp(append, "") == 0) {
 	sprintf(name_can,"canvas_Dkappa%d", i);
@@ -63,14 +73,38 @@ GeneralizedEndPointAnalysis::GeneralizedEndPointAnalysis(TFile * fout, const cha
       sprintf(title_p,"histo %d curvature",i);
       sprintf(name_n,"h_neg_%d",i);
       sprintf(title_n,"histo %d curvature",i);
-      h_pos = new TH1F(name_p,title_p,global_parameters::binning,0.,global_parameters::up_limit); // was 50
-      h_neg = new TH1F(name_n,title_n,global_parameters::binning,0.,global_parameters::up_limit); // revert later to positive values for comparison
+
+      //      h_pos = new TH1F(name_p,title_p,global_parameters::binning,0.,global_parameters::up_limit); // was 50
+      //      h_neg = new TH1F(name_n,title_n,global_parameters::binning,0.,global_parameters::up_limit); // revert later to positive values for comparison
+      
+      h_pos = new TH1F(name_p,title_p,binning,k_bins); 
+      h_neg = new TH1F(name_n,title_n,binning,k_bins); 
       h_pos->SetTitle("Leading pos muon curvature q/p_{T};#kappa [c/TeV];Entries");
       h_neg->SetTitle("Leading neg muon curvature q/p_{T};#kappa [c/TeV];Entries");
+
+      h_pos->Sumw2();
+      h_neg->Sumw2();
+
       HList_pos.Add(h_pos);
       HList_neg.Add(h_neg);
+
+      // book TH1 with finer binning histos for K-S test
+      sprintf(name_p,"h_KSpos_%d",i);
+      sprintf(title_p,"histo %d curvature (for KS test)",i);
+      sprintf(name_n,"h_KSneg_%d",i);
+      sprintf(title_n,"histo %d curvature (for KS test)",i);
+
+      h_KSpos = new TH1F(name_p,title_p,global_parameters::binningKS,0.,global_parameters::up_limit); // was 50
+      h_KSneg = new TH1F(name_n,title_n,global_parameters::binningKS,0.,global_parameters::up_limit); // revert later to positive values for comparison      
+      // h_KSpos->Sumw2();
+      // h_KSneg->Sumw2();
+
+      HListKS_pos.Add(h_KSpos);
+      HListKS_neg.Add(h_KSneg);
+
       c_temp = new TCanvas(name_can,title_can,800,800);
       Canvas.Add(c_temp);
+
     }
  
   }
@@ -85,7 +119,12 @@ GeneralizedEndPointAnalysis::~GeneralizedEndPointAnalysis() {
     TObject* h_neg_temp = HList_neg.At(j);    
     h_pos_temp->Write(); 
     h_neg_temp->Write(); 
-  }
+
+    TObject* h_KSpos_temp = HListKS_pos.At(j);
+    TObject* h_KSneg_temp = HListKS_neg.At(j);    
+    h_KSpos_temp->Write(); 
+    h_KSneg_temp->Write(); 
+}
 
   if (HList_pos.GetSize()!=0 && HList_neg.GetSize()!=0) {
     //cout<< "Yes, the size is different from zero"<< endl;
@@ -93,6 +132,14 @@ GeneralizedEndPointAnalysis::~GeneralizedEndPointAnalysis() {
     HList_neg.SetOwner(kTRUE);
     HList_pos.Clear();
     HList_neg.Clear();
+  }
+  
+  if (HListKS_pos.GetSize()!=0 && HListKS_neg.GetSize()!=0) {
+    //cout<< "Yes, the size is different from zero"<< endl;
+    HListKS_pos.SetOwner(kTRUE);
+    HListKS_neg.SetOwner(kTRUE);
+    HListKS_pos.Clear();
+    HListKS_neg.Clear();
   }
   
   if ( dk != 0 ) delete[] dk;
@@ -103,7 +150,7 @@ GeneralizedEndPointAnalysis::~GeneralizedEndPointAnalysis() {
 void GeneralizedEndPointAnalysis::analyze(const TLorentzVector & muNeg, const TLorentzVector & muPos, double weight){
 
   the_dir->cd();
-  float delta_kappa=+0.05;     // injected bias [c/TeV]
+  float delta_kappa=0.00;     // injected bias [c/TeV]
   float k_prime;
   
   //-- Injecting  the Dk  
@@ -112,14 +159,17 @@ void GeneralizedEndPointAnalysis::analyze(const TLorentzVector & muNeg, const TL
     TObject* h_pos_temp = HList_pos.At(j);
     TObject* h_neg_temp = HList_neg.At(j);
 
+    TObject* h_KSpos_temp = HListKS_pos.At(j);
+    TObject* h_KSneg_temp = HListKS_neg.At(j);
+
     // EM 2016.01.10
     // if the injected bias flips the sign of the curvature then skip this muon pair
     if  (( (+1./(muPos.Pt()*global_parameters::GeVToTeV) + delta_kappa) < 0 ) ||
 	 ( (-1./(muNeg.Pt()*global_parameters::GeVToTeV) + delta_kappa) > 0 ) ) continue;
 
     // EM 2016.01.11 not sure if next "continue" should be active or not. To be investigated...
-    // if  (( (+1./(muPos.Pt()*global_parameters::GeVToTeV) + delta_kappa - delta_k[j]) < 0 ) ||
-    // 	 ( (-1./(muNeg.Pt()*global_parameters::GeVToTeV) + delta_kappa - delta_k[j]) > 0 ) ) continue;
+    if  (( (+1./(muPos.Pt()*global_parameters::GeVToTeV) + delta_kappa - delta_k[j]) < 0 ) ||
+    	 ( (-1./(muNeg.Pt()*global_parameters::GeVToTeV) + delta_kappa - delta_k[j]) > 0 ) ) continue;
 
     // EM 2016.01.11
     // define delta_k[j] as "negative" to compensate the "additive" delta_kappa
@@ -127,18 +177,22 @@ void GeneralizedEndPointAnalysis::analyze(const TLorentzVector & muNeg, const TL
     k_prime = +1./(muPos.Pt()*global_parameters::GeVToTeV) + delta_kappa - delta_k[j]; 
     if(k_prime>0){
       ((TH1F*)h_pos_temp)->Fill(k_prime,weight);
+      ((TH1F*)h_KSpos_temp)->Fill(k_prime,weight);
     }
     else{
       ((TH1F*)h_neg_temp)->Fill(k_prime*(-1),weight); //filling with the negative to have the same histogram range for the chi2 comparison
+      ((TH1F*)h_KSneg_temp)->Fill(k_prime*(-1),weight); //filling with the negative to have the same histogram range for the chi2 comparison
     }	
 
     // -- negatively charged
     k_prime = -1./(muNeg.Pt()*global_parameters::GeVToTeV) + delta_kappa - delta_k[j];
     if(k_prime<0){
       ((TH1F*)h_neg_temp)->Fill(k_prime*(-1),weight); //filling with the negative to have the same histogram range for the chi2 comparison
+      ((TH1F*)h_KSneg_temp)->Fill(k_prime*(-1),weight); //filling with the negative to have the same histogram range for the chi2 comparison
     }
     else{
       ((TH1F*)h_pos_temp)->Fill(k_prime,weight);
+      ((TH1F*)h_KSpos_temp)->Fill(k_prime,weight);
     }
   }
 
@@ -156,6 +210,10 @@ void GeneralizedEndPointAnalysis::endjob(){
    for(int i=0;i<n_Dk ;i++){
      TObject* h_pos_temp = HList_pos.At(i);
      TObject* h_neg_temp = HList_neg.At(i);
+
+     TObject* h_KSpos_temp = HListKS_pos.At(i);
+     TObject* h_KSneg_temp = HListKS_neg.At(i);
+
      // cout << "POS --> "<< ((TH1F*)h_pos_temp)->GetXaxis()->GetXmin()<< "/" <<((TH1F*)h_pos_temp)->GetXaxis()->GetXmax() << endl;
      // cout << "NEG --> "<< ((TH1F*)h_neg_temp)->GetXaxis()->GetXmin()<< "/" <<((TH1F*)h_neg_temp)->GetXaxis()->GetXmax() << endl;
     
@@ -163,9 +221,7 @@ void GeneralizedEndPointAnalysis::endjob(){
      nsel_neg = ((TH1F*)h_neg_temp)->Integral();
     
     // --- normalization 
-    ((TH1F*)h_pos_temp)->Sumw2();
-    ((TH1F*)h_neg_temp)->Sumw2();
-    ((TH1F*)h_pos_temp)->Scale(((TH1F*)h_neg_temp)->Integral()/((TH1F*)h_pos_temp)->Integral());
+    //    ((TH1F*)h_pos_temp)->Scale(((TH1F*)h_neg_temp)->Integral()/((TH1F*)h_pos_temp)->Integral());
 
     nsel2_pos = ((TH1F*)h_pos_temp)->Integral();
     nsel2_neg = ((TH1F*)h_neg_temp)->Integral();
@@ -188,9 +244,19 @@ void GeneralizedEndPointAnalysis::endjob(){
     // EM 2016.01.07 Chi2Test changed from "WW" to "UU" to avoid a warning from ROOT
     // chi2[i]= ((TH1F*)h_pos_temp)->Chi2Test(((TH1F*)h_neg_temp),"WW,NORM,CHI2,P"); //CHI2
     // Info in <TH1F::Chi2TestX>: NORM option should be used together with UU option. It is ignored
-    chi2[i]= ((TH1F*)h_pos_temp)->Chi2Test(((TH1F*)h_neg_temp),"UU,NORM,CHI2,P"); //CHI2 
+    //    chi2[i]= ((TH1F*)h_pos_temp)->Chi2Test(((TH1F*)h_neg_temp),"UU,NORM,CHI2,P"); //CHI2
 
-    ks[i] = ((TH1F*)h_pos_temp)->KolmogorovTest(((TH1F*)h_neg_temp),"WW"); 
+    chi2[i]= ((TH1F*)h_pos_temp)->Chi2Test(((TH1F*)h_neg_temp),"WW,CHI2,P"); //CHI2 
+
+    // sanity check: when using weighted events check that there is no bin with a negative number of entries    
+    for (int i=0; i<global_parameters::binningKS; i++) {
+      if ( ((TH1F*)h_KSpos_temp)->GetBinContent(i+1) < 0  ||
+	   ((TH1F*)h_KSneg_temp)->GetBinContent(i+1) < 0  ) {
+	cout << "WARNING in KS test: at least one bin with negative content for dk=" << dk[i] << endl;
+      }
+    }
+
+    ks[i] = ((TH1F*)h_KSpos_temp)->KolmogorovTest(((TH1F*)h_KSneg_temp),"D"); 
     
     // --- evaluating the p-value for the 68% CL (--> p-value > 0.32)
     double chisq;
@@ -200,13 +266,15 @@ void GeneralizedEndPointAnalysis::endjob(){
     // EM 2016.01.07 Chi2TestX changed from "WW" to "UU" to avoid a warning from ROOT
     // p_value = ((TH1F*)h_pos_temp)->Chi2TestX(((TH1F*)h_neg_temp),chisq,ndf,igood,"WW,NORM,P");
 
-    p_value = ((TH1F*)h_pos_temp)->Chi2TestX(((TH1F*)h_neg_temp),chisq,ndf,igood,"UU,NORM,P");   
-    if(p_value>=0.32){
-      dk_68.push_back(delta_k[i]);
-    }    
-    if(p_value>=0.05){ // this is for 2-sigma!
-      dk_95.push_back(delta_k[i]);
-    }
+    // EM 2016.01.11 ->
+    // p_value = ((TH1F*)h_pos_temp)->Chi2TestX(((TH1F*)h_neg_temp),chisq,ndf,igood,"UU,NORM,P");   
+    // if(p_value>=0.32){
+    //   dk_68.push_back(delta_k[i]);
+    // }    
+    // if(p_value>=0.05){ // this is for 2-sigma!
+    //   dk_95.push_back(delta_k[i]);
+    // }
+    // <- EM 2016.01.11 
 
     // --- Draw them on canvas 
 
@@ -226,6 +294,7 @@ void GeneralizedEndPointAnalysis::endjob(){
     // ((TH1F*)h_pos_temp)->Sumw2(); // EM 2016.01.08 SumW2 already set
     // ((TH1F*)h_neg_temp)->Sumw2(); // EM 2016.01.08 SumW2 already set
     ((TH1F*)h_pos_temp)->SetStats(0);
+    ((TH1F*)h_neg_temp)->SetStats(0);
     
     ((TH1F*)h_pos_temp)->SetTitle(""); 
     ((TH1F*)h_neg_temp)->SetTitle(""); 
@@ -328,12 +397,12 @@ void GeneralizedEndPointAnalysis::endjob(){
 
    the_dir->cd();
   
-   TMultiGraph *mg = new TMultiGraph();
    TGraph *grChi2 = new TGraph(n_Dk,dk,chi2);
+   grChi2->SetMarkerColor(kBlue);
+   
    TGraph *grKS = new TGraph(n_Dk,dk,ks);
-   grKS->SetMarkerColor(kRed);  
-   mg->Add(grChi2);
-   mg->Add(grKS);
+   grKS->SetMarkerColor(kRed);
+   grKS->SetLineColor(kRed);  
 
    // EM 2016.01.08 next Write() statements likely not needed
    // mg->Write();
@@ -341,10 +410,8 @@ void GeneralizedEndPointAnalysis::endjob(){
    // grKS->Write();
    
    // --- opening canvas
+
    //   TCanvas *c1 = new TCanvas("c1","curvature",800,800);
-   TCanvas *c2 = new TCanvas("c2","Chi2",800,800);
-   TCanvas *c3 = new TCanvas("c3","Kolmogorov",800,800);
-   TCanvas *c4 = new TCanvas("c4","KolmogorovAndChi2",800,800);
 
    //   TLegend * legend = new TLegend(.4,.6 + 0.07,.6,.6 + 0.18 + 0.09);
 
@@ -364,65 +431,128 @@ void GeneralizedEndPointAnalysis::endjob(){
    // legend->AddEntry(hcurv, " full #eta ", "L");
    // legend->Draw("SAME");
       
-   TFitResultPtr r = grChi2->Fit("pol2","RSV","",-10*global_parameters::dk_step,+10*global_parameters::dk_step);
+   TFitResultPtr r = grChi2->Fit("pol2","RSV","",-30*global_parameters::dk_step,+30*global_parameters::dk_step);
    TF1 *myFunc = grChi2->GetFunction("pol2");
    myFunc->SetLineWidth(1);
-   myFunc->SetLineColor(kRed);
+   myFunc->SetLineColor(kBlue);
    
    grChi2->SetMarkerStyle(kFullDotMedium);
    grChi2->SetTitle("#chi^{2} minimization vs. #Delta#kappa; #Delta#kappa [c/TeV];#chi^{2}");
    grKS->SetMarkerStyle(kFullDotMedium);
    grKS->SetTitle("Kolmogorov test probability vs. #Delta#kappa; #Delta#kappa [c/TeV]; KS prob.");
+
+   // --- CHI2 TEST
    
-   mg->SetTitle("#chi^{2} and Kolmogorov test; #Delta#kappa [c/TeV]; #chi^{2} or KS prob.");
-   
-   
-   // --- calculating the minimum and its uncertainty (assuming parabolic beahviour in the minimum)
-   
-   double min = myFunc->GetMinimumX(-1.,+1.);
-   double chi2plusone = myFunc->Eval(min)+1;
-   double min_uncert = TMath::Abs(min - (myFunc->GetX(chi2plusone,-1.,+1.)));
+   // --- calculating the minimum chi2 and its uncertainty (assuming parabolic beahviour in the minimum)   
+   double dk_minChi2 = myFunc->GetMinimumX(-0.5,+0.5); // careful [-0.5,+0.5] hardcoded !!!
+   double chi2plusone = myFunc->Eval(dk_minChi2)+1;
+   double dk_minChi2_uncert = TMath::Abs(dk_minChi2 - (myFunc->GetX(chi2plusone,-0.5,+0.5)));
 
    char result_text[200];      
-   sprintf(result_text,"#Delta#kappa = %.3f +/- %.3f c/TeV",min,min_uncert);
-   TPaveText *ptext = new TPaveText(.4,.72,.65,.78,"brNDC"); 
-   ptext->SetFillColor(kWhite);
+   sprintf(result_text,"#Delta#kappa = %.3f +/- %.3f c/TeV",dk_minChi2,dk_minChi2_uncert);
+   TPaveText *ptext_chi2 = new TPaveText(.4,.72,.65,.78,"brNDC"); 
+   ptext_chi2->SetFillColor(kWhite);
    //ptext->SetTextSize(0.04);
    
+   // chi2 graph
+   TCanvas *c2 = new TCanvas("c2","Chi2",800,800);
    c2->cd();  
-   grChi2->Draw("ACP");
-   ptext->AddText(result_text);
-   ptext->Draw();
+   grChi2->Draw("AP");
+   ptext_chi2->AddText(result_text);
+   ptext_chi2->Draw();
    c2->Update();
    
+   c2->SaveAs(Form("%schi2.png",dirname));
+   c2->SaveAs(Form("%schi2.pdf",dirname));
+   c2->Write();
+
+   // --- K-S TEST
+
+   // --- calculating the max K-S 
+   double maxKS = 0;
+   double dk_maxKS;
+   for(int i=0;i<n_Dk;i++) {
+     if(ks[i]>maxKS) {
+       maxKS=ks[i];
+       dk_maxKS=dk[i];
+     }
+   }
+   
+   sprintf(result_text,"#Delta#kappa = %.3f c/TeV",dk_maxKS);
+   TPaveText *ptext_KS = new TPaveText(.1,.72,.35,.78,"brNDC"); 
+   ptext_KS->SetFillColor(kWhite);
+
+   // KS graph
+   TCanvas *c3 = new TCanvas("c3","Kolmogorov",800,800);
    c3->cd();  
    grKS->Draw("ACP");
+   ptext_KS->AddText(result_text);
+   ptext_KS->Draw();
    c3->Update();
    
-   c4->cd();
-   mg->Draw("ACP");
-   c4->Update();
+   c3->SaveAs(Form("%sKS.png",dirname));
+   c3->SaveAs(Form("%sKS.pdf",dirname));
+   c3->Write();
+   
+   TCanvas *c4 = new TCanvas("c4","KolmogorovAndChi2",0,0,800,800);
+   TPad *pad = new TPad("pad","",0,0,1,1);
+   pad->Draw();
+   pad->cd();
+
+   // draw a frame to define the range
+   TH1F *hr = c4->DrawFrame(-0.5,0,+0.5,chi2[0]);
+   hr->SetXTitle("#Delta #kappa");
+   hr->SetYTitle("#chi^{2}");
+   pad->GetFrame()->SetBorderSize(12);
+   
+   grChi2->Draw("P");
+      
+   //create a transparent pad drawn on top of the main pad
+   c4->cd();   
+   TPad *overlay = new TPad("overlay","",0,0,1,1);
+   overlay->SetFillStyle(4000);
+   overlay->SetFillColor(kWhite);
+   overlay->SetFrameFillStyle(4000);
+   overlay->Draw();
+   overlay->cd();
+      
+   Double_t xmin = pad->GetUxmin();
+   Double_t ymin = 0;
+   Double_t xmax = pad->GetUxmax();
+   Double_t ymax = maxKS;
+
+   TH1F *hframe = overlay->DrawFrame(xmin,ymin,xmax,ymax);
+   hframe->GetXaxis()->SetLabelOffset(99);
+   hframe->GetYaxis()->SetLabelOffset(99);
+   grKS->Draw("P");
+      
+   //Draw an axis on the right side
+   TGaxis *axis = new TGaxis(xmax,ymin,xmax, ymax,ymin,ymax,510,"+L");
+   axis->SetLineColor(kRed);
+   axis->SetLabelColor(kRed);
+   axis->Draw();
+
+   c4->SaveAs(Form("%schi2_KS.png",dirname));
+   c4->SaveAs(Form("%schi2_KS.pdf",dirname));  
+   c4->Write();   
+
+   // c4->SetFillStyle(4000);
+   // c4->SetFillColor(0);
+   // c4->SetFrameFillStyle(4000);
+   // c4->Draw();
+   // c4->cd();
+   // c4->Update();
    
 
-  // === Closing the output file
+
 
   // c1->SaveAs(Form("%scurvature.png",dirname));
   // c1->SaveAs(Form("%scurvature.pdf",dirname));
 
-  c2->SaveAs(Form("%schi2.png",dirname));
-  c2->SaveAs(Form("%schi2.pdf",dirname));
+ //  c4->Write();
 
-  c3->SaveAs(Form("%sKS.png",dirname));
-  c3->SaveAs(Form("%sKS.pdf",dirname));
-
-  c4->SaveAs(Form("%schi2_KS.png",dirname));
-  c4->SaveAs(Form("%schi2_KS.pdf",dirname));
-  
-  //  c1->Write(); 
-  c2->Write(); 
-  c3->Write();
-  c4->Write();
-
+  cout << "DBG 6" << endl;
+   
   return;
  }
 

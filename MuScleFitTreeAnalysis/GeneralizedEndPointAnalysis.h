@@ -17,14 +17,16 @@ public:
 private:
   TDirectory * the_dir;
 
-  TObjArray HList_pos, HList_neg, Canvas;
+  TObjArray HList_pos, HList_neg;
+  TObjArray HListKS_pos, HListKS_neg;
+  TObjArray Canvas;
   vector <float> delta_k;
 
-  vector <float> dk_68;
-  vector <float> dk_95;
+  /* vector <float> dk_68; */
+  /* vector <float> dk_95; */
 
   int n_Dk;
   double *dk, *chi2, *ks;
-
+  
   char dirname[200];
 };

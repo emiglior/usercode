@@ -4,8 +4,12 @@
 #include "TLorentzVector.h"
 #include "TH1F.h"
 
+#include<vector>
+
 double * computeCollinsSoperAngles(const TLorentzVector & muNeg, const TLorentzVector & muPos); 
 
+std::vector<double> computeCurvatureVariableBins(const double pT_ini);
+  
 // collection of user defined parameters of the analysis
 
 namespace global_parameters{
@@ -20,11 +24,11 @@ namespace global_parameters{
   const double cosThetaCS_max(1.);
   
   // min pT for GeneralizedEndPoint analysis
-  const double pt_lep = 50.; // [GeV/c]
+  const double pt_lep = 100.; // [GeV/c]
   const double up_limit = 1./(pt_lep*GeVToTeV); // [c/TeV]
   
-  const int binning = 40;
-  const float dk_step = 0.05; // [c/TeV]
+  const int binningKS = 200;
+  const float dk_step = 0.01; // [c/TeV]
   
   // target Afb
   const double AfbFIXED = 0.05;
