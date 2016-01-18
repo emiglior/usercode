@@ -19,7 +19,7 @@
 using namespace std;
 
 GeneralizedEndPointAnalysis::GeneralizedEndPointAnalysis(TFile * fout, const char * append) :
-  HList_pos(0), HList_neg(0), HListKS_pos(0), HListKS_neg(0), Canvas(0), dk(0), chi2(0), ks(0) {
+  the_dir(0), delta_kappa(0), HList_pos(0), HList_neg(0), HListKS_pos(0), HListKS_neg(0), Canvas(0), dk(0), chi2(0), ks(0) {
 
   // create the dir on local filesystem where output canvas are saved
   if (strcmp(append, "") == 0) {
@@ -42,7 +42,7 @@ GeneralizedEndPointAnalysis::GeneralizedEndPointAnalysis(TFile * fout, const cha
     // for(float f =-0.0002; f<0.0002; f+= dk_step ) 
     //   delta_k.push_back(f);
     
-    for(float f =-0.5; f<0.5; f+=global_parameters::dk_step )  // range in [c/TeV]
+    for(double f =-0.5; f<0.5; f+=global_parameters::dk_step )  // range in [c/TeV]
       delta_k.push_back(f);
     
     n_Dk = delta_k.size();
@@ -150,8 +150,7 @@ GeneralizedEndPointAnalysis::~GeneralizedEndPointAnalysis() {
 void GeneralizedEndPointAnalysis::analyze(const TLorentzVector & muNeg, const TLorentzVector & muPos, double weight){
 
   the_dir->cd();
-  float delta_kappa=0.00;     // injected bias [c/TeV]
-  float k_prime;
+  double k_prime;
   
   //-- Injecting  the Dk  
   for(int j=0;j<n_Dk;j++){
@@ -479,7 +478,7 @@ void GeneralizedEndPointAnalysis::endjob(){
    }
    
    sprintf(result_text,"#Delta#kappa = %.3f c/TeV",dk_maxKS);
-   TPaveText *ptext_KS = new TPaveText(.1,.72,.35,.78,"brNDC"); 
+   TPaveText *ptext_KS = new TPaveText(.15,.72,.40,.78,"brNDC"); 
    ptext_KS->SetFillColor(kWhite);
 
    // KS graph
@@ -524,13 +523,24 @@ void GeneralizedEndPointAnalysis::endjob(){
    TH1F *hframe = overlay->DrawFrame(xmin,ymin,xmax,ymax);
    hframe->GetXaxis()->SetLabelOffset(99);
    hframe->GetYaxis()->SetLabelOffset(99);
-   grKS->Draw("P");
+   hframe->GetYaxis()->SetTickLength(0);
+   grKS->Draw("PC");
       
    //Draw an axis on the right side
    TGaxis *axis = new TGaxis(xmax,ymin,xmax, ymax,ymin,ymax,510,"+L");
    axis->SetLineColor(kRed);
    axis->SetLabelColor(kRed);
    axis->Draw();
+
+   TPaveText *ptext = new TPaveText(.10,.10,.30,.20,"brNDC");
+   ptext->SetFillColor(kWhite);
+   sprintf(result_text,"IN: #Delta#kappa = %.3f c/TeV",delta_kappa);
+   ptext->AddText(result_text);
+   sprintf(result_text,"OUT (#chi^{2}): #Delta#kappa = %.3f +/- %.3f c/TeV",dk_minChi2,dk_minChi2_uncert);
+   ptext->AddText(result_text);
+   sprintf(result_text,"OUT (K-S): #Delta#kappa = %.3f c/TeV",dk_maxKS);
+   ptext->AddText(result_text);
+   ptext->Draw();
 
    c4->SaveAs(Form("%schi2_KS.png",dirname));
    c4->SaveAs(Form("%schi2_KS.pdf",dirname));  
@@ -542,16 +552,10 @@ void GeneralizedEndPointAnalysis::endjob(){
    // c4->Draw();
    // c4->cd();
    // c4->Update();
-   
-
-
-
+  
   // c1->SaveAs(Form("%scurvature.png",dirname));
   // c1->SaveAs(Form("%scurvature.pdf",dirname));
 
- //  c4->Write();
-
-  cout << "DBG 6" << endl;
    
   return;
  }

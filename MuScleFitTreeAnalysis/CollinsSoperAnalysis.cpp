@@ -21,7 +21,7 @@ CollinsSoperAnalysis::CollinsSoperAnalysis(TFile * fout, double m1, double m2, c
   if ( fout != 0 ) {
     fout->cd();
     
-    char dir_title[40];
+    char dir_title[50];
     sprintf(dir_title,"CollinsSoperAnalysis%s",append);
     the_dir = fout->mkdir(dir_title);
     the_dir->cd();

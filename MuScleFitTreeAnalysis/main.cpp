@@ -22,7 +22,7 @@ int main(int argc, char *argv[]){
 
   // Parse arguments
   TString inputTree = argv[1];
-
+  
   // input tree containing Generated events and Reco events  
   cout<<"Opening the file ..."<<endl;
   
@@ -41,12 +41,14 @@ int main(int argc, char *argv[]){
   // Afb
   const int nbins_mLL(11);
   double bins_mLL[nbins_mLL+1] = {60.,75.,85.,90.,95.,105.,120.,200.,300.,400.,600.,800.};
-  TH1F * h1_AfbVsmLL = new TH1F ("h1_AfbVsmLL", ";m(LL) [GeV]; A_{FB}", nbins_mLL, bins_mLL);
+  TH1F * h1_AfbVsmLL            = new TH1F ("h1_AfbVsmLL",            ";m(LL) [GeV]; A_{FB}", nbins_mLL, bins_mLL);
+  TH1F * h1_AfbVsmLL_cumulative = new TH1F ("h1_AfbVsmLL_cumulative", ";m(LL) [GeV]; A_{FB}", nbins_mLL, bins_mLL);
 
   // cosThetaCS (for reweighting events)
   TH1F * h1_cosThetaCS_tail = new TH1F("h1_cosThetaCS_tail", "; cos#theta_{CS};",50,-1.,+1.);
-
+    
   CollinsSoperAnalysis * cpa = new CollinsSoperAnalysis(fout,bins_mLL[0],bins_mLL[nbins_mLL],"_all");
+  // Afb differential in mLL
   vector<CollinsSoperAnalysis*> v_cpa;
   for (int i=0; i<nbins_mLL; i++){
     char append[20];
@@ -54,10 +56,21 @@ int main(int argc, char *argv[]){
     v_cpa.push_back(new CollinsSoperAnalysis(fout,bins_mLL[i],bins_mLL[i+1],append));
   }
 
+  // Afb cumulative in mLL
+  vector<CollinsSoperAnalysis*> v_cpa_cumulative;
+  for (int i=0; i<nbins_mLL; i++){
+    char append[20];
+    sprintf(append,"cumulative_mLL_bin%i",i);
+    v_cpa_cumulative.push_back(new CollinsSoperAnalysis(fout,bins_mLL[i],bins_mLL[nbins_mLL],append));
+  }
+
   // GeneralizedEndPoint
-  GeneralizedEndPointAnalysis * gepa  = new GeneralizedEndPointAnalysis(fout);
+  GeneralizedEndPointAnalysis * gepa  = new GeneralizedEndPointAnalysis(fout);      
   //  GeneralizedEndPointAnalysis * gepaW = new GeneralizedEndPointAnalysis(fout,"ReWgt");
-    
+  if ( argc > 2 ) {
+    gepa->set_delta_kappa(atof(argv[2]));
+    //    gepaW->set_delta_kappa(atof(argv[2]));
+  }
   // MuonPairs
   GenMuonPair *mupairGenIN_ = 0;
   double genweight_ = 0;
@@ -107,6 +120,7 @@ int main(int argc, char *argv[]){
       cpa->analyze(*muNegGen, *muPosGen, evtweight);
       for (int i=0; i<nbins_mLL; i++){
       	v_cpa[i]->analyze(*muNegGen, *muPosGen, evtweight);
+	v_cpa_cumulative[i]->analyze(*muNegGen, *muPosGen, evtweight);
       }
 
       gepa->analyze(*muNegGen, *muPosGen, evtweight);
@@ -184,11 +198,18 @@ int main(int argc, char *argv[]){
     h1_AfbVsmLL->SetBinContent(i+1,v_cpa[i]->getAfbRaw());
     h1_AfbVsmLL->SetBinError(i+1,v_cpa[i]->getAfbErrorRaw());
     delete v_cpa[i];
+
+    v_cpa_cumulative[i]->endjob();
+    h1_AfbVsmLL_cumulative->SetBinContent(i+1,v_cpa_cumulative[i]->getAfbRaw());
+    h1_AfbVsmLL_cumulative->SetBinError(i+1,v_cpa_cumulative[i]->getAfbErrorRaw());
+    delete v_cpa_cumulative[i];
+    
   }
 
   fout->cd();
   h1_mLL->Write();
   h1_AfbVsmLL->Write();
+  h1_AfbVsmLL_cumulative->Write();
   h1_cosThetaCS_tail->Write();
   fout->Close();
   if ( fout !=0 ) delete fout;

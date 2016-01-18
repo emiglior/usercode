@@ -17,7 +17,7 @@ namespace global_parameters{
   const double GeVToTeV = 0.001;
   
   // PDG
-  const double mass_Z = 91.188;  
+  const double mass_Z = 91.188;  // [GeV/c**2]
   
   // analysis is limited in [-cosThetaCS_max,+cosThetaCS_max] range
   // static const double cosThetaCS_max(0.5);
@@ -28,7 +28,7 @@ namespace global_parameters{
   const double up_limit = 1./(pt_lep*GeVToTeV); // [c/TeV]
   
   const int binningKS = 200;
-  const float dk_step = 0.01; // [c/TeV]
+  const double dk_step = 0.01; // [c/TeV]
   
   // target Afb
   const double AfbFIXED = 0.05;
