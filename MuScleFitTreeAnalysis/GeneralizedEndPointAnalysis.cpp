@@ -220,7 +220,8 @@ void GeneralizedEndPointAnalysis::endjob(){
      nsel_neg = ((TH1F*)h_neg_temp)->Integral();
     
     // --- normalization 
-    //    ((TH1F*)h_pos_temp)->Scale(((TH1F*)h_neg_temp)->Integral()/((TH1F*)h_pos_temp)->Integral());
+    ((TH1F*)h_pos_temp)->Scale(((TH1F*)h_neg_temp)->Integral()/((TH1F*)h_pos_temp)->Integral());
+    ((TH1F*)h_KSpos_temp)->Scale(((TH1F*)h_KSneg_temp)->Integral()/((TH1F*)h_KSpos_temp)->Integral());
 
     nsel2_pos = ((TH1F*)h_pos_temp)->Integral();
     nsel2_neg = ((TH1F*)h_neg_temp)->Integral();
@@ -254,6 +255,12 @@ void GeneralizedEndPointAnalysis::endjob(){
 	cout << "WARNING in KS test: at least one bin with negative content for dk=" << dk[i] << endl;
       }
     }
+
+    cout << "\n";
+    cout<< "* KS Histogram for k>0 -- "<<endl;
+    ((TH1F*)h_KSpos_temp)->Print();
+    cout<< "*  KS Histogram for k<0 -- "<<endl;
+    ((TH1F*)h_KSneg_temp)->Print();
 
     ks[i] = ((TH1F*)h_KSpos_temp)->KolmogorovTest(((TH1F*)h_KSneg_temp),"D"); 
     
@@ -289,7 +296,14 @@ void GeneralizedEndPointAnalysis::endjob(){
     pad1->cd();               // pad1 becomes the current pad
     //pad1->SetLogy();
     // -------------------------
-    
+
+    // set TH1 max for pretty printing
+    double h_pos_temp_max = ((TH1F*)h_pos_temp)->GetBinContent(((TH1F*)h_pos_temp)->GetMaximumBin());
+    double h_neg_temp_max = ((TH1F*)h_neg_temp)->GetBinContent(((TH1F*)h_neg_temp)->GetMaximumBin());
+
+    ((TH1F*)h_pos_temp)->SetMaximum(1.1*max(h_pos_temp_max,h_neg_temp_max));
+    ((TH1F*)h_neg_temp)->SetMaximum(1.1*max(h_pos_temp_max,h_neg_temp_max));
+      
     // ((TH1F*)h_pos_temp)->Sumw2(); // EM 2016.01.08 SumW2 already set
     // ((TH1F*)h_neg_temp)->Sumw2(); // EM 2016.01.08 SumW2 already set
     ((TH1F*)h_pos_temp)->SetStats(0);
@@ -518,7 +532,7 @@ void GeneralizedEndPointAnalysis::endjob(){
    Double_t xmin = pad->GetUxmin();
    Double_t ymin = 0;
    Double_t xmax = pad->GetUxmax();
-   Double_t ymax = maxKS;
+   Double_t ymax = maxKS*1.1;
 
    TH1F *hframe = overlay->DrawFrame(xmin,ymin,xmax,ymax);
    hframe->GetXaxis()->SetLabelOffset(99);
