@@ -205,6 +205,7 @@ void GeneralizedEndPointAnalysis::endjob(){
   float nsel2_neg=0.;
 
 
+  char equiv_entries_text[200];      
   // === THE BULK: chi2 and Kolmogorov tests
    for(int i=0;i<n_Dk ;i++){
      TObject* h_pos_temp = HList_pos.At(i);
@@ -218,14 +219,17 @@ void GeneralizedEndPointAnalysis::endjob(){
     
      nsel_pos = ((TH1F*)h_pos_temp)->Integral();
      nsel_neg = ((TH1F*)h_neg_temp)->Integral();
-    
-    // --- normalization 
-    ((TH1F*)h_pos_temp)->Scale(((TH1F*)h_neg_temp)->Integral()/((TH1F*)h_pos_temp)->Integral());
-    ((TH1F*)h_KSpos_temp)->Scale(((TH1F*)h_KSneg_temp)->Integral()/((TH1F*)h_KSpos_temp)->Integral());
+     
+     // --- normalization 
+     if ( fabs(delta_k[i])<global_parameters::dk_step )
+       sprintf(equiv_entries_text,"N_{evts,equiv} = %d",(int)((TH1F*)h_pos_temp)->GetEffectiveEntries());     
 
-    nsel2_pos = ((TH1F*)h_pos_temp)->Integral();
-    nsel2_neg = ((TH1F*)h_neg_temp)->Integral();
-
+     ((TH1F*)h_pos_temp)->Scale(((TH1F*)h_neg_temp)->Integral()/((TH1F*)h_pos_temp)->Integral());
+     ((TH1F*)h_KSpos_temp)->Scale(((TH1F*)h_KSneg_temp)->Integral()/((TH1F*)h_KSpos_temp)->Integral());
+     
+     nsel2_pos = ((TH1F*)h_pos_temp)->Integral();
+     nsel2_neg = ((TH1F*)h_neg_temp)->Integral();
+     
     cout << "\n";
     cout << "========================================================="<< endl; 
     cout<< "Printing few informations for the delta_k= "<< delta_k[i] << " c/TeV "<<endl; 
@@ -546,8 +550,9 @@ void GeneralizedEndPointAnalysis::endjob(){
    axis->SetLabelColor(kRed);
    axis->Draw();
 
-   TPaveText *ptext = new TPaveText(.10,.10,.30,.20,"brNDC");
+   TPaveText *ptext = new TPaveText(.10,.10,.40,.25,"brNDC");
    ptext->SetFillColor(kWhite);
+   ptext->AddText(equiv_entries_text);
    sprintf(result_text,"IN: #Delta#kappa = %.3f c/TeV",delta_kappa);
    ptext->AddText(result_text);
    sprintf(result_text,"OUT (#chi^{2}): #Delta#kappa = %.3f +/- %.3f c/TeV",dk_minChi2,dk_minChi2_uncert);

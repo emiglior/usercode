@@ -14,10 +14,9 @@ using namespace std;
 using namespace RooFit;
 
 
-CollinsSoperAnalysis::CollinsSoperAnalysis(TFile * fout, double m1, double m2, const char * append)
-  : mLL_low(m1), mLL_high(m2), AfbValRaw(0), AfbErrorRaw(0), AfbValFit(0), AfbErrorFit(0)  {
+CollinsSoperAnalysis::CollinsSoperAnalysis(TFile * fout, double m1, double m2, double y1, double y2, const char * append)
+  : mLL_low(m1), mLL_high(m2), yLL_low(y1), yLL_high(y2), AfbValRaw(0), AfbErrorRaw(0), AfbValFit(0), AfbErrorFit(0)  {
  
-  nBelowZ=0; nAboveZ=0; 
   if ( fout != 0 ) {
     fout->cd();
     
@@ -26,9 +25,18 @@ CollinsSoperAnalysis::CollinsSoperAnalysis(TFile * fout, double m1, double m2, c
     the_dir = fout->mkdir(dir_title);
     the_dir->cd();
 
-    char h_title[40];
+    char h_title[50];
     sprintf(h_title,"h1_cosThetaCS%s",append);
     h1_cosThetaCS = new TH1F(h_title,"; cos#theta_{CS}^{*};",50,-1.  ,+1.);
+
+    sprintf(h_title,"h1_cosThetaCS_pos%s",append);
+    h1_cosThetaCS_pos = new TH1F(h_title,"; cos#theta_{CS}^{*};",50,-1.  ,+1.);
+    h1_cosThetaCS_pos->Sumw2();
+	
+    sprintf(h_title,"h1_cosThetaCS_neg%s",append);
+    h1_cosThetaCS_neg = new TH1F(h_title,"; cos#theta_{CS}^{*};",50,-1.  ,+1.);
+    h1_cosThetaCS_neg->Sumw2();
+    
     sprintf(h_title,"h1_PhiCS%s",append);
     h1_phiCS      = new TH1F(h_title,"; #phi_{CS}^{*};"     ,50,-3.15/2,+3.15/2);
 
@@ -40,6 +48,8 @@ CollinsSoperAnalysis::CollinsSoperAnalysis(TFile * fout, double m1, double m2, c
     char rf_title[40];
     sprintf(rf_title,"rrv_c%s",append);
     rrv_c = new RooRealVar(rf_title,"rrv_c",-global_parameters::cosThetaCS_max,+global_parameters::cosThetaCS_max);
+    // sprintf(rf_title,"rrv_w%s",append);
+    // rrv_w = new RooRealVar(rf_title,"rrv_w");
     sprintf(rf_title,"cosThetaCS%s",append);
     rds_cosThetaCS = new RooDataSet(rf_title,"cosThetaCS dataset", RooArgSet(*rrv_c));
   }
@@ -48,15 +58,20 @@ CollinsSoperAnalysis::CollinsSoperAnalysis(TFile * fout, double m1, double m2, c
 CollinsSoperAnalysis::~CollinsSoperAnalysis(){  
   the_dir->cd();
   h1_cosThetaCS->Write();
+  h1_cosThetaCS_pos->Write();
+  h1_cosThetaCS_neg->Write();
   h1_phiCS->Write();
   hp_cosThetaCS->Write();
   hp_phiCS->Write();
 
   if ( h1_cosThetaCS  != 0 ) delete h1_cosThetaCS  ;
+  if ( h1_cosThetaCS_pos  != 0 ) delete h1_cosThetaCS_pos  ;
+  if ( h1_cosThetaCS_neg  != 0 ) delete h1_cosThetaCS_neg  ;
   if ( h1_phiCS       != 0 ) delete h1_phiCS       ; 
   if ( hp_cosThetaCS  != 0 ) delete hp_cosThetaCS  ; 
   if ( hp_phiCS       != 0 ) delete hp_phiCS       ;                        
-  if ( rrv_c          != 0 ) delete rrv_c          ; 
+  if ( rrv_c          != 0 ) delete rrv_c          ;
+  //  if ( rrv_w          != 0 ) delete rrv_w          ; 
   if ( rds_cosThetaCS != 0 ) delete rds_cosThetaCS ;
 }
 
@@ -64,7 +79,7 @@ void CollinsSoperAnalysis::analyze(const TLorentzVector & muNeg, const TLorentzV
 
   TLorentzVector Q = muNeg+muPos;
   if ( Q.M()<mLL_low || Q.M()>mLL_high ) return;
-  Q.M() < global_parameters::mass_Z ? nBelowZ++ : nAboveZ++;
+  if ( Q.Rapidity()<yLL_low || Q.Rapidity()>yLL_high ) return;
  
   double * angles = computeCollinsSoperAngles(muNeg, muPos);
   double cosThetaCS = angles[0];
@@ -72,11 +87,15 @@ void CollinsSoperAnalysis::analyze(const TLorentzVector & muNeg, const TLorentzV
   
   if ( fabs(cosThetaCS)>global_parameters::cosThetaCS_max ) return; 
   h1_cosThetaCS->Fill(cosThetaCS, weight);
+  cosThetaCS > 0 ? h1_cosThetaCS_pos->Fill(cosThetaCS, weight) : h1_cosThetaCS_neg->Fill(cosThetaCS, weight);
+  
   hp_cosThetaCS->Fill(cosThetaCS, Q.M(), weight);
 
   // add cosThetaCS to RooDataSet
   // TODO: usage weighted in events in RooDataSet ?
+  // https://root.cern.ch/root/html/tutorials/roofit/rf403_weightedevts.C.html
   rrv_c->setVal(cosThetaCS);
+  //  rrv_w->setVal(weight);
   rds_cosThetaCS->add(RooArgSet(*rrv_c));
 
   h1_phiCS->Fill(phiCS, weight);
@@ -88,16 +107,16 @@ void CollinsSoperAnalysis::analyze(const TLorentzVector & muNeg, const TLorentzV
 
 void CollinsSoperAnalysis::endjob(){
 
-  cout << "nBelow/nAbove " << nBelowZ << " / " << nAboveZ << endl;
-
   // compute RAW Afb
-  char cut_title[40];
-  sprintf(cut_title,"%s>0",rrv_c->GetName());
-  double nF = rds_cosThetaCS->sumEntries(cut_title);
-  double nB = rds_cosThetaCS->sumEntries() - nF; 
+  // char cut_title[40];
+  // sprintf(cut_title,"%s>0",rrv_c->GetName());
+  double nF = h1_cosThetaCS_pos->GetSumOfWeights(); //rds_cosThetaCS->sumEntries(cut_title);  
+  double nB = h1_cosThetaCS_neg->GetSumOfWeights(); //rds_cosThetaCS->sumEntries() - nF; 
   AfbValRaw = (nF-nB)/(nF+nB);
   AfbErrorRaw= 2./(nF+nB)*sqrt(nF*nB/(nF+nB));
 
+  cout << "CPA::endjob() nF " << nF << " nB " << nB << " AFB "<< AfbValRaw << endl;
+  
   // NB: the parametrization is such that Afb=(F-B)/(F+B)
   // "forward event" -> direction of mu- along the direction of the Z 
   RooRealVar Afb("Afb","Afb variable",0.,-1.,1.);

@@ -10,7 +10,8 @@ using namespace RooFit;
 
 class CollinsSoperAnalysis {
 public:
-  CollinsSoperAnalysis(TFile *, double m1=50., double m2=150., const char * append="");
+  // default values for mLL and yLL range correspond essentially to no cuts
+  CollinsSoperAnalysis(TFile *, double m1=0., double m2=10000., double y1=-1000., double y2=+1000., const char * append="");
   ~CollinsSoperAnalysis();
   void analyze(const TLorentzVector & muNeg, const TLorentzVector & muPos, double weight=1.);
   void endjob();
@@ -22,16 +23,19 @@ public:
 private:
   TDirectory * the_dir;
   TH1F * h1_cosThetaCS;
+  TH1F * h1_cosThetaCS_pos;
+  TH1F * h1_cosThetaCS_neg;
   TH1F * h1_phiCS;  
   TProfile * hp_cosThetaCS;
   TProfile * hp_phiCS;
 
   double mLL_low, mLL_high;
-  int nBelowZ, nAboveZ; 
+  double yLL_low, yLL_high;
   double AfbValRaw, AfbErrorRaw;
   double AfbValFit, AfbErrorFit;
   
-  RooRealVar * rrv_c;  
+  RooRealVar * rrv_c;
+  //  RooRealVar * rrv_w;  
   RooDataSet * rds_cosThetaCS;
 };
 

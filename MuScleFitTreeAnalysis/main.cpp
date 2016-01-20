@@ -35,35 +35,84 @@ int main(int argc, char *argv[]){
   TFile *fout = TFile::Open("TMP.root","RECREATE");
 
   // mLL
-  TH1F * h1_mLL = new TH1F ("h1_mLL", ";m(LL) [GeV];", 400., 0., 800);
+  TH1F * h1_mLL = new TH1F ("h1_mLL", ";m(LL) [GeV];", 700., 0., 1400);
   h1_mLL->Sumw2();
+
+  // yLL
+  TH1F * h1_yLL = new TH1F ("h1_yLL", ";y(LL);", 50., -5., +5.);
+  h1_yLL->Sumw2();
+
   
   // Afb
-  const int nbins_mLL(11);
-  double bins_mLL[nbins_mLL+1] = {60.,75.,85.,90.,95.,105.,120.,200.,300.,400.,600.,800.};
+  const int nbins_mLL(13);
+  double bins_mLL[nbins_mLL+1] = {50.,75.,85.,90.,95.,105.,120.,200.,300.,400.,600.,800.,1100.,1400.};
   TH1F * h1_AfbVsmLL            = new TH1F ("h1_AfbVsmLL",            ";m(LL) [GeV]; A_{FB}", nbins_mLL, bins_mLL);
   TH1F * h1_AfbVsmLL_cumulative = new TH1F ("h1_AfbVsmLL_cumulative", ";m(LL) [GeV]; A_{FB}", nbins_mLL, bins_mLL);
+  TH1F * h1_AfbVsmLL_HPT            = new TH1F ("h1_AfbVsmLL_HPT",            ";m(LL) [GeV]; A_{FB}", nbins_mLL, bins_mLL);
+  TH1F * h1_AfbVsmLL_cumulative_HPT = new TH1F ("h1_AfbVsmLL_cumulative_HPT", ";m(LL) [GeV]; A_{FB}", nbins_mLL, bins_mLL);
+
+
+  const int nbins_yLL(10);
+  double bins_yLL[nbins_yLL+1] = {-5.,-3.,-2.,-1.5,-0.75,0.,+0.75,+1.5,+2.,+3.,+5.};
+  TH1F * h1_AfbVsyLL            = new TH1F ("h1_AfbVsyLL",     ";y(LL); A_{FB}", nbins_yLL, bins_yLL);
+  TH1F * h1_AfbVsyLL_HPT        = new TH1F ("h1_AfbVsyLL_HPT", ";y(LL); A_{FB}", nbins_yLL, bins_yLL);
 
   // cosThetaCS (for reweighting events)
   TH1F * h1_cosThetaCS_tail = new TH1F("h1_cosThetaCS_tail", "; cos#theta_{CS};",50,-1.,+1.);
-    
-  CollinsSoperAnalysis * cpa = new CollinsSoperAnalysis(fout,bins_mLL[0],bins_mLL[nbins_mLL],"_all");
+
+  double yLL_MAX(1000.);
+  double mLL_MAX(100000.);
+  
+  //------- AFB ALL pTs  
+  CollinsSoperAnalysis * cpa = new CollinsSoperAnalysis(fout,bins_mLL[0],bins_mLL[nbins_mLL],-yLL_MAX,+yLL_MAX,"_all");
   // Afb differential in mLL
   vector<CollinsSoperAnalysis*> v_cpa;
   for (int i=0; i<nbins_mLL; i++){
-    char append[20];
+    char append[30];
     sprintf(append,"mLL_bin%i",i);
-    v_cpa.push_back(new CollinsSoperAnalysis(fout,bins_mLL[i],bins_mLL[i+1],append));
+    v_cpa.push_back(new CollinsSoperAnalysis(fout,bins_mLL[i],bins_mLL[i+1],-yLL_MAX,+yLL_MAX,append));
   }
-
   // Afb cumulative in mLL
   vector<CollinsSoperAnalysis*> v_cpa_cumulative;
   for (int i=0; i<nbins_mLL; i++){
-    char append[20];
+    char append[30];
     sprintf(append,"cumulative_mLL_bin%i",i);
-    v_cpa_cumulative.push_back(new CollinsSoperAnalysis(fout,bins_mLL[i],bins_mLL[nbins_mLL],append));
+    v_cpa_cumulative.push_back(new CollinsSoperAnalysis(fout,bins_mLL[0],bins_mLL[i+1],-yLL_MAX,+yLL_MAX,append));
   }
-
+  // Afb differential in yLL
+  vector<CollinsSoperAnalysis*> v_cpa_y;
+  for (int i=0; i<nbins_yLL; i++){
+    char append[30];
+    sprintf(append,"yLL_bin%i",i);
+    v_cpa_y.push_back(new CollinsSoperAnalysis(fout,-mLL_MAX,+mLL_MAX,bins_yLL[i],bins_yLL[i+1],append));
+  }
+  //-------
+  
+  //------- AFB HIGH pTs  
+  CollinsSoperAnalysis * cpaHPT = new CollinsSoperAnalysis(fout,bins_mLL[0],bins_mLL[nbins_mLL],-yLL_MAX,+yLL_MAX,"_HPT_all");
+  // Afb differential in mLL
+  vector<CollinsSoperAnalysis*> v_cpaHPT;
+  for (int i=0; i<nbins_mLL; i++){
+    char append[30];
+    sprintf(append,"HPT_mLL_bin%i",i);
+    v_cpaHPT.push_back(new CollinsSoperAnalysis(fout,bins_mLL[i],bins_mLL[i+1],-yLL_MAX,+yLL_MAX,append));
+  }
+  // Afb cumulative in mLL
+  vector<CollinsSoperAnalysis*> v_cpaHPT_cumulative;
+  for (int i=0; i<nbins_mLL; i++){
+    char append[30];
+    sprintf(append,"HPT_cumulative_mLL_bin%i",i);
+    v_cpaHPT_cumulative.push_back(new CollinsSoperAnalysis(fout,bins_mLL[0],bins_mLL[i+1],-yLL_MAX,+yLL_MAX,append));
+  }
+  // Afb differential in yLL
+  vector<CollinsSoperAnalysis*> v_cpaHPT_y;
+  for (int i=0; i<nbins_yLL; i++){
+    char append[30];
+    sprintf(append,"HPT_yLL_bin%i",i);
+    v_cpaHPT_y.push_back(new CollinsSoperAnalysis(fout,-mLL_MAX,+mLL_MAX,bins_yLL[i],bins_yLL[i+1],append));
+  }
+  //-------
+  
   // GeneralizedEndPoint
   GeneralizedEndPointAnalysis * gepa  = new GeneralizedEndPointAnalysis(fout);      
   //  GeneralizedEndPointAnalysis * gepaW = new GeneralizedEndPointAnalysis(fout,"ReWgt");
@@ -99,6 +148,8 @@ int main(int argc, char *argv[]){
       treeIN->GetEntry(entry);
       if (entry%1000000==0)cout<<"Loop #1 Reading muon pair n. "<<entry<<endl;
 
+      // if ( entry%4 != 0 ) continue; // to test scaling of dk_error with the size of the sample
+      
       //      evtweight = (genweight_ > 0) ? +1. : -1.;  // temporary for aMC@NLO studies
       evtweight = genweight_;
       
@@ -116,19 +167,38 @@ int main(int argc, char *argv[]){
 
       double mLL = ((*muNegGen)+(*muPosGen)).M();
       h1_mLL->Fill(mLL, evtweight);    
-      
+      double yLL = ((*muNegGen)+(*muPosGen)).Rapidity();
+      h1_yLL->Fill(yLL, evtweight);    
+
+      // Afb done on all events 
       cpa->analyze(*muNegGen, *muPosGen, evtweight);
       for (int i=0; i<nbins_mLL; i++){
-      	v_cpa[i]->analyze(*muNegGen, *muPosGen, evtweight);
+	v_cpa[i]->analyze(*muNegGen, *muPosGen, evtweight);
 	v_cpa_cumulative[i]->analyze(*muNegGen, *muPosGen, evtweight);
       }
+      for (int i=0; i<nbins_yLL; i++){
+	v_cpa_y[i]->analyze(*muNegGen, *muPosGen, evtweight);
+      }
 
-      gepa->analyze(*muNegGen, *muPosGen, evtweight);
-      
       double * angles = computeCollinsSoperAngles(*muNegGen, *muPosGen);
       double cosThetaCS = angles[0];
-      if ( muNegGen->Pt()>global_parameters::pt_lep || muPosGen->Pt()>global_parameters::pt_lep ) 
+      if ( muNegGen->Pt()>global_parameters::pt_lep || muPosGen->Pt()>global_parameters::pt_lep ) {	
+	// fill th1 to be used for reweighting the events
 	h1_cosThetaCS_tail->Fill(cosThetaCS, evtweight);    
+
+	// Afb done only on events with at least one muon with pT>pt_lep (see definition in Helpers.h)
+	cpaHPT->analyze(*muNegGen, *muPosGen, evtweight);
+	for (int i=0; i<nbins_mLL; i++){
+	  v_cpaHPT[i]->analyze(*muNegGen, *muPosGen, evtweight);
+	  v_cpaHPT_cumulative[i]->analyze(*muNegGen, *muPosGen, evtweight);
+	}
+	for (int i=0; i<nbins_yLL; i++){
+	  v_cpaHPT_y[i]->analyze(*muNegGen, *muPosGen, evtweight);
+	}
+
+	// Generalized EndPoint Analysis done only on events with at least one muon with pT>pt_lep (see definition in Helpers.h)
+	gepa->analyze(*muNegGen, *muPosGen, evtweight);	
+      }
       
       if ( muNegGen != 0 ) delete muNegGen; 
       if ( muPosGen != 0 ) delete muPosGen;      
@@ -187,8 +257,8 @@ int main(int argc, char *argv[]){
   // gepaW->endjob();
   // if ( gepaW != 0 ) delete gepaW;
   
+  // ----- ALL pTs
   cpa->endjob();
-  cout << cpa->getAfbRaw() << " " << cpa->getAfbErrorRaw() << endl;
   cout << "Closing file ..." << endl;
   if ( cpa != 0 ) delete cpa;
 
@@ -202,14 +272,58 @@ int main(int argc, char *argv[]){
     v_cpa_cumulative[i]->endjob();
     h1_AfbVsmLL_cumulative->SetBinContent(i+1,v_cpa_cumulative[i]->getAfbRaw());
     h1_AfbVsmLL_cumulative->SetBinError(i+1,v_cpa_cumulative[i]->getAfbErrorRaw());
-    delete v_cpa_cumulative[i];
-    
+    delete v_cpa_cumulative[i];    
   }
+  for (int i=0; i<nbins_yLL; i++){
+    v_cpa_y[i]->endjob();
+    h1_AfbVsyLL->SetBinContent(i+1,v_cpa_y[i]->getAfbRaw());
+    h1_AfbVsyLL->SetBinError(i+1,v_cpa_y[i]->getAfbErrorRaw());
+    delete v_cpa_y[i];
+  }
+  // -----
+  
+  // ----- HIGH pTs
+  cpaHPT->endjob();
+  cout << "Closing file ..." << endl;
+  if ( cpaHPT != 0 ) delete cpaHPT;
 
+  // summary histos
+  for (int i=0; i<nbins_mLL; i++){
+    v_cpaHPT[i]->endjob();
+    h1_AfbVsmLL_HPT->SetBinContent(i+1,v_cpaHPT[i]->getAfbRaw());
+    h1_AfbVsmLL_HPT->SetBinError(i+1,v_cpaHPT[i]->getAfbErrorRaw());
+    delete v_cpaHPT[i];
+
+    v_cpaHPT_cumulative[i]->endjob();
+    h1_AfbVsmLL_cumulative_HPT->SetBinContent(i+1,v_cpaHPT_cumulative[i]->getAfbRaw());
+    h1_AfbVsmLL_cumulative_HPT->SetBinError(i+1,v_cpaHPT_cumulative[i]->getAfbErrorRaw());
+    delete v_cpaHPT_cumulative[i];
+  }
+  for (int i=0; i<nbins_yLL; i++){
+    v_cpaHPT_y[i]->endjob();
+    h1_AfbVsyLL_HPT->SetBinContent(i+1,v_cpaHPT_y[i]->getAfbRaw());
+    h1_AfbVsyLL_HPT->SetBinError(i+1,v_cpaHPT_y[i]->getAfbErrorRaw());
+    delete v_cpaHPT_y[i];
+  }
+  // -----
+  
   fout->cd();
+
+  cout << "END-OF-JOB report for " << argv[1] << endl;
+  cout << "Number of equivalent entries (before selection)" << (int)h1_mLL->GetEffectiveEntries() << endl;
+
+
+
   h1_mLL->Write();
   h1_AfbVsmLL->Write();
   h1_AfbVsmLL_cumulative->Write();
+  h1_AfbVsmLL_HPT->Write();
+  h1_AfbVsmLL_cumulative_HPT->Write();
+
+  h1_yLL->Write();
+  h1_AfbVsyLL->Write();
+  h1_AfbVsyLL_HPT->Write();
+
   h1_cosThetaCS_tail->Write();
   fout->Close();
   if ( fout !=0 ) delete fout;
