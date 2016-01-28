@@ -79,7 +79,7 @@ void CollinsSoperAnalysis::analyze(const TLorentzVector & muNeg, const TLorentzV
 
   TLorentzVector Q = muNeg+muPos;
   if ( Q.M()<mLL_low || Q.M()>mLL_high ) return;
-  if ( Q.Rapidity()<yLL_low || Q.Rapidity()>yLL_high ) return;
+  if ( fabs(Q.Rapidity())<yLL_low || fabs(Q.Rapidity())>yLL_high ) return;
  
   double * angles = computeCollinsSoperAngles(muNeg, muPos);
   double cosThetaCS = angles[0];
@@ -112,9 +112,14 @@ void CollinsSoperAnalysis::endjob(){
   // sprintf(cut_title,"%s>0",rrv_c->GetName());
   double nF = h1_cosThetaCS_pos->GetSumOfWeights(); //rds_cosThetaCS->sumEntries(cut_title);  
   double nB = h1_cosThetaCS_neg->GetSumOfWeights(); //rds_cosThetaCS->sumEntries() - nF; 
-  AfbValRaw = (nF-nB)/(nF+nB);
-  AfbErrorRaw= 2./(nF+nB)*sqrt(nF*nB/(nF+nB));
-
+  if ( (nF+nB) > 0 ) {
+    AfbValRaw = (nF-nB)/(nF+nB);
+    AfbErrorRaw= 2./(nF+nB)*sqrt(nF*nB/(nF+nB));
+  } else {
+    AfbValRaw = 0;
+    AfbErrorRaw= 2;
+  }
+      
   cout << "CPA::endjob() nF " << nF << " nB " << nB << " AFB "<< AfbValRaw << endl;
   
   // NB: the parametrization is such that Afb=(F-B)/(F+B)

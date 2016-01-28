@@ -9,6 +9,8 @@
 #include "LinkDef.h"
 #include "TFile.h"
 #include "TH1F.h"
+#include "TH2F.h"
+#include "TProfile.h"
 #include "TTree.h"
 #include "TLorentzVector.h"
 
@@ -42,6 +44,11 @@ int main(int argc, char *argv[]){
   TH1F * h1_yLL = new TH1F ("h1_yLL", ";y(LL);", 50., -5., +5.);
   h1_yLL->Sumw2();
 
+  // yLL vs mLL
+  TH2F * h2_yLLvsmLL = new TH2F ("h2_yLLvsmLL", ";m(LL) [GeV]; |y(LL)|", 140., 0., 1400, 50, 0., +5.);
+  h2_yLLvsmLL->Sumw2();
+  TProfile * hp_yLLvsmLL = new TProfile("hp_yLLvsmLL", ";m(LL) [GeV]; |y(LL)|", 140., 0., 1400, 0., +5.);
+  hp_yLLvsmLL->Sumw2();
   
   // Afb
   const int nbins_mLL(13);
@@ -52,8 +59,10 @@ int main(int argc, char *argv[]){
   TH1F * h1_AfbVsmLL_cumulative_HPT = new TH1F ("h1_AfbVsmLL_cumulative_HPT", ";m(LL) [GeV]; A_{FB}", nbins_mLL, bins_mLL);
 
 
-  const int nbins_yLL(10);
-  double bins_yLL[nbins_yLL+1] = {-5.,-3.,-2.,-1.5,-0.75,0.,+0.75,+1.5,+2.,+3.,+5.};
+  // const int nbins_yLL(10);
+  // double bins_yLL[nbins_yLL+1] = {-5.,-3.,-2.,-1.5,-0.75,0.,+0.75,+1.5,+2.,+3.,+5.};
+  const int nbins_yLL(6);
+  double bins_yLL[nbins_yLL+1] = {0.,+0.75,+1.5,+2.,+2.5,+3.,+5.};
   TH1F * h1_AfbVsyLL            = new TH1F ("h1_AfbVsyLL",     ";y(LL); A_{FB}", nbins_yLL, bins_yLL);
   TH1F * h1_AfbVsyLL_HPT        = new TH1F ("h1_AfbVsyLL_HPT", ";y(LL); A_{FB}", nbins_yLL, bins_yLL);
 
@@ -168,7 +177,10 @@ int main(int argc, char *argv[]){
       double mLL = ((*muNegGen)+(*muPosGen)).M();
       h1_mLL->Fill(mLL, evtweight);    
       double yLL = ((*muNegGen)+(*muPosGen)).Rapidity();
-      h1_yLL->Fill(yLL, evtweight);    
+      h1_yLL->Fill(yLL, evtweight);
+
+      h2_yLLvsmLL->Fill(mLL, fabs(yLL), evtweight);
+      hp_yLLvsmLL->Fill(mLL, fabs(yLL), evtweight);    
 
       // Afb done on all events 
       cpa->analyze(*muNegGen, *muPosGen, evtweight);
@@ -321,6 +333,10 @@ int main(int argc, char *argv[]){
   h1_AfbVsmLL_cumulative_HPT->Write();
 
   h1_yLL->Write();
+
+  h2_yLLvsmLL->Write();
+  hp_yLLvsmLL->Write();
+      
   h1_AfbVsyLL->Write();
   h1_AfbVsyLL_HPT->Write();
 
