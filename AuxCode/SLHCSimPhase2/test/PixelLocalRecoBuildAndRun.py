@@ -147,6 +147,7 @@ class Job:
                                        "PU_"+self.pu)
         
         eos_out_dir=os.path.join("/store/caf/user",USER,"SLHCSimPhase2/phase2/out62XSLHC17patch1/32bit",\
+                                     'DEV_FPIX_TMP',\
                                      theMagfieldString,\
                                      "PixelROCRows_"+pixelrocrows_l0l1+"_"+pixelrocrows_l2l3+"_"+pixelrocrows_disks,\
                                      "PixelROCCols_"+pixelroccols_l0l1+"_"+pixelroccols_l2l3+"_"+pixelroccols_disks,\
@@ -619,7 +620,7 @@ def main():
     fout=open(harvestingname,"w")
 
     fout.write("#!/bin/bash \n")
-    fout.write("MAIL = $USER@mail.cern.ch \n")
+    fout.write("MAIL=$USER@mail.cern.ch \n")
     fout.write("echo $HOST | mail -s \"Harvesting job started\" $USER@mail.cern.ch \n")
     fout.write("OUT_DIR="+out_dir+" \n")
     fout.write("JOB_NAME="+opts.jobname+" \n")
