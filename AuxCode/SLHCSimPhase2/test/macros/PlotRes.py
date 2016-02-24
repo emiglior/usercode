@@ -187,7 +187,7 @@ def main():
         hsCotgBeta  = HistoStruct("CotgBeta"  ,50, 0., 5.0, "|cotg(#beta)|",  output_root_file, options.gaussfit)
     else:
         hsEta = HistoStruct("Eta" ,25, 1.4, 3.9, "|#eta|", output_root_file, options.gaussfit)
-        hsCotgAlpha = HistoStruct("CotgAlpha" , 4,-0.45,-0.25,  "cotg(#alpha)",  output_root_file, options.gaussfit) # FPIX
+        hsCotgAlpha = HistoStruct("CotgAlpha" , 7,-0.45,-0.24,  "cotg(#alpha)",  output_root_file, options.gaussfit) # FPIX
         hsCotgBeta  = HistoStruct("CotgBeta"  ,10, 0.25, 0.50, "|cotg(#beta)|",  output_root_file, options.gaussfit)
 
 #    hsCotgBeta  = HistoStruct("CotgBeta"  ,20, 0.25, 0.75, "|cotg(#beta)|",  output_root_file, options.gaussfit)
