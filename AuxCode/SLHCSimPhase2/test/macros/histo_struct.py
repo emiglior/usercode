@@ -12,7 +12,7 @@ the_styles =  [ROOT.kOpenCircle,ROOT.kFullCircle,ROOT.kOpenSquare,ROOT.kFullSqua
 
 
 #########################
-class HistoStruct():
+class HistoStruct:
 #########################
     """ container to store standard histos vs. a given variable V """
 
@@ -271,6 +271,14 @@ class HistoStruct():
             hname = "h2_resYvsresX_qhigh_%sBin%d" % (V_name ,i)
             htitle = "h2_resYvsresX_qhigh_%s bin %d (%.2f < %s < %.2f);resX [#mum];resY [#mum]" % (V_name, i, V_low, V_label, V_high)
             self.resYvsresX_qhigh_inVBinTH2.append( ROOT.TH2F(hname,htitle,50,-150.,150.,100,-1000.,1000.))
+
+    def EndOfJob(self):
+    #############################################
+        """method used to save all histos"""
+        current_dir = self.the_output_root_file.GetDirectory(self.the_name)
+        current_dir.cd()
+        current_dir.Write()
+        
 
     def FillFirstLoop(self, the_V, pixel_recHit):
     #############################################
@@ -811,19 +819,25 @@ class HistoStruct():
         for i in xrange(self.the_nbins):
 
             c1_rPhi_qall.cd(i+1)
-            mu, sigma = getTH1GausFit(self.resX_qall_inVBinTH1[i], c1_rPhi_qall.GetPad(i+1), self.the_gaussfit)
+            mu, mu_err, sigma, sigma_err = getTH1GausFit(self.resX_qall_inVBinTH1[i], c1_rPhi_qall.GetPad(i+1), self.the_gaussfit)
             self.h_resRPhivsV_qall.SetBinContent(i+1,sigma)
+            self.h_resRPhivsV_qall.SetBinError(i+1,sigma_err)
             self.h_biasRPhivsV_qall.SetBinContent(i+1,mu)
+            self.h_biasRPhivsV_qall.SetBinError(i+1,mu_err)
             
             c1_rPhi_qlow.cd(i+1)        
-            mu, sigma = getTH1GausFit(self.resX_qlow_inVBinTH1[i], c1_rPhi_qlow.GetPad(i+1), self.the_gaussfit)
+            mu, mu_err, sigma, sigma_err = getTH1GausFit(self.resX_qlow_inVBinTH1[i], c1_rPhi_qlow.GetPad(i+1), self.the_gaussfit)
             self.h_resRPhivsV_qlow.SetBinContent(i+1,sigma)
+            self.h_resRPhivsV_qlow.SetBinError(i+1,sigma_err)
             self.h_biasRPhivsV_qlow.SetBinContent(i+1,mu)
+            self.h_biasRPhivsV_qlow.SetBinError(i+1,mu_err)
 
             c1_rPhi_qhigh.cd(i+1)        
-            mu, sigma = getTH1GausFit(self.resX_qhigh_inVBinTH1[i], c1_rPhi_qhigh.GetPad(i+1), self.the_gaussfit)
+            mu, mu_err, sigma, sigma_err = getTH1GausFit(self.resX_qhigh_inVBinTH1[i], c1_rPhi_qhigh.GetPad(i+1), self.the_gaussfit)
             self.h_resRPhivsV_qhigh.SetBinContent(i+1,sigma)
+            self.h_resRPhivsV_qhigh.SetBinError(i+1,sigma_err)
             self.h_biasRPhivsV_qhigh.SetBinContent(i+1,mu)
+            self.h_biasRPhivsV_qhigh.SetBinContent(i+1,mu_err)
 
             c1_rPhiVsNx_qlow.cd(i+1)        
             c1_rPhiVsNx_qlow.GetPad(i+1).SetLogz()      
@@ -836,19 +850,25 @@ class HistoStruct():
             self.resXvsNx_qhigh_inVBinTH2[i].Draw("colz")
                         
             c1_z_qall.cd(i+1)
-            mu, sigma = getTH1GausFit(self.resY_qall_inVBinTH1[i], c1_z_qall.GetPad(i+1), self.the_gaussfit)
+            mu, mu_err, sigma, sigma_err = getTH1GausFit(self.resY_qall_inVBinTH1[i], c1_z_qall.GetPad(i+1), self.the_gaussfit)
             self.h_resZvsV_qall.SetBinContent(i+1,sigma)
+            self.h_resZvsV_qall.SetBinError(i+1,sigma_err)
             self.h_biasZvsV_qall.SetBinContent(i+1,mu)
+            self.h_biasZvsV_qall.SetBinError(i+1,mu_err)
 
             c1_z_qlow.cd(i+1)        
-            mu, sigma = getTH1GausFit(self.resY_qlow_inVBinTH1[i], c1_z_qlow.GetPad(i+1), self.the_gaussfit)
+            mu, mu_err, sigma, sigma_err = getTH1GausFit(self.resY_qlow_inVBinTH1[i], c1_z_qlow.GetPad(i+1), self.the_gaussfit)
             self.h_resZvsV_qlow.SetBinContent(i+1,sigma)
+            self.h_resZvsV_qlow.SetBinError(i+1,sigma_err)
             self.h_biasZvsV_qlow.SetBinContent(i+1,mu)
+            self.h_biasZvsV_qlow.SetBinError(i+1,mu_err)
             
             c1_z_qhigh.cd(i+1)        
-            mu, sigma = getTH1GausFit(self.resY_qhigh_inVBinTH1[i], c1_z_qhigh.GetPad(i+1), self.the_gaussfit)
+            mu, mu_err, sigma, sigma_err = getTH1GausFit(self.resY_qhigh_inVBinTH1[i], c1_z_qhigh.GetPad(i+1), self.the_gaussfit)
             self.h_resZvsV_qhigh.SetBinContent(i+1,sigma)
+            self.h_resZvsV_qhigh.SetBinError(i+1,sigma_err)
             self.h_biasZvsV_qhigh.SetBinContent(i+1,mu)
+            self.h_biasZvsV_qhigh.SetBinError(i+1,mu_err)
 
             c1_zVsNy_qlow.cd(i+1)        
             c1_zVsNy_qlow.GetPad(i+1).SetLogz()        
@@ -905,11 +925,11 @@ class HistoStruct():
   
         the_extrema = getExtrema(rphi_arr)
         MakeNiceTrendPlotStyle(self.h_resRPhivsV_qlow,0,the_extrema)
-        self.h_resRPhivsV_qlow.Draw("C")
+        self.h_resRPhivsV_qlow.Draw("CE")
         MakeNiceTrendPlotStyle(self.h_resRPhivsV_qhigh,1,the_extrema)
-        self.h_resRPhivsV_qhigh.Draw("Csame")
+        self.h_resRPhivsV_qhigh.Draw("CEsame")
         MakeNiceTrendPlotStyle(self.h_resRPhivsV_qall,3,the_extrema)
-        self.h_resRPhivsV_qall.Draw("Csame")
+        self.h_resRPhivsV_qall.Draw("CEsame")
         
         lego.AddEntry(self.h_resRPhivsV_qlow,"primaries Q/#LTQ#GT<1") 
         lego.AddEntry(self.h_resRPhivsV_qhigh,"primaries 1<Q/#LTQ#GT<1.5")
@@ -926,11 +946,11 @@ class HistoStruct():
         
         the_extrema = getExtrema(z_arr)        
         MakeNiceTrendPlotStyle(self.h_resZvsV_qlow,0,the_extrema)
-        self.h_resZvsV_qlow.Draw("C")
+        self.h_resZvsV_qlow.Draw("CE")
         MakeNiceTrendPlotStyle(self.h_resZvsV_qhigh,1,the_extrema)
-        self.h_resZvsV_qhigh.Draw("Csame")
+        self.h_resZvsV_qhigh.Draw("CEsame")
         MakeNiceTrendPlotStyle(self.h_resZvsV_qall,3,the_extrema)
-        self.h_resZvsV_qall.Draw("Csame")
+        self.h_resZvsV_qall.Draw("CEsame")
 
         lego.Draw("same")
         cResVsV_2.SaveAs("rmsVs%s_rz.root" % self.the_name)

@@ -205,10 +205,14 @@ def getTH1GausFit(h1_in, pad, gaussfit):
         h1_in.Fit(g1,"RQ")
 
         mu = g1.GetParameter("Mean") 
+        mu_err = g1.GetParError(1)
         sigma = g1.GetParameter("Sigma")
+        sigma_err = g1.GetParError(2)
     else:
         h1_in.Draw() 
         mu = h1_in.GetMean() 
+        mu_err = h1_in.GetMeanError()
         sigma = h1_in.GetRMS()
+        sigma_err = h1_in.GetRMSError()
 
-    return mu, sigma
+    return mu, mu_err, sigma, sigma_err
