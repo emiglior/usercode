@@ -47,6 +47,7 @@
 #include "MuonAnalysis/MomentumScaleCalibration/interface/Muon.h"
 #include "MuonAnalysis/MomentumScaleCalibration/interface/GenMuonPair.h"
 
+#include "AuxCode/AuxMuonAnalyzers/interface/MuScleFitPDFInfo.h"
 //
 // class declaration
 //
@@ -82,6 +83,7 @@ class GenMuonAnalyzerPromptFS : public edm::EDAnalyzer {
       bool beforeFSR_;
       std::vector<int> resfind_;
       GenMuonPair * genMuonPair; 
+      MuScleFitPDFInfo * pdfInfo;
 
   TH1F * h1_status;;
   TH1F * h1_nMu, * h1_nMuP, * h1_nMuN, * h1_MuMuMass_SD, * h1_MuMuMass_W;
@@ -195,11 +197,45 @@ GenMuonAnalyzerPromptFS::analyze(const edm::Event& iEvent, const edm::EventSetup
   double genEvt_weight = genEvtInfo->weight();
 
   // LHE weight
-  edm::Handle<LHEEventProduct> lheEvent;
-  iEvent.getByLabel("externalLHEProducer",lheEvent);
-  double lheEvt_weight = lheEvent->originalXWGTUP();
+  edm::Handle<LHEEventProduct> lheEvt;
+  iEvent.getByLabel("externalLHEProducer",lheEvt);
+  double lheEvt_weight = lheEvt->originalXWGTUP();
 
   if ( debug_ ) std::cout << "Evt Weight: LHE = " << lheEvt_weight << " GEN = " << genEvt_weight<< std::endl;
+
+  // // PDF info from LHE 
+  // if ( lheEvt->pdf() != NULL ) {
+  //   pdfInfo->Q    = lheEvt->pdf()->scalePDF;
+  //   pdfInfo->id1  = lheEvt->pdf()->id.first;
+  //   pdfInfo->x1   = lheEvt->pdf()->x.first; 
+  //   pdfInfo->pdf1 = lheEvt->pdf()->xPDF.first;
+  //   pdfInfo->id2  = lheEvt->pdf()->id.second;
+  //   pdfInfo->x2   = lheEvt->pdf()->x.second;
+  //   pdfInfo->pdf2 = lheEvt->pdf()->xPDF.second;
+  // }
+
+  // PDF info from GENEVT
+  if ( genEvtInfo->pdf() != NULL ) {
+    pdfInfo->Q    = genEvtInfo->pdf()->scalePDF;
+    pdfInfo->id1  = genEvtInfo->pdf()->id.first;
+    pdfInfo->x1   = genEvtInfo->pdf()->x.first; 
+    pdfInfo->pdf1 = genEvtInfo->pdf()->xPDF.first;
+    pdfInfo->id2  = genEvtInfo->pdf()->id.second;
+    pdfInfo->x2   = genEvtInfo->pdf()->x.second;
+    pdfInfo->pdf2 = genEvtInfo->pdf()->xPDF.second;
+  }
+
+
+  //   std::cout << "PDF scale = " << std::setw(14) << std::fixed << lheEvent->pdf()->scalePDF << std::endl;  
+  //   std::cout << "PDF 1 : id = " << std::setw(14) << std::fixed << lheEvent->pdf()->id.first 
+  // 	      << " x = " << std::setw(14) << std::fixed << lheEvent->pdf()->x.first 
+  // 	      << " xPDF = " << std::setw(14) << std::fixed << lheEvent->pdf()->xPDF.first << std::endl;  
+  //   std::cout << "PDF 2 : id = " << std::setw(14) << std::fixed << lheEvent->pdf()->id.second 
+  // 	      << " x = " << std::setw(14) << std::fixed << lheEvent->pdf()->x.second 
+  // 	      << " xPDF = " << std::setw(14) << std::fixed << lheEvent->pdf()->xPDF.second << std::endl;  
+  // } else {
+  //   std::cout << "lheEvent->pdf() is NULL" << std::endl;
+
 
   // loop on generated particles
   GenMuonPair muFromRes;
@@ -328,7 +364,9 @@ GenMuonAnalyzerPromptFS::beginJob()
   tree->Branch("evtnum", &evtnum_, "evtnum/I");
   tree->Branch("genweight", &genweight_, "genweight/D");
   tree->Branch("lheweight", &lheweight_, "lheweight/D");
-  genMuonPair = new GenMuonPair;
+  pdfInfo = new MuScleFitPDFInfo();
+  tree->Branch("PDF", "MuScleFitPDFInfo", &pdfInfo);
+  genMuonPair = new GenMuonPair();
   tree->Branch("GenMuons", "GenMuonPair", &genMuonPair);
 
 }

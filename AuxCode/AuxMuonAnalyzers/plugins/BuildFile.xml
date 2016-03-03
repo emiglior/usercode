@@ -9,6 +9,7 @@
 <use name="PhysicsTools/UtilAlgos"/>
 
 <use name="MuonAnalysis/MomentumScaleCalibration" />
+<use name="AuxCode/AuxMuonAnalyzers" />
 <use name="root"/>
 
 <flags EDM_PLUGIN="1"/>
