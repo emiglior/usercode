@@ -130,40 +130,40 @@ GenMuonAnalyzer::~GenMuonAnalyzer()
 
 const reco::Candidate* 
 GenMuonAnalyzer::getStatus1Muon(const reco::Candidate* status3Muon){
-  const reco::Candidate* tempMuon = status3Muon;
-  bool lastCopy = ((reco::GenParticle*)tempMuon)->isLastCopy();        //  int status = tempStatus1Muon->status();
-  while(tempMuon == 0 || tempMuon->numberOfDaughters()!=0){
-    if ( lastCopy ) break;                              //    if (status == 1) break;
+  const reco::Candidate* tempStatus1Muon = status3Muon;
+  int status = tempStatus1Muon->status();
+  while(tempStatus1Muon == 0 || tempStatus1Muon->numberOfDaughters()!=0){
+    if (status == 1) break;
     //std::vector<const reco::Candidate*> daughters;
-    for (unsigned int i=0; i<tempMuon->numberOfDaughters(); ++i){
-      if ( tempMuon->daughter(i)->pdgId()==tempMuon->pdgId() ){
-	tempMuon = tempMuon->daughter(i);
-	lastCopy = ((reco::GenParticle*)tempMuon)->isLastCopy(); 	//	status = tempStatus1Muon->status();
+    for (unsigned int i=0; i<tempStatus1Muon->numberOfDaughters(); ++i){
+      if ( tempStatus1Muon->daughter(i)->pdgId()==tempStatus1Muon->pdgId() ){
+	tempStatus1Muon = tempStatus1Muon->daughter(i);
+	status = tempStatus1Muon->status();
 	break;
       }else continue;
     }//for loop
   }//while loop
   
-  return tempMuon;
+  return tempStatus1Muon;
 }
 
 const reco::Candidate* 
 GenMuonAnalyzer::getStatus3Muon(const reco::Candidate* status3Muon){
-  const reco::Candidate* tempMuon = status3Muon;
-  bool lastCopy = ((reco::GenParticle*)tempMuon)->isLastCopyBeforeFSR();        //  int status = tempStatus1Muon->status();
-  while(tempMuon == 0 || tempMuon->numberOfDaughters()!=0){
-    if ( lastCopy ) break;                              //    if (status == 3) break;
+  const reco::Candidate* tempStatus3Muon = status3Muon;
+  int status = tempStatus3Muon->status();
+  while(tempStatus3Muon == 0 || tempStatus3Muon->numberOfDaughters()!=0){
+    if (status == 3) break;
     //std::vector<const reco::Candidate*> daughters;
-    for (unsigned int i=0; i<tempMuon->numberOfDaughters(); ++i){
-      if ( tempMuon->daughter(i)->pdgId()==tempMuon->pdgId() ){
-	tempMuon = tempMuon->daughter(i);
-	lastCopy = ((reco::GenParticle*)tempMuon)->isLastCopyBeforeFSR(); 	//	status = tempStatus1Muon->status();
+    for (unsigned int i=0; i<tempStatus3Muon->numberOfDaughters(); ++i){
+      if ( tempStatus3Muon->daughter(i)->pdgId()==tempStatus3Muon->pdgId() ){
+	tempStatus3Muon = tempStatus3Muon->daughter(i);
+       	status = tempStatus3Muon->status();
 	break;
       }else continue;
     }//for loop
   }//while loop
   
-  return tempMuon;
+  return tempStatus3Muon;
 }
 
 

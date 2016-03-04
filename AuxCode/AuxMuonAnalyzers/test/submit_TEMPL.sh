@@ -7,7 +7,7 @@ jobName=GenMuonAnalyzer_promptFS_afterFSR_${jobId}
 LSF_DIR=/afs/cern.ch/user/e/emiglior/scratch0/jobs/lsf
 LOG_DIR=/afs/cern.ch/user/e/emiglior/scratch0/jobs/log
 
-OUT_DIR=/afs/cern.ch/user/e/emiglior/MyWorkSpace/public/MuScleFit/Run2/CMSSW_7_4_6_patch6/src/AuxCode/AuxMuonAnalyzers/test 
+OUT_DIR=/afs/cern.ch/user/e/emiglior/MyWorkSpace/public/MuScleFit/Run2/CMSSW_5_3_32_patch2/src/AuxCode/AuxMuonAnalyzers/test 
 
 lsfname=${LSF_DIR}/${jobName}.lsf
 logname=${jobName}.log
@@ -43,7 +43,7 @@ echo  -----------------------
 
 #Some variable definitions
 echo "Defining variables ..."
-cmssw_ver=CMSSW_7_4_6_patch6
+cmssw_ver=CMSSW_5_3_32_patch2
 CMSSW_DIR=/afs/cern.ch/user/e/emiglior/MyWorkSpace/public/MuScleFit/Run2/${cmssw_ver}/src
 
 cd $CMSSW_DIR
@@ -55,7 +55,7 @@ cd AuxCode/AuxMuonAnalyzers/test
 
 echo "Issue cmsRun ..."
 mkdir -p /tmp/emiglior
-cmsRun genmuonanalyzer_promptFS_afterFSR_TEMPL_cfg.py jobId=${jobId}
+cmsRun genmuonanalyzer_status3_TEMPL_cfg.py jobId=${jobId}
 
 
 echo "Inspecting test directory after cmsRun ..."
