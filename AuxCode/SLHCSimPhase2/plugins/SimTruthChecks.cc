@@ -43,7 +43,6 @@
 #include "SimDataFormats/TrackingHit/interface/PSimHitContainer.h"
 #include "DataFormats/SiPixelDetId/interface/PixelSubdetector.h"
 
-#include "CommonTools/UtilAlgos/interface/TFileService.h"
 
 // DataFormats
 #include "DataFormats/DetId/interface/DetId.h"
@@ -59,10 +58,9 @@
 #include "Geometry/TrackerGeometryBuilder/interface/PixelGeomDetType.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
 
-// 20/Jul/2014 Mark Grimes - temporary hack to remap the DetIds from old SLHC11 input
 // files. As soon as this functionality is no longer needed this should be taken out.
 #include <FWCore/ServiceRegistry/interface/Service.h>
-#include <SimTracker/SiPixelDigitizer/interface/RemapDetIdService.h>
+#include "CommonTools/UtilAlgos/interface/TFileService.h"
 
 //
 // class declaration
@@ -131,15 +129,10 @@ SimTruthChecks::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    iSetup.get<TrackerDigiGeometryRecord>().get(geometry);
    const TrackerGeometry* theGeometry = &(*geometry);
 
-   // 20/Jul/2014 Mark Grimes - temporary hack to remap the DetIds from old SLHC11 input
-   // files. As soon as this functionality is no longer needed this should be taken out.
-   edm::Service<simtracker::services::RemapDetIdService> detIdRemapService;
-
    for(auto const& trackerContainer : trackerContainers) {
      //Retrieve the simhit vector
      edm::Handle<std::vector<PSimHit> > simHits;
      edm::InputTag tag_hits("g4SimHits", trackerContainer);
-     detIdRemapService->getByLabel(iEvent,tag_hits,simHits);
      for (std::vector<PSimHit>::const_iterator isim = simHits->begin(); isim != simHits->end(); isim++) {
        DetId detId((*isim).detUnitId());
 
