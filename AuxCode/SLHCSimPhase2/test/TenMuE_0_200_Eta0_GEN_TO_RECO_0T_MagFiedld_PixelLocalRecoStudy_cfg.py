@@ -115,6 +115,8 @@ process.load('Configuration.StandardSequences.Generator_cff')
 # for gaussian smeared vertex
 #process.load('IOMC.EventVertexGenerators.VtxSmearedGauss_cfi')
 process.load('Configuration.StandardSequences.VtxSmearedNoSmear_cff')
+process.VtxSmeared.MinZ = 2.99999
+process.VtxSmeared.MaxZ = 3.00001
 process.load('GeneratorInterface.Core.genFilterSummary_cff')
 process.load('Configuration.StandardSequences.SimIdeal_cff')
 process.load('Configuration.StandardSequences.Digi_cff')
@@ -260,9 +262,9 @@ process.generator = cms.EDProducer("FlatRandomEGunProducer",
     PGunParameters = cms.PSet(
         PartID = cms.vint32(-13, -13, -13, -13, -13),
 	#PartID = cms.vint32(-13),
-        MaxEta = cms.double(+0.02),
+        MaxEta = cms.double(+0.01),
         MaxPhi = cms.double(3.14159265359),
-        MinEta = cms.double(-0.02),
+        MinEta = cms.double(-0.01),
         MinE = cms.double(0.0),
         MinPhi = cms.double(-3.14159265359),
         MaxE = cms.double(200.0),
