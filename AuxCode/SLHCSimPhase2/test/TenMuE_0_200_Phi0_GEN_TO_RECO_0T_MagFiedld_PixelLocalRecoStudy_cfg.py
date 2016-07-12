@@ -261,16 +261,16 @@ process.generator = cms.EDProducer("FlatRandomEGunProducer",
         PartID = cms.vint32(-13, -13, -13, -13, -13),
 	#PartID = cms.vint32(-13),
         MaxEta = cms.double(2.5),
-        MaxPhi = cms.double(0.01),
+        MaxPhi = cms.double(0.28),
         MinEta = cms.double(-2.5),
         MinE = cms.double(0.0),
-        MinPhi = cms.double(-0.01),
+        MinPhi = cms.double(0.24),
         MaxE = cms.double(200.0),
 	MinPt = cms.double(0.9)
     ),
     Verbosity = cms.untracked.int32(0),
     psethack = cms.string('Ten mu e 0 to 200'),
-    AddAntiParticle = cms.bool(True),				   
+    AddAntiParticle = cms.bool(False),				   
     firstRun = cms.untracked.uint32(1)
 )
 
