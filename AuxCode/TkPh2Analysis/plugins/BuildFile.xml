@@ -1,0 +1,33 @@
+<use   name="FWCore/Framework"/>
+<use   name="FWCore/ParameterSet"/>
+
+ <!-- for TFileService -->
+<use   name="FWCore/ServiceRegistry"/>
+<use   name="CommonTools/UtilAlgos"/>
+<use   name="CommonTools/Utils"/>
+
+<use   name="SimDataFormats/TrackingHit"/>
+<use   name="Geometry/CommonDetUnit"/>
+<use   name="Geometry/TrackerGeometryBuilder"/>
+<use   name="Geometry/Records"/>
+<use   name="Geometry/TrackerNumberingBuilder"/>
+
+<use   name="DataFormats/Common"/>
+<use   name="DataFormats/TrackerCommon"/>
+<use   name="DataFormats/SiPixelDigi"/>
+<use   name="SimDataFormats/CrossingFrame"/>
+<use   name="SimDataFormats/TrackerDigiSimLink"/>
+<use   name="SimDataFormats/GeneratorProducts"/>
+
+<!-- # for HEPMC -->
+<!-- <use name="GeneratorInterface/Core"/> -->
+
+<use name="root"/>
+<use name="clhep"/>
+
+<use name="heppdt"/>
+<use name="SimGeneral/HepPDTRecord"/>
+
+<flags   EDM_PLUGIN="1"/>
+
+
