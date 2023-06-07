@@ -112,9 +112,9 @@ process.FEVTDEBUGHLToutput = cms.OutputModule("PoolOutputModule",
 # Additional output definition
 
 # Other statements
-process.mix.input.nbPileupEvents.averageNumber = cms.double(20.000000)
+process.mix.input.nbPileupEvents.averageNumber = cms.double(20.0)
 process.mix.bunchspace = cms.int32(25)
-process.mix.minBunch = cms.int32(-12)
+process.mix.minBunch = cms.int32(-5)
 process.mix.maxBunch = cms.int32(3)
 process.mix.input.fileNames = cms.untracked.vstring([
     '/store/relval/CMSSW_13_1_0_pre1/RelValMinBias_14TeV/GEN-SIM/130X_mcRun4_realistic_v2_2026D98noPU-v1/00000/0ea3b302-5d02-465b-a177-750db6ce8230.root'

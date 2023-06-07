@@ -29,6 +29,7 @@
 
 #include "Geometry/CommonDetUnit/interface/GeomDetType.h"
 #include "Geometry/CommonDetUnit/interface/GeomDet.h"
+#include "Geometry/CommonTopologies/interface/PixelGeomDetUnit.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
 #include "Geometry/TrackerNumberingBuilder/interface/GeometricDet.h"
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
@@ -78,6 +79,11 @@ using namespace std;
 //
 // class declaration
 //
+using Phase2TrackerGeomDetUnit = PixelGeomDetUnit;
+
+constexpr double c_cm_ns = CLHEP::c_light * CLHEP::ns / CLHEP::cm;
+constexpr double c_inv = 1.0 / c_cm_ns;
+constexpr double GeVperkElectron = 3.61E-06;
 
 class SimHitDistanceAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources> {
 public:
@@ -89,7 +95,6 @@ public:
 private:
   // ----------member data ---------------------------
 
-  const double GeVperkElectron; 
 
   edm::ESGetToken<TrackerGeometry, TrackerDigiGeometryRecord> geom_esToken_;
   edm::ESGetToken<TrackerTopology, TrackerTopologyRcd> topo_esToken_;
@@ -114,12 +119,13 @@ private:
   // per TBPX layers
   std::map<uint32_t, TFileDirectory> tbpxLayerDirs_;
   // standard SimHit
+  std::map<uint32_t, TH1F*> map_h1_simhit_time_; 
   std::map<uint32_t, TH1F*> map_h1_simhit_n_;
   std::map<uint32_t, TH1F*> map_h1_simhit_charge_; 
   // SimHit from MixingModule
+  std::map<uint32_t, TH1F*> map_h1_mixsimhit_time_; 
   std::map<uint32_t, TH1F*> map_h1_mixsimhit_n_;
   std::map<uint32_t, TH1F*> map_h1_mixsimhit_charge_; 
-  
 };
 
 //
@@ -134,7 +140,6 @@ private:
 // constructors and destructor
 //
 SimHitDistanceAnalyzer::SimHitDistanceAnalyzer( const edm::ParameterSet& pset ):
-  GeVperkElectron(3.61E-06), 
   geom_esToken_(esConsumes()),
   topo_esToken_(esConsumes()),
   hepMCSrc_("generatorSmeared",""),
@@ -183,9 +188,11 @@ void SimHitDistanceAnalyzer::beginJob() {
     for ( unsigned int layer = 0; layer<4; layer++ ) {
        sprintf(subdirname, "layer%d", layer+1);   
        tbpxLayerDirs_[layer]           = tbpxDir_.mkdir(subdirname);
-       map_h1_simhit_n_[layer]         = tbpxLayerDirs_[layer].make<TH1F>("h1_simhit_n",         "h1_simhit_n",           10000, -0.5, 99999.5);
+       map_h1_simhit_time_[layer]      = tbpxLayerDirs_[layer].make<TH1F>("h1_simhit_time",      "h1_simhit_time",           60, -150, 150.);
+       map_h1_simhit_n_[layer]         = tbpxLayerDirs_[layer].make<TH1F>("h1_simhit_n",         "h1_simhit_n",           10000, -0.5, 999999.5);
        map_h1_simhit_charge_[layer]    = tbpxLayerDirs_[layer].make<TH1F>("h1_simhit_charge",    "h1_simhit_charge",         32, -0.1, 31.9);
-       map_h1_mixsimhit_n_[layer]      = tbpxLayerDirs_[layer].make<TH1F>("h1_mixsimhit_n",      "h1_mixsimhit_n",        10000, -0.5, 99999.5);
+       map_h1_mixsimhit_time_[layer]   = tbpxLayerDirs_[layer].make<TH1F>("h1_mixsimhit_time",   "h1_mixsimhit_time",        60, -150, 150.);
+       map_h1_mixsimhit_n_[layer]      = tbpxLayerDirs_[layer].make<TH1F>("h1_mixsimhit_n",      "h1_mixsimhit_n",        10000, -0.5, 999999.5);
        map_h1_mixsimhit_charge_[layer] = tbpxLayerDirs_[layer].make<TH1F>("h1_mixsimhit_charge", "h1_mixsimhit_charge",      32, -0.1, 31.9);
     }
 }
@@ -198,9 +205,9 @@ SimHitDistanceAnalyzer::analyze( const edm::Event& iEvent, const edm::EventSetup
    const bool print = false;
 
    // geometry setup
-   const TrackerGeometry* theGeometry = &iSetup.getData(geom_esToken_);
+   const TrackerGeometry* tkGeom = &iSetup.getData(geom_esToken_);
    // tracker topology from geometry
-   const TrackerTopology* const tTopo = &iSetup.getData(topo_esToken_);
+   const TrackerTopology* const tkTopo = &iSetup.getData(topo_esToken_);
 
    // analyze SimHit (per TBPX layer)
    int nsimhit_tbpx[4] = {};
@@ -220,9 +227,14 @@ SimHitDistanceAnalyzer::analyze( const edm::Event& iEvent, const edm::EventSetup
      uint32_t detid = iSimHit.detUnitId();  
      DetId detId = DetId(detid);  // Get the Detid object
      if ( detId.subdetId() == PixelSubdetector::PixelBarrel ) {
-       uint32_t layer = tTopo->pxbLayer(detId.rawId());
-       nsimhit_tbpx[layer-1]++;
-       map_h1_simhit_charge_[layer-1]->Fill(iSimHit.energyLoss()/GeVperkElectron );  //convert GeV to ke 	   
+       const Phase2TrackerGeomDetUnit* tkDetUnit = dynamic_cast<const Phase2TrackerGeomDetUnit*>(tkGeom->idToDetUnit(detId));
+       uint32_t layer = tkTopo->pxbLayer(detId.rawId());
+       double tofCorr = iSimHit.tof() - tkDetUnit->surface().toGlobal(iSimHit.localPosition()).mag() * c_inv;
+       map_h1_simhit_time_[layer-1]->Fill(tofCorr); 
+       if ( -5.<=tofCorr && tofCorr < +20. ) { // define the current BX as [-5ns,+20ns]
+	 nsimhit_tbpx[layer-1]++;
+	 map_h1_simhit_charge_[layer-1]->Fill(iSimHit.energyLoss()/GeVperkElectron );  //convert GeV to ke 
+       }
      }
    }
   
@@ -242,7 +254,7 @@ SimHitDistanceAnalyzer::analyze( const edm::Event& iEvent, const edm::EventSetup
 
      std::unique_ptr<MixCollection<PSimHit> > coll(new MixCollection<PSimHit>(cf_simhit_H.product()));
      for(MixCollection<PSimHit>::iterator isim = coll->begin(); isim != coll->end(); ++isim){
-       if (print) cout << "MixSimHit charge: " <<  (*isim).energyLoss() << endl;
+       //if (print) cout << "MixSimHit charge: " <<  (*isim).energyLoss() << endl;
        // int tkid = (*isim).trackId();
        // if (tkid <= 0) continue;
        
@@ -250,17 +262,21 @@ SimHitDistanceAnalyzer::analyze( const edm::Event& iEvent, const edm::EventSetup
        uint32_t detid = iSimHit.detUnitId();  
        DetId detId = DetId(detid);  // Get the Detid object
        if ( detId.subdetId() == PixelSubdetector::PixelBarrel ) {
-	 uint32_t layer = tTopo->pxbLayer(detId.rawId());
-	 nmixsimhit_tbpx[layer-1]++;
-	 map_h1_mixsimhit_charge_[layer-1]->Fill(iSimHit.energyLoss()/GeVperkElectron );  //convert GeV to ke 	   
+	 const Phase2TrackerGeomDetUnit* tkDetUnit = dynamic_cast<const Phase2TrackerGeomDetUnit*>(tkGeom->idToDetUnit(detId));
+	 uint32_t layer = tkTopo->pxbLayer(detId.rawId());
+	 double tofCorr = iSimHit.tof() - tkDetUnit->surface().toGlobal(iSimHit.localPosition()).mag() * c_inv;
+	 map_h1_mixsimhit_time_[layer-1]->Fill(tofCorr); 
+	 if ( -5.<=tofCorr && tofCorr < +20. ) { // define the current BX as [-5ns,+20ns]
+	   nmixsimhit_tbpx[layer-1]++;
+	   map_h1_mixsimhit_charge_[layer-1]->Fill(iSimHit.energyLoss()/GeVperkElectron );  //convert GeV to ke 	   
+	 }
        }
      }
      //$
-  
-     for ( int ll=0; ll<4; ll++){
-       map_h1_mixsimhit_n_[ll]->Fill(nmixsimhit_tbpx[ll]);
-     }
-   }   
+   } 
+   for ( int ll=0; ll<4; ll++){
+     map_h1_mixsimhit_n_[ll]->Fill(nmixsimhit_tbpx[ll]);
+   }
 
 // #ifdef HEPMC
 //    const bool printGenParticles = false;
